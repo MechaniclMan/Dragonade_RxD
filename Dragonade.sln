@@ -1,0 +1,50 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scripts", "scripts\scripts.vcxproj", "{9B549C98-0BF4-4092-AE2A-AD7F780F8405}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6636E311-E860-4F52-9D23-FE38E38D6020} = {6636E311-E860-4F52-9D23-FE38E38D6020}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MemoryManager", "MemoryManager\MemoryManager.vcxproj", "{2FEF1C76-9E4A-4921-B2D3-E536DA918810}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "example", "example\example.vcxproj", "{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared", "shared\shared.vcxproj", "{6636E311-E860-4F52-9D23-FE38E38D6020}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rencorner", "rencorner\rencorner.vcxproj", "{1DBBA8E3-C02C-42A6-84F0-E91236C883C7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9B549C98-0BF4-4092-AE2A-AD7F780F8405}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9B549C98-0BF4-4092-AE2A-AD7F780F8405}.Debug|Win32.Build.0 = Debug|Win32
+		{9B549C98-0BF4-4092-AE2A-AD7F780F8405}.Release|Win32.ActiveCfg = Release|Win32
+		{9B549C98-0BF4-4092-AE2A-AD7F780F8405}.Release|Win32.Build.0 = Release|Win32
+		{2FEF1C76-9E4A-4921-B2D3-E536DA918810}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2FEF1C76-9E4A-4921-B2D3-E536DA918810}.Debug|Win32.Build.0 = Debug|Win32
+		{2FEF1C76-9E4A-4921-B2D3-E536DA918810}.Release|Win32.ActiveCfg = Release|Win32
+		{2FEF1C76-9E4A-4921-B2D3-E536DA918810}.Release|Win32.Build.0 = Release|Win32
+		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Debug|Win32.Build.0 = Debug|Win32
+		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Release|Win32.ActiveCfg = Release|Win32
+		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Release|Win32.Build.0 = Release|Win32
+		{6636E311-E860-4F52-9D23-FE38E38D6020}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6636E311-E860-4F52-9D23-FE38E38D6020}.Debug|Win32.Build.0 = Debug|Win32
+		{6636E311-E860-4F52-9D23-FE38E38D6020}.Release|Win32.ActiveCfg = Release|Win32
+		{6636E311-E860-4F52-9D23-FE38E38D6020}.Release|Win32.Build.0 = Release|Win32
+		{1DBBA8E3-C02C-42A6-84F0-E91236C883C7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1DBBA8E3-C02C-42A6-84F0-E91236C883C7}.Debug|Win32.Build.0 = Debug|Win32
+		{1DBBA8E3-C02C-42A6-84F0-E91236C883C7}.Release|Win32.ActiveCfg = Release|Win32
+		{1DBBA8E3-C02C-42A6-84F0-E91236C883C7}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(SubversionScc) = preSolution
+		Svn-Managed = True
+		Manager = AnkhSVN - Subversion Support for Visual Studio
+	EndGlobalSection
+EndGlobal
