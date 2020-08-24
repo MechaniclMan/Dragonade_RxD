@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2020 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -156,6 +156,9 @@ public:
 		Rights = mode;
 		switch (Rights)
 		{
+		case 3: //DA
+			Handle = CreateFileA(Filename, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+			break;
 		case 2:
 			Handle = CreateFileA(Filename,GENERIC_WRITE,0,0,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
 			break;

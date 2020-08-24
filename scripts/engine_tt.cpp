@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2020 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -40,7 +40,6 @@
 #include "TeamPurchaseSettingsDefClass.h"
 #include "PurchaseSettingsDefClass.h"
 #include "PowerUpGameObjDef.h"
-
 class WideStringClass;
 
 

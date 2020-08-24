@@ -55,12 +55,25 @@ public:
 	}
 };
 
+
+#define STYLE_C4 0
+#define STYLE_BEACON 6
+
 #define CID_Weapon 0xB001
 #define CID_Ammo 0xB002
 #define CID_Explosion 0xB003
-#define STYLE_C4 0
-#define STYLE_BEACON 6
 #define CID_Spawner 0x300D
+
+DA_API bool RxDMap();
+DA_API void Set_Emot_Icon_VisableAll(int ID, const char *Model );
+DA_API void Check_Stealth_ICON(int ID, const char *Model, int Team );
+DA_API bool Check_Stealth(int ID);
+DA_API void Set_Emot_Icon(int ID,const char *Model,int Team);
+
+DA_API bool Find_Active_Beacon();
+//DA_API GameObject *Find_Any_Beacon();
+
+DA_API bool Close_To_Teams_Beacon(cPlayer *Player,float Distane); //Default distance 30.0f
 
 DA_API void Destroy_All_Objects_With_Script(const char *Script);
 DA_API bool Has_Beacon(ArmedGameObj *obj);
@@ -166,8 +179,6 @@ inline bool Is_Player(GameObject *obj) {
 	return (obj && obj->As_SoldierGameObj() && ((SoldierGameObj*)obj)->Get_Player_Data());
 }
 
-DA_API bool RxDMap();
-
 DA_API bool Is_Stealth_Enabled2(GameObject *obj);
 DA_API bool Is_Stealth_Unit(GameObject *obj);
 DA_API unsigned int Get_Ground_Vehicle_Count(int Team);
@@ -232,7 +243,7 @@ DA_API bool Exit_Vehicle(SoldierGameObj *Soldier);
 
 DA_API void Reverse_Damage(GameObject *obj,float Amount);
 
-DA_API void Set_Emot_Icon(int ID,const char *Model,int Team);
+
 class SpawnerClass;
 extern REF_DECL(DynamicVectorClass<SpawnerClass*>,SpawnerList);
 

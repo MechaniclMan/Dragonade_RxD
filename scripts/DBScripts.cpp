@@ -1,14 +1,6 @@
 #include "General.h"
 #include "engine_tt.h"
 #include "engine_def.h"
-#include "engine_script.h"
-#include "engine_obj.h"
-#include "engine_obj2.h"
-#include "engine_phys.h"
-#include "engine_tdb.h"
-#include "engine_dmg.h"
-#include "engine_game.h"
-#include "engine_player.h"
 #include "VehicleGameObjDef.h"
 #include "BeaconGameObjDef.h"
 #include "TeamPurchaseSettingsDefClass.h"
@@ -26,7 +18,14 @@
 #include "MoveablePhysClass.h"
 #include "DB_General.h"
 
-
+#include "engine_tdb.h"
+#include "engine_obj.h"
+#include "engine_script.h"
+#include "engine_player.h"
+#include "engine_phys.h"
+#include "engine_game.h"
+#include "engine_obj2.h"
+#include "engine_dmg.h"
 
 class DB_Captureable_Silo : public ScriptImpClass {
 	bool Play_Damage;

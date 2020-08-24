@@ -490,8 +490,7 @@ void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 	}
 }
 
-bool DAVehicleManager::Vehicle_Flip_Event(VehicleGameObj *Vehicle) 
-{
+bool DAVehicleManager::Vehicle_Flip_Event(VehicleGameObj *Vehicle) {
 	return false;
 }
 

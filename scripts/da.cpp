@@ -65,7 +65,7 @@ Any other level loaded events
 */
 
 const char *DA::Get_Version() {
-	return "1.95";
+	return "2.0.0";
 }
 
 void DA::Init() {
@@ -301,6 +301,21 @@ void DA::Page_Player(cPlayer *Player,const char *Format,...)
 		Create_2D_WAV_Sound_Player_By_ID(ID,"yo1.wav");
 	}
 }
+
+void DA::Page_Player_Sound(cPlayer *Player, StringClass Sound, const char *Format,...) 
+{
+	int ID = Player->Get_Id();
+	char Message[256];
+	Format_String_Prefix(Message);
+	if (!Player->Get_DA_Player()->Is_Scripts_Client()) {
+		Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PRIVATE,false,-1,ID,true,true);
+	}
+	else {
+		Send_Message_Player_By_ID(ID,COLORLIGHTBLUE,StringFormat("Host: %s",Message));
+		Create_2D_WAV_Sound_Player_By_ID(ID, Sound);
+	}
+}
+
 
 void DA::Page_Player(int Player,const char *Format,...) {
 	cPlayer *P = Find_Player(Player);

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2020 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -38,7 +38,7 @@ public:
 
 	VisTableClass(uint, int);
 	VisTableClass(CompressedVisTableClass*, int, int);
-	VisTableClass(const VisTableClass& that) { *this = that; }
+	VisTableClass(const VisTableClass& that);
 	~VisTableClass();
 	const VisTableClass& operator =(const VisTableClass& that);
 

@@ -18,8 +18,6 @@
 #include "engine_player.h"
 #include "engine_io.h"
 #include "engine_obj.h"
-#include "gmgame.h"
-#include "gmplugin.h"
 #include "WeaponClass.h"
 #include "SoldierGameObj.h"
 #include "WeaponBagClass.h"

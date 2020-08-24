@@ -538,14 +538,20 @@
     <ClCompile Include="da_chatsounds.cpp">
       <Filter>DA Game Features</Filter>
     </ClCompile>
+    <ClCompile Include="DB_Innate.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
     <ClCompile Include="DBScripts.cpp">
       <Filter>Scripts</Filter>
     </ClCompile>
     <ClCompile Include="DBVehicleBypass.cpp">
       <Filter>Scripts</Filter>
     </ClCompile>
-    <ClCompile Include="DB_Innate.cpp">
+    <ClCompile Include="MasterCan_Scripts.cpp">
       <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="DefaultConnectionAcceptanceFilter.cpp">
+      <Filter>Engine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1598,6 +1604,27 @@
     </ClInclude>
     <ClInclude Include="DB_Innate.h">
       <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="cPlayerKill.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="cPurchaseResponseEvent.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="MuzzleFlashClass.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="MuzzleRecoilClass.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="ObserverImpClass.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="PresetMgr.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="DefaultConnectionAcceptanceFilter.h">
+      <Filter>Engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

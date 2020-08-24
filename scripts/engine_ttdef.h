@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2020 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -22,8 +22,8 @@ enum TextMessageEnum
 	TEXT_MESSAGE_PUBLIC,
 	TEXT_MESSAGE_TEAM,
 	TEXT_MESSAGE_PRIVATE,
-	TEXT_MESSAGE_TMSG, //Special extra value for the TMSG console command.
-	TEXT_MESSAGE_KEYHOOK, //For chat commands triggered by keyhooks.
+	TEXT_MESSAGE_TMSG, //special extra value for the TMSG console command
+	TEXT_MESSAGE_KEYHOOK, //For chat commands triggered by keyhooks. //DA
 };
 enum AnnouncementEnum
 {
@@ -94,8 +94,8 @@ struct PathfindDistanceRequest
 
 	}
 
-	PathfindDistanceRequest(const Vector3 &start, const Vector3 &dest, PathfindDistanceCallback callback, void *data) :
-		Id(0), Start(start), Dest(dest), PathSolver(nullptr), Result(PATHFIND_DISTANCE_INVALID_RESULT), Distance(0.0f), Callback(callback), Data(data)
+	PathfindDistanceRequest(uint32 id, const Vector3 &start, const Vector3 &dest, PathSolveClass* solver, PathfindDistanceCallback callback, void *data) :
+		Id(id), Start(start), Dest(dest), PathSolver(solver), Result(PATHFIND_DISTANCE_INVALID_RESULT), Distance(0.0f), Callback(callback), Data(data)
 	{
 
 	}
@@ -112,7 +112,6 @@ struct PathfindDistanceRequest
 
 	void Do_Callback()
 	{
-		PathSolver = nullptr;
 		Callback((*this));
 	}
 

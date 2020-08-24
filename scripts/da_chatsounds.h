@@ -42,6 +42,9 @@ class DAChatSoundsGameFeatureClass : public DAEventClass, public DAGameFeatureCl
 	HashTemplateClass<StringClass,StringClass> Sounds;
 	unsigned long LastUsed;
 	unsigned int Delay;
+	bool DisableBeaconSounds;
+	bool DisableChatSoundsCloseToActiveBeacon;
+	float ChatSoundBeaconDistance;
 };
 
 #endif

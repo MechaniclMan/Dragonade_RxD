@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2020 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -62,15 +62,15 @@ public:
 	virtual int Get_Player_Type(void) const;
 	virtual	void	Apply_Damage_Extended( const OffenseObjectClass & offense, float scale = 1.0f,
 			const	Vector3 & direction = Vector3( 0,0,0 ), const char * collision_box_name = NULL );
-	SCRIPTS_API void Add_Occupant( SoldierGameObj * occupant, int seat_id );
+	SCRIPTS_API void Add_Occupant( SoldierGameObj * occupant, int seat_id ); //DA
 	SCRIPTS_API void Add_Occupant( SoldierGameObj * occupant );
 	void	Remove_Occupant( SoldierGameObj * occupant );
 	bool	Contains_Occupant( SoldierGameObj * occupant );
 	SCRIPTS_API int	Get_Occupant_Count(void);
 	int	Find_Seat( SoldierGameObj * occupant );
-	SCRIPTS_API SoldierGameObj * Get_Driver(void);
-	SCRIPTS_API SoldierGameObj * Get_Gunner(void);
-	SCRIPTS_API SoldierGameObj * Get_Actual_Gunner(void);
+	SCRIPTS_API SoldierGameObj * Get_Driver(void); //DA
+	SCRIPTS_API SoldierGameObj * Get_Gunner(void); //DA
+	SCRIPTS_API SoldierGameObj * Get_Actual_Gunner(void); //DA
 	virtual bool Is_Entry_Permitted(SoldierGameObj * p_soldier);
 	void	Passenger_Entering( void );
 	void	Passenger_Exiting( void );
@@ -191,10 +191,10 @@ public:
 		}
 		return ((team <= 1) && (team >= 0));
 	}
-	bool Are_Transitions_Enabled() {
+	bool Are_Transitions_Enabled() { //DA
 		return TransitionsEnabled;
 	}
-	int Get_Last_Team() {
+	int Get_Last_Team() { //DA
 		return LastTeam;
 	}
 #ifndef TTLE_EXPORTS
@@ -256,8 +256,9 @@ public:
 	void		Aquire_Turret_Bones( void );
 	void		Release_Turret_Bones( void );
 	void        Reset_Sound_Effects( void );
-protected:
+
 	void		Update_Turret( float weapon_turn, float weapon_tilt );
+protected:
 	void		Update_Sound_Effects( void );
 	void		Change_Engine_Sound_State( int new_state );
 	void		Update_Engine_Sound_Pitch( void );

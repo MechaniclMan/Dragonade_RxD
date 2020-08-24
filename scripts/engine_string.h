@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2020 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -399,12 +399,12 @@ inline StringClass::operator const char * (void) const
 
 inline bool StringClass::operator== (const char *rvalue) const
 {
-	return (Compare_No_Case(rvalue) == 0);
+	return (Compare(rvalue) == 0);
 }
 
 inline bool StringClass::operator!= (const char *rvalue) const
 {
-	return (Compare_No_Case(rvalue) != 0);
+	return (Compare(rvalue) != 0);
 }
 
 inline bool StringClass::operator < (const char *string) const

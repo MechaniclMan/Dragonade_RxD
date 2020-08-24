@@ -85,6 +85,9 @@ void DAChatSoundsGameFeatureClass::Settings_Loaded_Event() {
 		}
 	}
 	Delay = (unsigned int)DASettingsManager::Get_Int("ChatSoundDelay",5)*1000;
+	DisableBeaconSounds = DASettingsManager::Get_Bool("DisableChatSoundsActiveBeacon", false);
+	DisableChatSoundsCloseToActiveBeacon = DASettingsManager::Get_Bool("DisableChatSoundsCloseToActiveBeacon", false);
+	ChatSoundBeaconDistance = DASettingsManager::Get_Float("ChatSoundBeaconDistance",30.0f);
 }
 
 bool DAChatSoundsGameFeatureClass::EnableSounds_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
@@ -125,9 +128,16 @@ bool DAChatSoundsGameFeatureClass::Chat_Event(cPlayer *Player,TextMessageEnum Ty
 	StringClass *Sound = Sounds.Get(Message);
 	if (Sound) {
 		if (GetTickCount()-LastUsed < Delay) {
-			//DA::Page_Player(Player,"A sound command may only be used once every %u second(s). You must wait %u second(s) before using one again.",Delay/1000,(Delay-(GetTickCount()-LastUsed))/1000);
+			DA::Page_Player(Player,"A sound command may only be used once every %u second(s). You must wait %u second(s) before using one again.",Delay/1000,(Delay-(GetTickCount()-LastUsed))/1000);
 			return true;
 		}
+		else if ( Find_Active_Beacon() && DisableBeaconSounds )
+		{
+			DA::Page_Player(Player,"A sound command may not be used when there is an active beacon.");
+			return true;
+		}
+
+
 		cScTextObj *Text = Send_Client_Text(WideStringFormat(L"j\n95\n%hs\n,",*Sound),TEXT_MESSAGE_PUBLIC,false,-2,-1,false,false);
 		DAChatSoundsPlayerDataClass *Data = Get_Player_Data(Player);
 		if (Data->Mute || Type == TEXT_MESSAGE_PRIVATE) {
@@ -138,16 +148,34 @@ bool DAChatSoundsGameFeatureClass::Chat_Event(cPlayer *Player,TextMessageEnum Ty
 		else if (Type == TEXT_MESSAGE_TEAM) {
 			LastUsed = GetTickCount();
 			for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
-				if (z->Data()->Is_Active() && Get_Player_Data(z->Data())->Enable && z->Data()->Get_Player_Type() == Player->Get_Player_Type()) {
-					Text->Set_Object_Dirty_Bit(z->Data()->Get_Id(),NetworkObjectClass::BIT_CREATION,true);
+				if (z->Data()->Is_Active() && Get_Player_Data(z->Data())->Enable && z->Data()->Get_Player_Type() == Player->Get_Player_Type()) 
+				{
+					if ( DisableChatSoundsCloseToActiveBeacon )
+					{
+						if ( !Close_To_Teams_Beacon(z->Data(), ChatSoundBeaconDistance) )
+							Text->Set_Object_Dirty_Bit(z->Data()->Get_Id(),NetworkObjectClass::BIT_CREATION,true);
+					}
+					else
+					{
+						Text->Set_Object_Dirty_Bit(z->Data()->Get_Id(),NetworkObjectClass::BIT_CREATION,true);
+					}
 				}
 			}
 		}
 		else {
 			LastUsed = GetTickCount();
 			for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
-				if (z->Data()->Is_Active() && Get_Player_Data(z->Data())->Enable) {
-					Text->Set_Object_Dirty_Bit(z->Data()->Get_Id(),NetworkObjectClass::BIT_CREATION,true);
+				if (z->Data()->Is_Active() && Get_Player_Data(z->Data())->Enable) 
+				{
+					if ( DisableChatSoundsCloseToActiveBeacon )
+					{
+						if ( !Close_To_Teams_Beacon(z->Data(), ChatSoundBeaconDistance) )
+							Text->Set_Object_Dirty_Bit(z->Data()->Get_Id(),NetworkObjectClass::BIT_CREATION,true);
+					}
+					else
+					{
+						Text->Set_Object_Dirty_Bit(z->Data()->Get_Id(),NetworkObjectClass::BIT_CREATION,true);
+					}
 				}
 			}
 		}

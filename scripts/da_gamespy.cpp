@@ -24,6 +24,8 @@
 #include "HashTemplateClass.h"
 #include "GameDefinition.h"
 #include "GameObjManager.h"
+#include "Winsock2.h"
+
 
 /*
 static time_t GSA_ActiveTime;
@@ -35,8 +37,118 @@ time_t GSA::Get_GSA_Activetime()
 */
 
 
+
+//////////////
+//IP Functions
+//////////////
+
+StringClass GetMyIPAddress()
+{
+   WSADATA WSAData;
+  
+   // Initialize winsock dll
+   if(::WSAStartup(MAKEWORD(1, 0), &WSAData))
+   {
+      Console_Output(("Failed to find the WinSock DLL\n"));
+      return 0;
+   }
+  
+   char szHostName[128] = "";
+  
+   //get the standard host name of the machine
+   if(::gethostname(szHostName, sizeof(szHostName)))
+   {
+      Console_Output(("Failed to get local ip by the host name\n"));
+   }
+  
+   struct sockaddr_in SocketAddress;
+   struct hostent     *pHost        = 0;
+  
+   // Get local IP addresses
+   pHost = ::gethostbyname(szHostName);
+  
+   if(!pHost)
+   {
+      Console_Output(("Failed to get the host information.\n"));
+      return 0;
+   }
+  
+   char IPAddresses[10][16]; // maximum of ten IP addresses
+  
+   for(int nCount = 0; ((pHost->h_addr_list[nCount]) && (nCount < 10)); ++nCount)
+   {
+      memcpy(&SocketAddress.sin_addr, pHost->h_addr_list[nCount], pHost->h_length);
+      strcpy(IPAddresses[nCount], inet_ntoa(SocketAddress.sin_addr));
+   }
+
+   Console_Output("IPS %s | %s | %s | %s\n", IPAddresses[0], IPAddresses[1], IPAddresses[2], IPAddresses[3]);
+  
+   // Cleanup
+   WSACleanup();
+
+   return IPAddresses[1];
+}
+
+
+bool isValidIpAddress(char *ipAddress)
+{
+    struct sockaddr_in sa;
+    int result = inet_pton(AF_INET, ipAddress, &(sa.sin_addr));
+    return result != 0;
+}
+
+
+//Method1
+//Manually set local ip address 
+//Fix for when using wol and device uses 127.0.0.1 instead of local or wan ip
+//StringClass GSAIP;
+//DASettingsManager::Get_String(GSAIP,"GSAIP", IP);
+//if ( GSAIP && isValidIpAddress(GSAIP.Peek_Buffer()))
+//	IP = GSAIP;
+//Console_Output("GameSpyIP %s | %s\n", IP, GSAIP );
+//
+
+//Method2 Get local ip with winsock GetMyIPAddress, assume that char 1 is our local ip 
+//StringClass GSAIP = GetMyIPAddress().Peek_Buffer();
+//Console_Output("GameSpyIP: %s | %s\n", IP, GSAIP );
+//if ( GSAIP && isValidIpAddress(GSAIP.Peek_Buffer()))
+//	IP = GSAIP;
+
+// GetMyIPAddress()
+// APIPA ip address 169 - 0
+// dual lan connected
+// eth1 - 1
+// eth0 - 2
+// single lan connection
+// lanip = 1
+
+
 void DAGameSpyGameFeatureClass::Init() {
+
 	StringClass IP = Long_To_IP(The_Game()->Get_Ip_Address());
+
+	
+	//
+	bool GSAIPFIX = DASettingsManager::Get_Bool("GSA_IP_Fix", false);
+	StringClass GSAIP;
+	DASettingsManager::Get_String(GSAIP,"GameSpyIP", 0);
+
+	
+	if ( GSAIP && isValidIpAddress(GSAIP.Peek_Buffer())) //Manually set local ip address if config defined
+	{
+		Console_Output("GameSpyIP: %s\n", GSAIP );
+		IP = GSAIP;
+	}
+	//else if (stristr(GSAIP, "127.0.0.1")) //Fix for when using wol and server binds to 127.0.0.1 instead of local or wan ip
+	else if ( GSAIPFIX )
+	{
+		GSAIP = GetMyIPAddress().Peek_Buffer();
+		Console_Output("Auto GameSpyIP: %s\n", GSAIP );
+		if ( GSAIP && isValidIpAddress(GSAIP.Peek_Buffer()))
+			IP = GSAIP;
+	}
+	//
+
 	Port = (unsigned short)DASettingsManager::Get_Int("GameSpyQueryPort",DASettingsClass("server.ini").Get_INI()->Get_Int("Server","GameSpyQueryPort",25300));
 	QueryID = 0;
 	
@@ -45,7 +157,7 @@ void DAGameSpyGameFeatureClass::Init() {
 	unsigned short MasterPort = htons(27900);
 
 	StringClass Masters;
-	DASettingsManager::Get_String(Masters,"GameSpyMasterServers","renlist.w3dhub.com|renmaster.cncnet.org|master-gsa.renlist.n00b.hk");
+	DASettingsManager::Get_String(Masters,"GameSpyMasterServers","renlist.w3dhub.com|renmaster.cncnet.org|master-gsa.renlist.n00b.hk|renmaster-backup.cncirc.net");
 	DATokenParserClass Parser(Masters,'|');
 	while (char *Token = Parser.Get_String()) {
 		HostInfo = gethostbyname(Token);
@@ -88,6 +200,21 @@ void DAGameSpyGameFeatureClass::Init() {
 		//current_time = time(NULL);
 		//GSA_ActiveTime = current_time;
 	}
+}
+
+
+uint32_t IPToUInt(const StringClass ip) {
+    int a, b, c, d;
+    uint32_t addr = 0;
+
+    if (sscanf(ip.Peek_Buffer(), "%d.%d.%d.%d", &a, &b, &c, &d) != 4)
+       return 0;
+
+    addr = a << 24;
+    addr |= b << 16;
+    addr |= c << 8;
+    addr |= d;
+    return addr;
 }
 
 void DAGameSpyGameFeatureClass::Settings_Loaded_Event() {

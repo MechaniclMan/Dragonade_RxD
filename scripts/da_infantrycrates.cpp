@@ -1243,6 +1243,14 @@ class DATiberiumMutantCrateObserverClass : public DAGameObjObserverClass
 		return false; //Can't enter vehicles.
 	}
 
+	/*
+	virtual bool PowerUp_Grant_Request_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj)
+	{ // Stop Viscroid from pickip up power ups
+		return false;
+	}
+	*/
+
+
 	virtual bool Add_Weapon_Request(const WeaponDefinitionClass *Weapon) {
 		return !_stricmp(Weapon->Get_Name(),Preset); //Can only use chem sprayer.
 	}
