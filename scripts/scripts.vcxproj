@@ -255,11 +255,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="da_vehiclequeue.cpp" />
     <ClCompile Include="da_weapons.cpp" />
     <ClCompile Include="DBIKScripts.cpp" />
-    <ClCompile Include="DBScripts.cpp" />
-    <ClCompile Include="DBVehicleBypass.cpp" />
-    <ClCompile Include="DB_Innate.cpp" />
     <ClCompile Include="DB_Research_Terminals.cpp" />
-    <ClCompile Include="DefaultConnectionAcceptanceFilter.cpp" />
     <ClCompile Include="DefinitionFactoryClass.cpp" />
     <ClCompile Include="DefinitionFactoryMgrClass.cpp" />
     <ClCompile Include="dllmain.cpp" />
@@ -315,7 +311,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="kak.cpp" />
     <ClCompile Include="kamuix.cpp" />
     <ClCompile Include="LoopedAnimationController.cpp" />
-    <ClCompile Include="MasterCan_Scripts.cpp" />
     <ClCompile Include="mdb.cpp" />
     <ClCompile Include="mdbdef.cpp" />
     <ClCompile Include="mdbevf.cpp" />
@@ -392,8 +387,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="BuildingAggregateDefClass.h" />
     <ClInclude Include="cNetEvent.h" />
     <ClInclude Include="ConversationClass.h" />
-    <ClInclude Include="cPlayerKill.h" />
-    <ClInclude Include="cPurchaseResponseEvent.h" />
     <ClInclude Include="cScTextObj.h" />
     <ClInclude Include="cTeam.h" />
     <ClInclude Include="BaseControllerClass.h" />
@@ -478,9 +471,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="da_weapons.h" />
     <ClInclude Include="DBIKScripts.h" />
     <ClInclude Include="DB_General.h" />
-    <ClInclude Include="DB_Innate.h" />
     <ClInclude Include="DB_Research_Terminals.h" />
-    <ClInclude Include="DefaultConnectionAcceptanceFilter.h" />
     <ClInclude Include="DefenseObjectDefClass.h" />
     <ClInclude Include="Definition.h" />
     <ClInclude Include="DefinitionFactoryClass.h" />
@@ -558,8 +549,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="mdbevf.h" />
     <ClInclude Include="MixFileFactoryClass.h" />
     <ClInclude Include="MoveablePhysDefClass.h" />
-    <ClInclude Include="MuzzleFlashClass.h" />
-    <ClInclude Include="MuzzleRecoilClass.h" />
     <ClInclude Include="NavalFactoryGameObj.h" />
     <ClInclude Include="NavalFactoryGameObjDef.h" />
     <ClInclude Include="neo.h" />
@@ -567,7 +556,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="nh.h" />
     <ClInclude Include="nhp.h" />
     <ClInclude Include="obboxclass.h" />
-    <ClInclude Include="ObserverImpClass.h" />
     <ClInclude Include="OffenseObjectClass.h" />
     <ClInclude Include="Parameter.h" />
     <ClInclude Include="Persist.h" />
@@ -584,7 +572,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="PowerPlantGameObjDef.h" />
     <ClInclude Include="PowerupGameObj.h" />
     <ClInclude Include="PowerupGameObjDef.h" />
-    <ClInclude Include="PresetMgr.h" />
     <ClInclude Include="prototypeclass.h" />
     <ClInclude Include="PurchaseSettingsDefClass.h" />
     <ClInclude Include="Quaternion.h" />

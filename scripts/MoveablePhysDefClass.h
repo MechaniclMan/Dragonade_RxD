@@ -25,10 +25,8 @@ public:
 	virtual bool								Load(ChunkLoadClass &cload);
 	float											Get_Mass(void)					{ return Mass; }
 	float											Get_Grav_Scale(void)			{ return GravScale; }
-	float											Get_Elasticity(void) { return Elasticity; }
 	void											Set_Mass(float new_mass)	{ Mass = new_mass; }
 	void											Set_Grav_Scale(float new_g){ GravScale = new_g; }
-	void											Set_Elasticity(float new_e) { Elasticity = new_e; }
 #ifdef DDBEDIT
 	virtual void                        Dump (FileClass &file);
 #endif

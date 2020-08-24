@@ -78,12 +78,6 @@ public:
 		Y *= oolen;
 		Z *= oolen;
 	}
-	Vector3 Normalized() const
-    {
-        Vector3 v = *this;
-        v.Normalize();
-        return v;
-    }
 	TT_INLINE float Length() const
 	{
 		return WWMath::Sqrt(Length2());

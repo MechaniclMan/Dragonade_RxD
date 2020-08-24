@@ -1343,7 +1343,7 @@ void RA_Base_Defense_Simple::Timer_Expired(GameObject *obj, int number)
 			}
 			ActionParamsStruct params;
 			params.Set_Basic(this, 1, 30); //priority low
-			params.Set_Face_Location(pos, 6);
+			params.Set_Face_Location(pos, 4);
 			Commands->Action_Face_Location(obj, params);
 		}
 	}
@@ -1877,7 +1877,7 @@ void RA_Base_Defense_Powered::Timer_Expired(GameObject *obj, int number)
 			}
 			ActionParamsStruct params;
 			params.Set_Basic(this, 1, 30); //priority low
-			params.Set_Face_Location(pos, 6);
+			params.Set_Face_Location(pos, 4);
 			Commands->Action_Face_Location(obj, params);
 		}
 	}
@@ -2429,7 +2429,7 @@ void RA_Base_Defense_Chargeup::Timer_Expired(GameObject *obj, int number)
 			}
 			ActionParamsStruct params;
 			params.Set_Basic(this, 1, 30); //priority low
-			params.Set_Face_Location(pos, 6);
+			params.Set_Face_Location(pos, 4);
 			Commands->Action_Face_Location(obj, params);
 		}
 	}

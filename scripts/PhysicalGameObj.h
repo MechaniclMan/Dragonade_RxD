@@ -113,7 +113,6 @@ public:
 	void                Clear_Animation() {if (AnimControl) {AnimControl->Set_Animation((const char*)NULL, 0, 0);AnimControl->Set_Mode(ANIM_MODE_STOP,0);ClearAnimation = true;Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);}}
 	void                Set_Team_Visibility(TeamVisibilitySetting setting) {TeamVisibility = (char)setting;Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);}
 	void                Set_Player_Visible(bool visible) {PlayerVisible = visible;}
-	GameObject *		Get_Parent_Object(){return HostGameObj;}
 protected:
 	ActiveConversationClass *ActiveConversation;
 private:

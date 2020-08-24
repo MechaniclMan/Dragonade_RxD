@@ -38,7 +38,7 @@ public:
 
 	VisTableClass(uint, int);
 	VisTableClass(CompressedVisTableClass*, int, int);
-	VisTableClass(const VisTableClass& that);
+	VisTableClass(const VisTableClass& that) { *this = that; }
 	~VisTableClass();
 	const VisTableClass& operator =(const VisTableClass& that);
 

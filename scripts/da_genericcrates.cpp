@@ -486,16 +486,8 @@ class DASpyCrateClass : public DACrateClass {
 			Soldier->Get_Vehicle()->Add_Observer(new DASpyCrateVehicleObserverClass);
 			DA::Page_Player(Player,"Base defenses will ignore your current vehicle until one of its passengers destroys an enemy building.");
 		}
-		else 
-		{
-			DefinitionClass *z = Find_Named_Definition("CnC_Nod_FlameThrower_2SF");
-			SoldierGameObjDef *SBH = (SoldierGameObjDef*)z;
-			DefinitionClass *x = Find_Named_Definition("CnC_Nod_FlameThrower_2SF_RxD");
-			if ( RxDMap() && x )
-			{
-				SBH = (SoldierGameObjDef*)x;
-			}
-
+		else {
+			SoldierGameObjDef *SBH = (SoldierGameObjDef*)Find_Named_Definition("CnC_Nod_FlameThrower_2SF");
 			if (SBH) {
 				Soldier->Re_Init(*SBH);
 				Soldier->Post_Re_Init();
@@ -765,7 +757,7 @@ class DASecondWindCrateObserverClass : public DAGameObjObserverClass {
 				else if (Soldier->Get_Player_Type() == 1) {
 					Create_2D_WAV_Sound_Player_By_ID(ID,"M00EVAG_DSGN0026I1EVAG_SND.wav");
 				}
-				Check_Stealth_ICON(ID,"o_em_cross.w3d",2);
+				Set_Emot_Icon(ID,"o_em_cross.w3d",2);
 			}
 			Set_Delete_Pending();
 		}

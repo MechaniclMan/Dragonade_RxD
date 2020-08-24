@@ -23,8 +23,6 @@ class DAWeaponsGameFeatureClass : public DAEventClass, public DAGameFeatureClass
 	virtual void Settings_Loaded_Event();
 	bool Weapons_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
 	virtual bool Chat_Command_Event(cPlayer *Player,TextMessageEnum Type,const StringClass &Command,const DATokenClass &Text,int ReceiverID);
-	bool Weapon_Purchasable_Soldier_Factory_Destroyed;
-	float WeaponCostMultiplier;
 
 	struct WeaponStruct {
 		bool operator==(const WeaponStruct &That) { return false; }

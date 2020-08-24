@@ -239,72 +239,6 @@ void Send_Custom_Event_Vehicle_Occupants(GameObject *obj,GameObject *Sender,int 
 	}
 }
 
-/*
-GameObject *Find_Any_Beacon()
-{
-	GameObject *ReturnObj = 0;
-	SLNode<BeaconGameObj> *x = GameObjManager::BeaconGameObjList.Head();
-	while (x)
-	{
-		GameObject *o = (GameObject *)x->Data();
-		if (o)
-		{
-			ReturnObj = o;
-		}
-		x = x->Next();
-	}
-	return ReturnObj;
-}*/
-
-bool Find_Active_Beacon()
-{
-	bool FoundBeacon = false;
-	SLNode<BeaconGameObj> *x = GameObjManager::BeaconGameObjList.Head(); 
-	while (x)
-	{
-		GameObject *o = (GameObject *)x->Data();
-		if (o)
-		{
-			BeaconGameObj *Beacon = o->As_PhysicalGameObj()->As_BeaconGameObj();
-			if (Beacon->Get_State() == 2) 
-			{ //Deployed
-				//Console_Output("Found Deplyed Beacon %s\n", Commands->Get_Preset_Name(o) );
-				FoundBeacon = true;
-				break;
-			}
-		}
-		x = x->Next();
-	}
-	return FoundBeacon;
-}
-
-bool Close_To_Teams_Beacon(cPlayer* Player, float Distance)
-{
-	if ( Player )
-	{
-		if ( Distance < 40.0f )
-			Distance = 40.0f;
-
-		float ClosestDist = Distance;
-		Vector3 Position = Player->Get_GameObj()->Get_Position();
-		int Team = Player->Get_Player_Type();
-		BeaconGameObj *Closest = 0;
-		for (SLNode<BeaconGameObj> *z = GameObjManager::BeaconGameObjList.Head();z;z = z->Next()) {
-			if (z->Data()->Get_Player_Type() == Team ) {
-				float Dist = Commands->Get_Distance(Position,Commands->Get_Position(z->Data()));
-				if (Dist < ClosestDist) {
-					ClosestDist = Dist;
-					Closest = z->Data();
-				}
-			}
-		}
-		if (Closest) {
-			return true;
-		}
-	}
-	return false;
-}
-
 void Disarm_Closest_Beacon(const Vector3 &Position,int Team) {
 	float ClosestDist = FLT_MAX;
 	BeaconGameObj *Closest = 0;
@@ -1130,18 +1064,7 @@ void Fix_Stuck_Objects(const Vector3 &Position,float CheckRange,float Range,bool
 	}
 }
 
-bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range) 
-{
-
-	if ( !obj->Peek_Physical_Object()->As_MoveablePhysClass() )
-		return false;
-
-	if ( obj->As_VehicleGameObj() )
-	{
-		if ( obj->As_VehicleGameObj()->Is_Turret() )
-			return false;
-	}
-
+bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range) {
 	MoveablePhysClass *Phys = (MoveablePhysClass*)obj->Peek_Physical_Object();
 	Collision_Group_Type CollisionSave = Phys->Get_Collision_Group();
 	float MinDistance = FLT_MAX;
@@ -1411,94 +1334,6 @@ void cGameData::Set_Intermission_Time_Seconds(int time) {
 	IntermissionTime_Seconds = time;
 }
 
-void Set_Emot_Icon_VisableAll(int ID, const char *Model ) {
-	WideStringClass Send;
-	Send.Format(L"j\n36\n%d\n%hs\n", ID, Model);
-	for (SLNode<cPlayer> *z = Get_Player_List()->Head(); z; z = z->Next()) {
-		if ( z->Data()->Is_Active() ) {
-			Send_Client_Text(Send, TEXT_MESSAGE_PRIVATE, false, -2, z->Data()->Get_Id(), true, true);
-		}
-	}
-}
-
-
-void Check_Stealth_ICON(int ID,const char *Model,int Team) 
-{
-	cPlayer *Player = Find_Player(ID);
-	if ( Player )
-	{
-		if (Player->Get_GameObj()->Get_Vehicle()) {
-			if ( Player->Get_GameObj()->Get_Vehicle()->Is_Stealthed()  )
-				return;
-		}
-		if ( Player->Get_GameObj()->Is_Stealthed() )
-			return;
-		Set_Emot_Icon(ID,Model,Team);
-	}
-}
-
-bool Is_Stealth(int ID) 
-{
-	cPlayer *Player = Find_Player(ID);
-	if ( Player )
-	{
-		if (Player->Get_GameObj()->Get_Vehicle()) {
-			if ( Player->Get_GameObj()->Get_Vehicle()->Is_Stealthed()  )
-				return true;
-		}
-
-		if ( Player->Get_GameObj()->Is_Stealthed() )
-			return true;
-	}
-	return false;
-}
-
-/*
-
-bool Is_Stealth(GameObject *obj) 
-{
-	if ( obj )
-	{
-		if (obj->Get_Vehicle()) {
-			if ( obj->Get_Vehicle()->Is_Stealthed()  )
-				return true;
-		}
-
-		if ( obj->Is_Stealthed() )
-			return true;
-	}
-	return false;
-}
-
-bool Is_Stealth(cPlayer *Player) 
-{
-	if ( Player )
-	{
-		if (Player->Get_GameObj()->Get_Vehicle()) {
-			if ( Player->Get_GameObj()->Get_Vehicle()->Is_Stealthed()  )
-				return true;
-		}
-
-		if ( Player->Get_GameObj()->Is_Stealthed() )
-			return true;
-	}
-	return false;
-}
-
-*/
-
-bool RxDMap()
-{
-	if ( The_Game() )
-	{
-		StringClass MapName = The_Game()->Get_Map_Name();
-		if (stristr(MapName, "RxD"))
-			return true;
-	}
-	return false;
-}
-
-
 void Set_Emot_Icon(int ID,const char *Model,int Team) {
 	WideStringClass Send;
 	Send.Format(L"j\n36\n%d\n%hs\n",ID,Model);
@@ -1508,7 +1343,6 @@ void Set_Emot_Icon(int ID,const char *Model,int Team) {
 		}
 	}
 }
-
 
 unsigned int Get_Ground_Vehicle_Count(int Team) {
 	GameObject *factory = Find_Vehicle_Factory(Team);
@@ -1554,7 +1388,3 @@ bool CombatManager::Is_Gameplay_Permitted()
 }
 REF_DEF2(CombatNetworkHandlerClass*, CombatManager::NetworkHandler, 0x00855ED4, 0x008550BC);
 REF_DEF2(bool, CombatManager::IsGameplayPermitted, 0x00855EFE, 0x008550E6);
-
-
-
-

@@ -77,7 +77,6 @@ public:
 	virtual	void	Import_Creation( BitStreamClass & packet );
 	bool Is_Control_Data_Dirty(cPacket & packet);
 	bool	SCRIPTS_API Is_Obj_Visible( PhysicalGameObj *obj );
-	bool	SCRIPTS_API Is_Splash_Possible( PhysicalGameObj *obj );
 	void	Set_Enemy_Seen_Enabled( bool enabled )	{ IsEnemySeenEnabled = enabled; }
 	bool	Is_Enemy_Seen_Enabled( void )				{ return IsEnemySeenEnabled; }
 	virtual Matrix3D Get_Look_Transform(void) { return Get_Transform(); }

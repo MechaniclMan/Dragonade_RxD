@@ -340,31 +340,30 @@ int DefinitionMgrClass::fnCompareDefinitionsCallback(const void* elem1, const vo
 
 unsigned long DefinitionMgrClass::Get_New_ID(uint32 class_id)
 {
-	for(int x = 0; x < _DefinitionCount; x++)
+	for (int i = 0;i < _DefinitionCount;i++)
 	{
-		DefinitionClass *def = _SortedDefinitionArray[x];
-		if (!def)
+		if (_SortedDefinitionArray[i])
 		{
-			continue;
-		}
-
-		uint32 defId = def->Get_ID();
-		if (defId >= 10000 * class_id - 40960000 && defId < 10000 * class_id - 40950000)
-		{
-			if (x == _DefinitionCount - 1)
+			uint32 id = _SortedDefinitionArray[i]->Get_ID();
+			if (id >= 10000 * class_id - 40960000)
 			{
-				return defId + 1;
-			}
-
-			DefinitionClass *nextDef = _SortedDefinitionArray[x + 1];
-			if (nextDef && nextDef->Get_ID() > defId + 1)
-			{
-				return defId + 1;
+				if (id < 10000 * class_id - 40950000)
+				{
+					if (i >= _DefinitionCount - 1)
+					{
+						if (_SortedDefinitionArray[i + 1])
+						{
+							if (_SortedDefinitionArray[i + 1]->Get_ID() > id + 1)
+							{
+								return id + 1;
+							}
+						}
+					}
+				}
 			}
 		}
 	}
-
-	return (10000 * class_id - 40959999);
+	return 10000 * class_id - 40959999;
 }
 
 DefinitionClass *DefinitionMgrClass::Get_First(uint32 id,ID_TYPE type)

@@ -14,16 +14,9 @@
 #include "da_log.h"
 #include "da_settings.h"
 #include "engine_da.h"
-#include <iostream>
-#include <string>
-#include <stdio.h>
-#include "engine_string.h"
-#include "engine_threading.h"
-
 
 //Based on code by danpaul88 from SSGM 4.0.
 
-StringClass LastLine;
 SOCKET DALogManager::Socket = 0;
 DynamicVectorClass<DALogManager::Connection*> DALogManager::Connections;
 
@@ -61,7 +54,6 @@ void DALogManager::Shutdown() {
 
 void DALogManager::Think() {
 	SOCKET Client = accept(Socket,NULL,NULL);
-	StringClass Line;
 	if (Client != INVALID_SOCKET) {
 		Connection *c = new Connection;
 		c->BufferFilled = 0;
@@ -76,8 +68,7 @@ void DALogManager::Think() {
 			delete Connections[i];
 			Connections.Delete(i);
 		}
-		else if (Receive > 0) 
-		{
+		else if (Receive > 0) {
 			char *LineStartPos = Connections[i]->Buffer;
 			char *EndPos = Connections[i]->Buffer + Connections[i]->BufferFilled+Receive;
 			for (;;) {
@@ -118,20 +109,6 @@ void DALogManager::Write_GameLog(const char *Format,...) {
 	Time[0] = 0x3F;
 	GetTimeFormat(LOCALE_SYSTEM_DEFAULT,TIME_FORCE24HOURFORMAT,0,"'['HH':'mm':'ss']'",Time,0xFF);
 	int Len = sprintf(Buffer,"001%s ",Time);
-	va_list arg_list;
-	va_start(arg_list,Format);
-	vsnprintf(Buffer+Len,525-Len,Format,arg_list);
-	va_end(arg_list);
-	Send(Buffer);
-}
-
-void DALogManager::Write_RenLog(const char *Format,...) {
-	char Buffer[526];
-	char Time[64];
-	memset(Time,0,sizeof(Time));
-	Time[0] = 0x3F;
-	GetTimeFormat(LOCALE_SYSTEM_DEFAULT,TIME_FORCE24HOURFORMAT,0,"'['HH':'mm':'ss']'",Time,0xFF);
-	int Len = sprintf(Buffer,"002%s ",Time);
 	va_list arg_list;
 	va_start(arg_list,Format);
 	vsnprintf(Buffer+Len,525-Len,Format,arg_list);

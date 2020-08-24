@@ -173,18 +173,6 @@ typedef void (*sbgmo) (GameObject *obj,const char *music,float startoffset);
 typedef void (*setcam) (GameObject *obj,const char *camera);
 typedef void (*settran) (GameObject *obj,int defid,int stringid);
 typedef void (*setnur) (GameObject *obj,int rate);
-typedef void (*fou) (GameObject *obj);
-typedef void (*foup) (GameObject *player,GameObject *obj);
-typedef int (*cwscp) (GameObject *obj,const char *soundname);
-typedef void (*ftu) (GameObject *obj);
-typedef void (*ftup) (GameObject *player,GameObject *obj);
-typedef void (*fvu) (GameObject *obj);
-typedef void (*fvup) (GameObject *player,GameObject *obj);
-typedef void (*schn) (GameObject *obj);
-typedef uint32(*gpd) (const Vector3& start, const Vector3& dest, PathfindDistanceCallback callback, SmartGameObj* pathObj, void* data);
-typedef uint32 (*gpda) (SmartGameObj* pathObj, const Vector3 &dest, PathfindDistanceCallback callback, void *data);
-typedef bool(*gpdb) (SmartGameObj* pathObj, const Vector3& dest, float& distanceResult, PathfindDistanceResult& pathfindResult);
-typedef bool (*cgpd) (uint32 id);
 SCRIPTS_API extern gpl Get_Player_List;
 SCRIPTS_API extern gcmi Get_Current_Map_Index;
 SCRIPTS_API extern gm Get_Map;
@@ -359,18 +347,6 @@ SCRIPTS_API extern sbgmo Set_Background_Music_Player_Offset;
 SCRIPTS_API extern setcam Set_Camera_Player;
 SCRIPTS_API extern settran Set_Definition_TranslationID_Player;
 SCRIPTS_API extern setnur Set_Net_Update_Rate_Player;
-SCRIPTS_API extern fou Force_Orientation_Update;
-SCRIPTS_API extern foup Force_Orientation_Update_Player;
-SCRIPTS_API extern cwscp Create_2D_Wave_Sound_Cinematic_Player;
-SCRIPTS_API extern ftu Force_Turret_Update;
-SCRIPTS_API extern ftup Force_Turret_Update_Player;
-SCRIPTS_API extern fvu Force_Velocity_Update;
-SCRIPTS_API extern fvup Force_Velocity_Update_Player;
-SCRIPTS_API extern schn Set_Camera_Host_Network;
-SCRIPTS_API extern gpd Get_Pathfind_Distance; // Deprecated, use Get_Pathfind_Distance_Async in stead
-SCRIPTS_API extern gpda Get_Pathfind_Distance_Async; // Returns > 0 when succusful. pathObj must be a vehicle or a soldier
-SCRIPTS_API extern cgpd Cancel_Get_Pathfind_Distance; // Cancels a pathfind distance request. Use the result from Get_Pathfind_Distance_Async/Get_Pathfind_Distance to cancel
-SCRIPTS_API extern gpdb Get_Pathfind_Distance_Blocking; // Returns > 0 when succesful. Solves distances immediately. pathObj must be a vehicle or a soldier
 
 class SCRIPTS_API JFW_Key_Hook_Base : public ScriptImpClass {
 public:
@@ -478,7 +454,6 @@ SCRIPTS_API void Create_Sound_Team(const char *soundname,const Vector3 & positio
 SCRIPTS_API void Create_2D_Sound_Team(const char *soundname,int team); //play a 2D sound for a team
 SCRIPTS_API void Create_2D_WAV_Sound_Team(const char *soundname,int team); //play a 2D WAV sound for a team
 SCRIPTS_API void Create_2D_WAV_Sound_Team_Dialog(const char *soundname,int team); //play a 2D WAV Dialogue sound for a team
-SCRIPTS_API void Create_2D_WAV_Sound_Team_Cinematic(const char *soundname,int team); //play a 2D WAV Cinematic sound for a team
 SCRIPTS_API void Create_3D_WAV_Sound_At_Bone_Team(const char *soundname,GameObject *obj,const char *bonename,int team); //play a 3D WAV sound at a bone for a team
 SCRIPTS_API void Create_3D_Sound_At_Bone_Team(const char *soundname,GameObject *obj,const char *bonename,int team); //play a 3D sound at a bone for a team
 SCRIPTS_API void Send_Message_Team(int team,unsigned int red,unsigned int green,unsigned int blue,const char *msg); //send a message to a team

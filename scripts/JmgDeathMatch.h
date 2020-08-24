@@ -75,7 +75,7 @@ public:
 			return (RP2DeathMatchSpawnNodeList = new RP2DeathMatchSpawnNode(obj));
 		while (Current)
 		{
-			if (Current->id == id)
+			if (!Current->id == id)
 				return Current;
 			if (!Current->next)
 			{
@@ -100,12 +100,8 @@ public:
 					RP2DeathMatchSpawnNodeList = Current->next;
 				else
 					Prev->next = Current->next;
-				RP2DeathMatchSpawnNode *temp = Current;
-				Current = Current->next;
-				delete temp;
-				continue;
+				delete Current;
 			}
-			Prev = Current;
 			Current = Current->next;
 		}
 		return *this;

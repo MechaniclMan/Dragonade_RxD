@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2016 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,8 +24,3 @@ enum Research_Technology
 };
 
 #define REATTACH_BONES_CUSTOM 9320943
-#define DEPLOY_BEGIN_CUSTOM 9320944
-#define DEPLOY_COMPLETE_CUSTOM 9320945
-#define UNDEPLOY_BEGIN_CUSTOM 9320946
-#define UNDEPLOY_COMPLETE_CUSTOM 9320947
-#define BOMBARD_TOGGLE 9320948

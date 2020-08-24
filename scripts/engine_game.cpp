@@ -81,8 +81,6 @@ RENEGADE_FUNCTION
 cGameDataSinglePlayer SCRIPTS_API *The_Single_Player_Game()
 AT2(0x00477CB0,0x00477380);
 
-bool AllMapsAreFlying = false;
-
 void BaseControllerClass::Check_Vehicle_Factory()
 {
 	if (CombatManager::I_Am_Server())
@@ -259,7 +257,7 @@ GameObject SCRIPTS_API *Find_Base_Defense(int team)
 
 bool SCRIPTS_API Is_Map_Flying()
 {
-	return IsMapVTOL || AllMapsAreFlying;
+	return IsMapVTOL;
 }
 
 GameObject SCRIPTS_API *Create_Building(const char *preset,const Vector3 & Position)

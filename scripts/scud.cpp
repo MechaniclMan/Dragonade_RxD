@@ -943,7 +943,7 @@ void SCUD_Set_Player_Type_OnCustom::Custom(GameObject *obj,int type,int param,Ga
 	msg = Get_Int_Parameter("Message");
 	if (type == msg)
 	{
-		Commands->Set_Player_Type(obj,pltype);
+		Commands->Set_Player_Type(obj,type);
 	}
 }
 

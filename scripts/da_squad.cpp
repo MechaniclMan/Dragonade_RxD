@@ -413,85 +413,13 @@ DASquadManagerClass::~DASquadManagerClass() {
 	SquadList.Delete_All();
 }
 
-void DASquadManagerClass::Level_Loaded_Event() 
-{
+void DASquadManagerClass::Level_Loaded_Event() {
 	Check_Teams();
 	Check_Size();
 	Invites.Delete_All();
 	Joins.Delete_All();
 	WaitList.Delete_All();
-	Active_Squads();
-	Squad_Max_Games();
 }
-
-
-void DASquadManagerClass::Active_Squads()
-{
-	bool DisplayActiveSquads = DASettingsManager::Get_Bool("DisplayActiveSquads",1);
-	if ( !DisplayActiveSquads )
-		return;
-
-	int SquadCount = SquadList.Count();
-	//Functions::Console_Renlog("[BB] There are %d Active Squads\n", SquadCount);
-	DALogManager::Write_Log("_SQUAD","There are %d Active Squads\n", SquadCount);
-	Display_Squads();
-}
-
-void DASquadManagerClass::Display_Squads()
-{
-	if (SquadList.Count()) 
-	{
-		for (int i = 0;i < SquadList.Count();i++) 
-		{
-			DASquadClass *Squad = SquadList[i];
-			if (Squad->Active_Size() ) {
-				StringClass Str;
-				Str.Format("%d Leader: %ls - Members: ",Squad->Get_Leader()->Get_Name());
-				for (int x = 1;x < Squad->Size();x++) {
-					Str += StringClass(Squad->Get_Member(x)->Get_Name()) + ", ";
-				}
-				Str[Str.Get_Length()-2] = '\0';
-				DALogManager::Write_Log("_SQUAD","Active Squad %s\n", Str);
-			}
-		}
-	}
-}
-
-void DASquadManagerClass::Squad_Max_Games() 
-{
-	int SquadCount = SquadList.Count();
-	int MaxGames = DASettingsManager::Get_Int("MaxSquadGames",3);
-
-	if ( MaxGames == 0 )
-		return;
-	
-	for (int i = 0;i < SquadCount;i++) 
-	{
-		DASquadClass *Squad = SquadList[i];
-		if (Squad->Active_Size() ) 
-		{
-			int SquadGames = Squad->Get_Max_Squad_Games();
-			if ( SquadGames > 10 || SquadGames < 0 )
-				SquadGames = 0;
-			SquadGames++;
-			Squad->Set_Max_Squad_Games(SquadGames);
-			SquadGames = Squad->Get_Max_Squad_Games();
-			Squad->Squad_Message("Squad %d has played %d Squad Games", i, SquadGames);
-			//Functions::Console_Renlog("[BB] Squad %d has played %d Squad Games\n", i, SquadGames );
-			DALogManager::Write_Log("_SQUAD","Squad %d has played %d Squad Games\n", i, SquadGames );
-
-			if ( SquadGames >= MaxGames )
-			{
-				Squad->Squad_Message("Your Squad was Disbanded after %d Games", SquadGames);
-				//Functions::Console_Renlog("[BB] Squad %d Disbanded after %d Games\n", i, SquadGames );
-				DALogManager::Write_Log("_SQUAD","Squad %d Disbanded after %d Games\n", i, SquadGames );
-				Squad->Disband();
-			}
-		}
-	}
-}
-
-
 
 void DASquadManagerClass::Settings_Loaded_Event() {
 	RemixSquads = DASettingsManager::Get_Bool("RemixSquads",true);
@@ -699,8 +627,7 @@ bool DASquadManagerClass::Chat_Event(cPlayer *Player,TextMessageEnum Type,const 
 }
 
 bool DASquadManagerClass::List_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-	if (SquadList.Count()) 
-	{
+	if (SquadList.Count()) {
 		for (int i = 0;i < SquadList.Count();i++) {
 			DASquadClass *Squad = SquadList[i];
 			if (Squad->Active_Size() && Squad->Get_Team() == 0) {
@@ -711,7 +638,6 @@ bool DASquadManagerClass::List_Chat_Command(cPlayer *Player,const DATokenClass &
 				}
 				Str[Str.Get_Length()-2] = '\0';
 				DA::Private_Color_Message_With_Team_Color(Player,0,"%s",Str);
-				DALogManager::Write_Log("_SQUAD","Active Squads: %s\n", Str);
 			}
 		}
 
@@ -725,7 +651,6 @@ bool DASquadManagerClass::List_Chat_Command(cPlayer *Player,const DATokenClass &
 				}
 				Str[Str.Get_Length()-2] = '\0';
 				DA::Private_Color_Message_With_Team_Color(Player,1,"%s",Str);
-				DALogManager::Write_Log("_SQUAD","Active Squads: %s\n", Str);
 			}
 		}
 		if (Can_Create_Squads()) {
@@ -961,7 +886,6 @@ void DASquadManagerClass::Join_Accepted(int JoinIndex) {
 		}
 		else {
 			Squad->Add(Player);
-			Squad->Set_Max_Squad_Games(1);
 		}
 	}
 	Joins.Delete(JoinIndex);
@@ -1115,20 +1039,6 @@ int DASquadManagerClass::Get_Max_Squad_Size() {
 	}
 	return MaxSquadSize;
 }
-
-int DASquadClass::Get_Max_Squad_Games()
-{
-	//Functions::Console_Renlog("[BB] Get MaxSquadGames %d\n", MaxSquadGames );
-	return MaxSquadGames;
-}
-
-int DASquadClass::Set_Max_Squad_Games(int Games) 
-{
-	MaxSquadGames = Games;
-	//Functions::Console_Renlog("[BB] Setting MaxSquadGames %d\n", MaxSquadGames );
-	return MaxSquadGames;
-}
-
 
 bool DASquadManagerClass::Can_Create_Squads() {
 	return Get_Max_Squad_Size() >= 2;

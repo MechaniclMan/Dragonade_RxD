@@ -24,7 +24,6 @@ class DANodeManagerClass;
 
 class DA_API DABaseNodeClass abstract : public DAEventClass {
 public:
-	virtual ~DABaseNodeClass() { }
 	bool operator ==(const DABaseNodeClass &That) {
 		return false;
 	}

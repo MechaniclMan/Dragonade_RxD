@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2016 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -925,7 +925,6 @@ void DB_DeployableTank_Upgradeable::Custom(GameObject *obj,int type,int param,Ga
 		{
 			if (!obj->As_VehicleGameObj()->Is_Immovable())
 			{
-				Commands->Send_Custom_Event(obj,obj,DEPLOY_BEGIN_CUSTOM,0,0);
 				obj->As_VehicleGameObj()->Set_Immovable(true);
 				mode = 1;
 				Set_Model_Custom(obj,dmodel);
@@ -934,7 +933,7 @@ void DB_DeployableTank_Upgradeable::Custom(GameObject *obj,int type,int param,Ga
 				Commands->Clear_Weapons(obj);
 				Commands->Give_PowerUp(obj,Get_Parameter("Weapon_Powerup_Name"),false);
 				Commands->Select_Weapon(obj,Get_Parameter("Weapon_Name"));
-				//Commands->Control_Enable(sender,false);
+				Commands->Control_Enable(sender,false);
 				obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
 				Commands->Create_Sound(Get_Parameter("DeploySound"),Commands->Get_Position(obj),obj);
 				Commands->Enable_Vehicle_Transitions(obj,false);
@@ -943,16 +942,13 @@ void DB_DeployableTank_Upgradeable::Custom(GameObject *obj,int type,int param,Ga
 		//mode: 0=walk;1=deploy;2=deployed;3=redeploy
 		else if (mode == 2)
 		{
-			Commands->Send_Custom_Event(obj,obj,UNDEPLOY_BEGIN_CUSTOM,0,0);
 			mode = 3;
 			Set_Model_Custom(obj,dmodel);
-			Commands->Set_Animation_Frame(obj,deployanim,(int)Get_Float_Parameter("Last_Deploy_Frame"));
-			Update_Network_Object(obj);
 			Commands->Set_Animation(obj,deployanim,false,0,Get_Float_Parameter("Last_Deploy_Frame"),0,0);
 			Commands->Clear_Weapons(obj);
 			Commands->Give_PowerUp(obj,Get_Parameter("Weapon_Powerup_Name2"),false);
 			Commands->Select_Weapon(obj,Get_Parameter("Weapon_Name2"));
-			//Commands->Control_Enable(sender,false);
+			Commands->Control_Enable(sender,false);
 			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
 			Commands->Create_Sound(Get_Parameter("UndeploySound"),Commands->Get_Position(obj),obj);
 			Commands->Enable_Vehicle_Transitions(obj,false);
@@ -978,7 +974,6 @@ void DB_DeployableTank_Upgradeable::Animation_Complete(GameObject *obj,const cha
 		Commands->Enable_Engine(obj,false);
 		Commands->Enable_Vehicle_Transitions(obj,true);
 		Commands->Enable_Innate_Conversations(obj,true);
-		Commands->Send_Custom_Event(obj,obj,DEPLOY_COMPLETE_CUSTOM,0,0);
 		return;
 	}
 	//tank redeploy
@@ -996,7 +991,6 @@ void DB_DeployableTank_Upgradeable::Animation_Complete(GameObject *obj,const cha
 		Commands->Enable_Innate_Conversations(obj,true);
 		Commands->Enable_Vehicle_Transitions(obj,true);
 		Commands->Enable_Engine(obj,true);
-		Commands->Send_Custom_Event(obj,obj,UNDEPLOY_COMPLETE_CUSTOM,0,0);
 		return;
 	}
 }

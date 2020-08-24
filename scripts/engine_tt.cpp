@@ -216,18 +216,6 @@ SCRIPTS_API sbgmo Set_Background_Music_Player_Offset;
 SCRIPTS_API setcam Set_Camera_Player;
 SCRIPTS_API settran Set_Definition_TranslationID_Player;
 SCRIPTS_API setnur Set_Net_Update_Rate_Player;
-SCRIPTS_API fou Force_Orientation_Update;
-SCRIPTS_API foup Force_Orientation_Update_Player;
-SCRIPTS_API cwscp Create_2D_Wave_Sound_Cinematic_Player;
-SCRIPTS_API ftu Force_Turret_Update;
-SCRIPTS_API ftup Force_Turret_Update_Player;
-SCRIPTS_API fvu Force_Velocity_Update;
-SCRIPTS_API fvup Force_Velocity_Update_Player;
-SCRIPTS_API schn Set_Camera_Host_Network;
-SCRIPTS_API gpd Get_Pathfind_Distance;
-SCRIPTS_API gpda Get_Pathfind_Distance_Async;
-SCRIPTS_API cgpd Cancel_Get_Pathfind_Distance;
-SCRIPTS_API gpdb Get_Pathfind_Distance_Blocking;
 
 SCRIPTS_API bool Can_Team_Build_Vehicle(int Team)
 {
@@ -417,23 +405,6 @@ SCRIPTS_API void Create_2D_WAV_Sound_Team_Dialog(const char *soundname,int team)
 	}
 }
 
-SCRIPTS_API void Create_2D_WAV_Sound_Team_Cinematic(const char *soundname,int team)
-{
-	SLNode<SoldierGameObj> *x = GameObjManager::StarGameObjList.Head();
-	while (x)
-	{
-		GameObject *o = x->Data();
-		if (o)
-		{
-			if ((Get_Object_Type(o) == team) || (team == 2))
-			{
-				Create_2D_Wave_Sound_Cinematic_Player(o,soundname);
-			}
-		}
-		x = x->Next();
-	}
-}
-
 SCRIPTS_API void Create_3D_WAV_Sound_At_Bone_Team(const char *soundname,GameObject *obj,const char *bonename,int team)
 {
 	if (!obj)
@@ -494,7 +465,7 @@ SCRIPTS_API void Ranged_Stealth_On_Team(Gap_ListNode* FirstNode)
 					test = o->Get_Lock_Team();
 				}
 				const VehicleGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed())
 				{
 					while (current)
 					{
@@ -528,7 +499,7 @@ SCRIPTS_API void Ranged_Stealth_On_Team(Gap_ListNode* FirstNode)
 			if (o)
 			{
 				const VehicleGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary")  && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed())
 				{
 					Commands->Enable_Stealth(o, false);
 				}
@@ -549,7 +520,7 @@ SCRIPTS_API void Ranged_Stealth_On_Team(Gap_ListNode* FirstNode)
 				Gap_ListNode *current = FirstNode;
 				int test = Commands->Get_Player_Type(o);
 				const SoldierGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed())
 				{
 					while (current)
 					{
@@ -583,7 +554,7 @@ SCRIPTS_API void Ranged_Stealth_On_Team(Gap_ListNode* FirstNode)
 			if (o)
 			{
 				const SoldierGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary")  && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed())
 				{
 					Commands->Enable_Stealth(o, false);
 				}
@@ -607,7 +578,7 @@ SCRIPTS_API void Ranged_Gap_Effect(Gap_ListNode* FirstNode)
 				Gap_ListNode *current = FirstNode;
 				int test = Commands->Get_Player_Type(o);
 				const VehicleGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && d->Get_Type() != VEHICLE_TYPE_SUB && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed() && d->Get_Type() != VEHICLE_TYPE_SUB)
 				{
 					while (current)
 					{
@@ -641,7 +612,7 @@ SCRIPTS_API void Ranged_Gap_Effect(Gap_ListNode* FirstNode)
 			if (o)
 			{
 				const VehicleGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed())
 				{
 					Commands->Enable_Stealth(o, false);
 				}
@@ -663,7 +634,7 @@ SCRIPTS_API void Ranged_Gap_Effect(Gap_ListNode* FirstNode)
 				Gap_ListNode *current = FirstNode;
 				int test = Commands->Get_Player_Type(o);
 				const SoldierGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed())
 				{
 					while (current)
 					{
@@ -712,7 +683,7 @@ SCRIPTS_API void Ranged_Gap_Effect(Gap_ListNode* FirstNode)
 			if (o)
 			{
 				const SoldierGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed())
 				{
 					Commands->Enable_Stealth(o, false);
 					if (Commands->Is_A_Star(o))

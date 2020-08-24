@@ -19,7 +19,6 @@ class DAGameModeClass;
 class DAGameModeFactoryClass abstract {
 public:
 	DA_API DAGameModeFactoryClass(const char *ShortName,const char *LongName,const char *RequiredData = 0);
-	virtual ~DAGameModeFactoryClass() { }
 	inline const char *Get_Long_Name() const {
 		return LongName;
 	}

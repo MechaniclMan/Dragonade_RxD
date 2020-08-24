@@ -334,7 +334,6 @@ public:
   // Events
   virtual void Enemy_Seen ( GameObject *obj, GameObject *enemy );
   virtual void Timer_Expired( GameObject *obj, int number );
-  virtual void Damaged(GameObject *obj, GameObject *damager, float amount);
 
   // Custom AI initialisation script overrides
   virtual void Init( GameObject *obj );

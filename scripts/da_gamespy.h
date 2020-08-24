@@ -17,19 +17,6 @@
 #include "da_event.h"
 #include "da_gamefeature.h"
 
-#include "general.h"
-#include "engine.h"
-#include "da.h"
-
-/*
-class GSA
-{
-public:
-	time_t Get_GSA_Activetime();
-	static time_t GSA_ActiveTime;
-};
-*/
-
 class DAGameSpyGameFeatureClass : public DAEventClass, public DAGameFeatureClass {
 public:
 	virtual void Init();
@@ -40,7 +27,6 @@ public:
 	virtual void Player_Join_Event(cPlayer *Player);
 	virtual void Player_Leave_Event(cPlayer *Player);
 	virtual ~DAGameSpyGameFeatureClass();
-	
 
 private:
 	SOCKET ListenSocket;

@@ -62,11 +62,6 @@ protected:
 	friend	class								SoldierGameObj;
 	friend	class								SoldierObserverClass;
 	friend class PresetDump;
-public:
-	bool	GetInnateBehavior(){ return UseInnateBehavior;}
-	float	GetInnateAggressiveness(){ return InnateAggressiveness;}
-	float	GetInnateTakeCoverProbability(){ return InnateTakeCoverProbability;}
-	bool	GetInnateIsStationary(){ return InnateIsStationary;}
 }; // size: 912
 
 

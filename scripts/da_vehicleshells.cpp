@@ -68,7 +68,7 @@ DAVehicleShellObserverClass::DAVehicleShellObserverClass(DAVehicleShellStruct *S
 	VehicleGameObj *Shell = (VehicleGameObj*)Create_Object(MountedDef,Transform);
 	MountedDef->PhysDefID = PhysDefIDSave;
 	Commands->Set_Model(Shell,Get_Model(Shadow));
-	Shell->Set_Collision_Group(SOLDIER_GHOST_COLLISION_GROUP);
+	Shell->Set_Collision_Group(TERRAIN_AND_BULLET_COLLISION_GROUP);
 	Shell->Set_Player_Type(-2);
 	Commands->Enable_Vehicle_Transitions(Shell,false);
 	DefenseObjectClass *ShellDefense = Shell->Get_Defense_Object();
@@ -86,8 +86,6 @@ DAVehicleShellObserverClass::DAVehicleShellObserverClass(DAVehicleShellStruct *S
 	Shadow->Add_Observer(new DAVehicleShellShadowObserverClass(Shell));
 
 	Transform.Get_Translation(&LastPos);
-	Update_Network_Object(Shell);
-	Force_Orientation_Update(Shell);
 	StartZ = LastPos.Z;
 	Start_Timer(1,0.5f);
 }

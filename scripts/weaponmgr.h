@@ -96,9 +96,7 @@ public:
 	safe_float		TargetingRange;//new
 	int             C4Preset;
 	bool			DisableHitscan;
-	bool			TrackingIgnoreVehicle;
-	bool			TrackingIgnoreSoldier;
-	bool			TrackingIgnoreVTOL;
+	bool			TrackingIgnoreTarget;
 
 #if (PARAM_EDITING_ON) || (DDBEDIT) || (W3DVIEWER)
     Vector3 ProjectileExtent;
@@ -190,7 +188,6 @@ public:
 	float CameraShakeRadius;
 	float CameraShakeDuration;
 	float CollisionDamageMultiplier;
-	bool ResetMappers;
 	ExplosionDefinitionClass();
 	virtual ~ExplosionDefinitionClass();
 	virtual const PersistFactoryClass &Get_Factory() const;

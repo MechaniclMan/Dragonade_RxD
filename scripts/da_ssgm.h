@@ -30,8 +30,6 @@ public:
 	static void Send(const char *data);
 };
 
-SCRIPTS_API void Log_Killed_Message(GameObject* obj, GameObject* killer, const char* objectType);
-
 enum EventType {
 	EVENT_GLOBAL_INI = 0,
 	EVENT_MAP_INI,

@@ -586,26 +586,6 @@ SCRIPTS_API bool SmartGameObj::Is_Obj_Visible(PhysicalGameObj* object)
 		collisionTest.CollidedPhysObj == object->Peek_Physical_Object();
 }
 
-SCRIPTS_API bool SmartGameObj::Is_Splash_Possible(PhysicalGameObj* object)
-{
-	Vector3 bullseyePosition = object->Get_Position();
-	const Matrix3D lookTransform = Get_Look_Transform();
-	const Vector3 lookPosition = lookTransform.Get_Translation();
-	
-
-	
-	CastResultStruct castResult;
-	PhysRayCollisionTestClass collisionTest(LineSegClass(bullseyePosition,lookPosition), &castResult, BULLET_COLLISION_GROUP);
-	
-	object->Peek_Physical_Object()->Inc_Ignore_Counter();
-	PhysicsSceneClass::Get_Instance()->Cast_Ray(collisionTest, false);
-	object->Peek_Physical_Object()->Dec_Ignore_Counter();
-	
-	return
-		castResult.Fraction == 1.f ||
-		collisionTest.CollidedPhysObj == Peek_Physical_Object();
-}
-
 bool SCRIPTS_API ActionClass::Is_Acting( void )
 {
 	return ( ActionCode != NULL );

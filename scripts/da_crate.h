@@ -29,7 +29,6 @@ class DACrateModifierClass;
 class DACrateModifierFactoryClass abstract {
 public:
 	DA_API DACrateModifierFactoryClass(const char *Name);
-	virtual ~DACrateModifierFactoryClass() { }
 	virtual DACrateModifierClass *Create(const char *Parameters) = 0;
 	inline const char *Get_Name() const {
 		return Name;
@@ -102,7 +101,6 @@ class DACrateClass;
 class DACrateFactoryClass abstract {
 public:
 	DA_API DACrateFactoryClass(const char *Name,DACrateType::Type Type);
-	virtual ~DACrateFactoryClass() { }
 	virtual DACrateClass *Create_Instance() = 0;
 	DA_API void Destroy_Instance();
 	DA_API bool Check_Enabled() const;

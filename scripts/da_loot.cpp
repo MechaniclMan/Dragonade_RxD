@@ -23,7 +23,6 @@
 #include "da_gameobjobservers.h"
 #include "WeaponBagClass.h"
 #include "WeaponClass.h"
-#include "GameObjManager.h"
 
 void DALootPlayerDataClass::Add_Weapon(WeaponClass *Weapon) {
 	if (Locker.ID(Weapon->Get_Definition()) == -1) {
@@ -299,72 +298,6 @@ bool DALootDNAClass::PowerUp_Grant_Request(cPlayer *Player) {
 	return DALootPowerUpClass::PowerUp_Grant_Request(Player);
 }
 
-
-class DATiberiumMutantCrateObserverClass : public DAGameObjObserverClass 
-{
-	StringClass Preset;
-
-	virtual const char *Get_Name() { 
-		return "DATiberiumMutantCrateObserverClass"; 
-	}
-
-	virtual void Init() 
-	{
-		DefinitionClass *x = Find_Named_Definition("CNC_Weapon_ChemSprayer_RxD");
-		if ( RxDMap() && x ) { Preset = "CNC_Weapon_ChemSprayer_RxD"; }
-		else { Preset = "CNC_Weapon_ChemSprayer_Player"; }
-		WeaponBagClass *Bag = ((SoldierGameObj*)Get_Owner())->Get_Weapon_Bag();
-		Bag->Clear_Weapons();
-		Bag->Add_Weapon(Preset,999);
-		Bag->Select_Index(1);
-		const_cast<Matrix3D&>(((SoldierGameObj*)Get_Owner())->Get_Transform()).Adjust_Z_Translation(1.0f); //Fix stuck in ground.
-		Start_Timer(1,1.0f);
-
-	}
-
-	virtual void Timer_Expired(GameObject *obj,int Number) {
-		Start_Timer(1,1.0f);
-		DefenseObjectClass *Defense = ((SoldierGameObj*)Get_Owner())->Get_Defense_Object(); //Small health regen.
-		if (Defense->Get_Health_Max() == Defense->Get_Health()) {
-			Defense->Add_Shield_Strength(1.0f);
-		}
-		else {
-			Defense->Add_Health(1.0f);
-		}
-		Set_Bullets(Get_Owner(),Preset,100);
-		//Set_Bullets(Get_Owner(),"CNC_Weapon_ChemSprayer_Player",100); //Infinite ammo, no reload.
-		Vector3 Position;
-		Get_Owner()->Get_Position(&Position);
-		for (SLNode<SoldierGameObj> *x = GameObjManager::SoldierGameObjList.Head();x;x = x->Next()) { //AOE damage.
-			if (x->Data()->Get_Player_Type() != ((SoldierGameObj*)Get_Owner())->Get_Player_Type() && Commands->Get_Distance(Position,x->Data()->Get_Position()) < 5.0f) {
-				Commands->Apply_Damage(x->Data(),1.0f,"TiberiumRaw",Get_Owner());
-			}
-		}
-	}
-
-	virtual bool Vehicle_Entry_Request(VehicleGameObj *Vehicle,int &Seat) {
-		return false; //Can't enter vehicles.
-	}
-
-	virtual bool Add_Weapon_Request(const WeaponDefinitionClass *Weapon) {
-		return !_stricmp(Weapon->Get_Name(),Preset); //Can only use chem sprayer.
-	}
-	
-	virtual bool Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
-		if (Type == DADamageType::SQUISH || Type == DADamageType::FALL) {
-			return false; //Can't be squished and doesn't take fall damage.
-		}
-		else if (Type != DADamageType::REPAIR) {
-			Damage *= 0.5f; //Only takes half damage.
-		}
-		return true;
-	}
-
-	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
-		Get_Owner()->Set_Delete_Pending(); //Fix bug where the player won't respawn when they die because the visceroid doesn't have a death animation.
-	}
-};
-
 void DALootDNAClass::PowerUp_Grant(cPlayer *Player) {
 	SoldierGameObj *Soldier = Player->Get_GameObj();
 	Create_2D_WAV_Sound_Player(Soldier,"powerup_ammo.wav");
@@ -372,15 +305,6 @@ void DALootDNAClass::PowerUp_Grant(cPlayer *Player) {
 	Soldier->Post_Re_Init();
 	Get_Owner()->Set_Delete_Pending();
 	DA::Private_HUD_Message(Player, COLORLIGHTBLUE, "%s",DATranslationManager::Translate(Character));
-
-
-	if (_stricmp(Character->Get_Name(), "CnC_GDI_Mutant_2SF_Templar") == 0)
-	{
-		if ( !Soldier->Find_Observer("DATiberiumMutantCrateObserverClass") )
-		{
-			Soldier->Add_Observer(new DATiberiumMutantCrateObserverClass);
-		}
-	}
 }
 
 void DALootDNAClass::Timer_Expired(GameObject *obj,int Number) {

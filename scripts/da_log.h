@@ -24,7 +24,6 @@ public:
 	DA_API static void Write_Log(const char *Header,const char *Format,...);
 	DA_API static void Write_GameLog(const char *Format,...);
 	DA_API static void Send(const char *Data);
-	DA_API static void Write_RenLog(const char *Format,...);
 	
 private:
 	virtual void Think();

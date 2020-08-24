@@ -1140,8 +1140,7 @@ void JFW_Cinematic::Command_Control_Camera(char *command)
 		GameObject *obj = Commands->Find_Object(Slots[slot]);
 		if (obj)
 		{
-			Update_Network_Object(obj);
-			Set_Camera_Host_Network(obj);
+			Commands->Set_Camera_Host(obj);
 			Commands->Control_Enable(Commands->Get_The_Star(),false);
 			Commands->Enable_HUD(false);
 			CameraControl = true;
@@ -1151,7 +1150,7 @@ void JFW_Cinematic::Command_Control_Camera(char *command)
 	}
 	else
 	{
-		Set_Camera_Host_Network(0);
+		Commands->Set_Camera_Host(0);
 		Commands->Control_Enable(Commands->Get_The_Star(),true);
 		Commands->Enable_HUD(true);
 	}
