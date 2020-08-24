@@ -1,5 +1,3 @@
-# Dragonade_RxD
- 
 Dragonade 1.10
 Created by Whitedragon and Black-Cell.net
 
