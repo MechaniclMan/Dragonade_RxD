@@ -31,6 +31,8 @@ void DAWeaponsGameFeatureClass::Init() {
 
 void DAWeaponsGameFeatureClass::Settings_Loaded_Event() {
 	Weapons.Delete_All();
+	Weapon_Purchasable_Soldier_Factory_Destroyed = DASettingsManager::Get_Bool("Weapon_Purchasable_Infantry_Factory_Destroyed",false);
+	WeaponCostMultiplier = DASettingsManager::Get_Float("WeaponCostMultiplier",1.0f);
 	INISection *Section = DASettingsManager::Get_Section("Purchasable_Weapons");
 	if (Section) {
 		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
@@ -94,6 +96,14 @@ bool DAWeaponsGameFeatureClass::Chat_Command_Event(cPlayer *Player,TextMessageEn
 	for (int i = 0;i < Weapons.Count();i++) {
 		if (Weapons[i].Triggers.ID(Command) != -1) {
 			int Team = Player->Get_Player_Type();
+			BuildingGameObj *SF = BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_SOLDIER_FACTORY);
+			if ( !Weapon_Purchasable_Soldier_Factory_Destroyed && SF->Is_Destroyed() )
+			{
+				//DA::Private_Color_Message(Player,COLORGRAY,"The %s needs to be alive to be able to purchase weapons.", SF->Get_Definition().Get_Name());
+				DA::Private_Color_Message(Player,COLORGRAY,"The factory needs to be alive to be able to purchase a weapon.", SF->Get_Definition().Get_Name());
+				return false;
+			}
+
 			if ((Team != 0 && Team != 1) || !Weapons[i].Weapon[Team]) {
 				DA::Private_Color_Message(Player,COLORGRAY,"Your team cannot purchase that weapon.");
 				return false;
@@ -109,7 +119,8 @@ bool DAWeaponsGameFeatureClass::Chat_Command_Event(cPlayer *Player,TextMessageEn
 					return false;
 				}
 				else {
-					int Cost = (int)Round((float)Weapons[i].Cost*Player->Get_DA_Player()->Get_PowerUp_Discount());
+					//int Cost = (int)Round(((float)Weapons[i].Cost*WeaponCostMultiplier)*Player->Get_DA_Player()->Get_PowerUp_Discount());
+					int Cost = (int)Round((float)Weapons[i].Cost*WeaponCostMultiplier*Player->Get_DA_Player()->Get_Vehicle_Discount());
 					if (!BaseControllerClass::Find_Base(Team)->Is_Base_Powered()) {
 						Cost *= 2;
 					}

@@ -46,7 +46,27 @@ void Iran_Beaconing_Prevention_Zone::Timer_Expired(GameObject *obj,int number)
 				Commands->Select_Weapon(checkplayerobj,"CnC_Weapon_IonCannonBeacon_Player");
 			}
 		Commands->Start_Timer(obj,this,0.5,number);	
-		}		
+		}
+		else if (Get_Total_Bullets(checkplayerobj, "CnC_Weapon_NukeBeacon_RxD"))
+		{
+			const char* currentweapon = Get_Current_Weapon(checkplayerobj);
+			if(strcmp(currentweapon,"CnC_Weapon_NukeBeacon_RxD") == 0 && Get_Current_Bullets(checkplayerobj) > 0) 
+			{
+				Commands->Select_Weapon(checkplayerobj,"");
+				Commands->Select_Weapon(checkplayerobj,"CnC_Weapon_NukeBeacon_RxD");
+			}
+		Commands->Start_Timer(obj,this,0.5,number);	
+		}	
+		else if (Get_Total_Bullets(checkplayerobj, "CnC_Weapon_IonCannonBeacon_RxD"))
+		{
+			const char* currentweapon = Get_Current_Weapon(checkplayerobj);
+			if(strcmp(currentweapon,"CnC_Weapon_IonCannonBeacon_RxD") == 0 && Get_Current_Bullets(checkplayerobj) > 0) 
+			{
+				Commands->Select_Weapon(checkplayerobj,"");
+				Commands->Select_Weapon(checkplayerobj,"CnC_Weapon_IonCannonBeacon_RxD");
+			}
+		Commands->Start_Timer(obj,this,0.5,number);	
+		}	
 	}
 }
 

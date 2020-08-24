@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -266,6 +266,8 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Send_Client_Announcement = (sca)Address(tt,"Send_Client_Announcement");
 	Send_Player_Kill_Message = (spkm)Address(tt, "Send_Player_Kill_Message");
 	Send_Purchase_Response = (spr)Address(tt, "Send_Purchase_Response");
+	GetTTVersion = (gttv)Address(tt,"GetTTVersion");
+	GetTTRevision = (gttr)Address(tt,"GetTTRevision");
 	AddShaderNotify = (asn)Address(tt,"AddShaderNotify");
 	RemoveShaderNotify = (rsn)Address(tt,"RemoveShaderNotify");
 	Do_Objectives_Dlg = (dod)Address(tt,"Do_Objectives_Dlg");

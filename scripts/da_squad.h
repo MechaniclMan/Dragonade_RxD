@@ -118,6 +118,21 @@ public:
 	void Squad_Message_Except(cPlayer *Player,const char *Format,...);
 	void Leader_Message(const char *Format,...);
 
+	int Get_Max_Squad_Games();
+	int Set_Max_Squad_Games(int Games);
+
+	/*
+	inline int Get_Max_Squad_Games()
+	{
+		return MaxSquadGames;
+
+	}
+	inline int Set_Max_Squad_Games(int Games)
+	{
+
+	}
+	*/
+
 	inline bool Is_Member(cPlayer *Player) {
 		for (int i = 0;i < Members.Count();i++) {
 			if (Members[i]->Get_Owner() == Player) {
@@ -140,6 +155,7 @@ public:
 	inline DASquadMemberClass *Get_Member(int Index) {
 		return Members[Index];
 	}
+
 	inline DASquadMemberClass *Get_Leader() {
 		return Members.Count()?Members[0]:0;
 	}
@@ -161,6 +177,7 @@ private:
 	DynamicVectorClass<DASquadMemberClass*> Members;
 	int Team;
 	bool Disbanded;
+	int MaxSquadGames;
 };
 
 class DA_API DASquadManagerClass : public DAEventClass, public DAGameFeatureClass {
@@ -191,6 +208,9 @@ public:
 	void Join_Accepted(int JoinIndex);
 	void Invite_Accepted(int InviteIndex);
 
+	void Display_Squads();
+	void Active_Squads();
+
 	bool Is_Join_Pending(cPlayer *Player,cPlayer *Leader = 0);
 	bool Is_Invite_Pending(cPlayer *Player,cPlayer *Leader = 0);
 	bool Is_WaitList_Pending(cPlayer *Player,cPlayer *Leader = 0);
@@ -214,10 +234,13 @@ public:
 		return SquadList.Count();
 	}
 
+	//int Get_Max_Squad_Games();
+	//int Set_Max_Squad_Games(int Games);
 	int Get_Max_Squad_Size();
 	bool Can_Create_Squads();
 	void Check_Teams();
 	void Check_Size();
+	void Squad_Max_Games();
 
 private:
 	DynamicVectorClass<DASquadInviteStruct> Invites;
@@ -227,6 +250,7 @@ private:
 
 	//Settings
 	int MaxSquadSize;
+	int MaxSquadGames;
 	bool RemixSquads;
 };
 

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -184,13 +184,13 @@ public:
 		PageBusy = b;
 		Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
 	}
-	void Set_Definition(int index,int preset) {
+	void Set_Definition(int index, int preset) { //DA
 		presetids[index] = preset;
 	}
-	void Set_Alt_Definition(int index,int index2,int preset) {
+	void Set_Alt_Definition(int index, int index2, int preset) { //DA
 		altpresetids[index][index2] = preset;
 	}
-	void Set_Cost(int index,int cost) {
+	void Set_Cost(int index, int cost) { //DA
 		costs[index] = cost;
 	}
 #endif

@@ -64,6 +64,8 @@
 #include "Iterator.h"
 #include "BuildingAggregateClass.h"
 #include "BuildingAggregateDefClass.h"
+#include "engine_script.h"
+#include "engine_game.h"
 
 SCRIPTS_API bool BuildingAggregateClass::Is_MCT(void) 
 {
@@ -1096,4 +1098,226 @@ void SCRIPTS_API VehicleGameObj::Set_Immovable(bool b)
 SCRIPTS_API const SmartGameObjDef & SmartGameObj::Get_Definition( void ) const
 {
 	return (const SmartGameObjDef &)BaseGameObj::Get_Definition();
+}
+
+
+//newmaps
+bool SCRIPTS_API Can_Deploy_Object_Distance(Vector3 position, float max_distance)
+{
+	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
+	while (x)
+	{
+		BaseGameObj *o = x->Data();
+		ScriptableGameObj *o2 = 0;
+		if (o)
+		{
+			o2 = o->As_ScriptableGameObj();
+		}
+		if (o2)
+		{
+			if (o2->As_BuildingGameObj())
+			{
+				Vector3 pos = Commands->Get_Position(o2);
+				float dist = Commands->Get_Distance(pos, position);
+				if (dist < max_distance)
+				{
+					return false;
+				}
+			}
+		}
+		x = x->Next();
+	}
+	return true;
+}
+
+//newmaps
+bool SCRIPTS_API Find_Closest_Beacon_To_Position(Vector3 position, float min_distance)
+{
+	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
+	while (x)
+	{
+		BaseGameObj *o = x->Data();
+		PhysicalGameObj *o2 = 0;
+		if (o)
+		{
+			o2 = o->As_PhysicalGameObj();
+		}
+		if (o2)
+		{
+			if (o2->As_PhysicalGameObj()->As_BeaconGameObj())
+			{
+				Vector3 pos = Commands->Get_Position(o2);
+				float dist = Commands->Get_Distance(pos, position);
+				if (dist < min_distance)
+				{
+					return false;
+				}
+			}
+		}
+		x = x->Next();
+	}
+	return true;
+}
+
+//newmaps
+bool SCRIPTS_API Find_Closest_Deployed_Building_To_Position(Vector3 position, float min_distance)
+{
+	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
+	while (x)
+	{
+		BaseGameObj *o = x->Data();
+		VehicleGameObj *o2 = 0;
+		if (o)
+		{
+			o2 = o->As_VehicleGameObj();
+		}
+		if (o2)
+		{
+			if (o2->As_VehicleGameObj() && Is_Script_Attached(o2, "MPF_Deployed_Building"))
+			{
+				Vector3 pos = Commands->Get_Position(o2);
+				float dist = Commands->Get_Distance(pos, position);
+				if (dist < min_distance)
+				{
+					return true;
+				}
+			}
+		}
+		x = x->Next();
+	}
+	return false;
+}
+
+//newmaps
+bool SCRIPTS_API Find_Closest_Deployable_To_Position(Vector3 position, float min_distance)
+{
+	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
+	while (x)
+	{
+		BaseGameObj *o = x->Data();
+		ScriptableGameObj *o2 = 0;
+		if (o)
+		{
+			o2 = o->As_ScriptableGameObj();
+		}
+		if (o2)
+		{
+			if (o2->As_ScriptableGameObj())
+			{
+				if (Is_Script_Attached(o2, "MPF_Deployed_Deployable"))
+				{
+					Vector3 pos = Commands->Get_Position(o2);
+					float dist = Commands->Get_Distance(pos, position);
+					if (dist < min_distance)
+					{
+						return false;
+					}
+				}
+			}
+		}
+		x = x->Next();
+	}
+	return true;
+}
+
+//newmaps
+bool SCRIPTS_API Return_Closest_Harvester_To_Position(Vector3 position, float min_distance)
+{
+	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
+	while (x)
+	{
+		BaseGameObj *o = x->Data();
+		VehicleGameObj *o2 = 0;
+		if (o)
+		{
+			o2 = o->As_VehicleGameObj();
+		}
+		if (o2)
+		{
+			if (o2->As_VehicleGameObj())
+			{
+				if (Is_Harvester_Preset(o2))
+				{
+					Vector3 pos = Commands->Get_Position(o2);
+					float dist = Commands->Get_Distance(pos, position);
+					if (dist < min_distance)
+					{
+						return true;
+					}
+				}
+			}
+		}
+		x = x->Next();
+	}
+	return false;
+}
+
+//newmaps
+GameObject SCRIPTS_API *Return_Closest_IK_Nod_Mine_To_Position(Vector3 position, int team, int selfid)
+{
+	float closestdist = FLT_MAX;
+	GameObject *closest = 0;
+	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
+	while (x)
+	{
+		BaseGameObj *o = x->Data();
+		VehicleGameObj *o2 = 0;
+		if (o)
+		{
+			o2 = o->As_VehicleGameObj();
+		}
+		if (o2)
+		{
+			if (o2->As_VehicleGameObj() && Get_Object_Type(o2) == team || team == 2 && Commands->Get_ID(o2) != selfid)
+			{
+				if (strcmp(Commands->Get_Preset_Name(o2),"IK_Anti-Tank_Centipede_Mine") == 0 || strcmp(Commands->Get_Preset_Name(o2),"IK_M15_Anti-Tank_Mine") == 0)
+				{
+					Vector3 pos = Commands->Get_Position(o2);
+					float dist = Commands->Get_Distance(Commands->Get_Position(o2),pos);
+					if (dist < closestdist)
+					{
+						closestdist = dist;
+						closest = o2;
+					}
+				}
+			}
+		}
+		x = x->Next();
+	}
+	return closest;
+}
+
+//newmaps
+GameObject SCRIPTS_API *Return_Closest_IK_GDI_Mine_To_Position(Vector3 position, int team, int selfid)
+{
+	float closestdist = FLT_MAX;
+	GameObject *closest = 0;
+	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
+	while (x)
+	{
+		BaseGameObj *o = x->Data();
+		VehicleGameObj *o2 = 0;
+		if (o)
+		{
+			o2 = o->As_VehicleGameObj();
+		}
+		if (o2)
+		{
+			if (o2->As_VehicleGameObj() && Get_Object_Type(o2) == team || team == 2 && Commands->Get_ID(o2) != selfid)
+			{
+				if (strcmp(Commands->Get_Preset_Name(o2),"IK_Anti-Tank_Centipede_Mine") == 0 || strcmp(Commands->Get_Preset_Name(o2),"IK_M15_Anti-Tank_Mine") == 0)
+				{
+					Vector3 pos = Commands->Get_Position(o2);
+					float dist = Commands->Get_Distance(Commands->Get_Position(o2),pos);
+					if (dist < closestdist)
+					{
+						closestdist = dist;
+						closest = o2;
+					}
+				}
+			}
+		}
+		x = x->Next();
+	}
+	return closest;
 }
