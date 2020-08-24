@@ -341,11 +341,23 @@ Vector3 *DACrateManager::Select_Spawner() {
 void DACrateManager::Timer_Expired(int Number,unsigned int Data) {
 	if (The_Game()->Get_Current_Players() && The_Game()->Is_Gameplay_Permitted()) {
 		Vector3 *Position = Select_Spawner();
-		if (Position) {
-			PhysicalGameObj *Crate = Create_Object("Soldier PowerUps",*Position);
-			Commands->Set_Model(Crate,Model);
-			CrateObjs.Add(Crate);
-			return;
+		if (Position) 
+		{
+			bool RxD = RxDMap();
+			DefinitionClass *x = Find_Named_Definition("pow_crate_rxd");
+			if ( RxD && x )
+			{
+				PhysicalGameObj *Crate = Create_Object("pow_crate_rxd",*Position);
+				CrateObjs.Add(Crate);
+				return;
+			}
+			else
+			{
+				PhysicalGameObj *Crate = Create_Object("Soldier PowerUps",*Position);
+				Commands->Set_Model(Crate,Model);
+				CrateObjs.Add(Crate);
+				return;
+			}
 		}
 	}
 	Start_Timer(1,Get_Random_Float(SpawnTimeMin,SpawnTimeMax));

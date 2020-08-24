@@ -62,6 +62,7 @@ public:
 	static void Page_Team_Except(int Team,cPlayer *Except,const char *Format,...); //Sends a page to an entire team, except for the given player. Page will be light blue for players with scripts.
 
 	static void Page_Player(cPlayer *Player,const char *Format,...); //Sends a page to a single player. Page will be light blue for players with scripts.
+	static void Page_Player_Sound(cPlayer *Player, StringClass Sound, const char *Format,...); //Sends a page to a single player. Page will be light blue for players with scripts.
 	static void Page_Player(int Player,const char *Format,...);
 	static void Page_Player(GameObject *Player,const char *Format,...);
 

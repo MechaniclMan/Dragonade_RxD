@@ -219,8 +219,18 @@ void DAGameObjManager::Player_Loaded_Event(cPlayer *Player) {
 		}
 		for (SLNode<SoldierGameObj> *x = GameObjManager::SoldierGameObjList.Head();x;x = x->Next()) { 
 			SoldierGameObj *Soldier = x->Data();
-			if (Soldier->Is_Stealth_Enabled() && !Soldier->Get_Definition().Is_Stealthed()) {
-				const BaseGameObjDef *Stealth = (BaseGameObjDef*)Find_Named_Definition("CnC_Nod_FlameThrower_2SF");
+			if (Soldier->Is_Stealth_Enabled() && !Soldier->Get_Definition().Is_Stealthed()) 
+			{
+				const BaseGameObjDef *Stealth;
+				DefinitionClass *x = Find_Named_Definition("CnC_Nod_FlameThrower_2SF_RxD");
+				if ( RxDMap() && x ) {
+					Stealth = (BaseGameObjDef*)Find_Named_Definition("CnC_Nod_FlameThrower_2SF_RxD");
+				}
+				else
+				{
+					Stealth = (BaseGameObjDef*)Find_Named_Definition("CnC_Nod_FlameThrower_2SF");
+				}
+
 				if (Stealth) {
 					const BaseGameObjDef *DefSave = Soldier->Definition;
 					Soldier->Definition = Stealth;

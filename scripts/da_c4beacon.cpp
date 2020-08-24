@@ -23,6 +23,8 @@
 #include "GameObjManager.h"
 #include "weaponmgr.h"
 
+bool C4Command;
+
 void DAC4BeaconManager::Init() {
 	static DAC4BeaconManager Instance;
 	Instance.Register_Event(DAEvent::SETTINGSLOADED,INT_MAX);
@@ -38,6 +40,8 @@ void DAC4BeaconManager::Init() {
 void DAC4BeaconManager::Settings_Loaded_Event() {
 	Console_InputF("mlimit %d",DASettingsManager::Get_Int("C4Limit",Get_Mine_Limit()));
 	BlockFakeBeacons = DASettingsManager::Get_Bool("BlockFakeBeacons",false);
+	BeaconMessages = DASettingsManager::Get_Bool("BeaconMessages",true);
+	C4Command = DASettingsManager::Get_Bool("C4Command",true);
 }
 
 void DAC4BeaconManager::Object_Created_Event(GameObject *obj) {
@@ -72,26 +76,30 @@ void DAC4BeaconManager::Object_Created_Event(GameObject *obj) {
 }
 
 void DAC4BeaconManager::Beacon_Deploy_Event(BeaconGameObj *Beacon) {
-	if (Commands->Is_A_Star(Beacon->Get_Owner())) {
-		if (The_Cnc_Game()->BeaconPlacementEndsGame && Beacon->Is_In_Enemy_Base()) {
-			DA::Team_Player_Message(Beacon->Get_Owner(),"Defend my beacon on the pedestal!");
-		}
-		else {
-			BuildingGameObj *Building = Get_Closest_Building(Beacon->Get_Position(),!Beacon->Get_Player_Type());
-			if (Building) {
-				ExplosionDefinitionClass *Explosion = (ExplosionDefinitionClass*)Find_Definition(Beacon->Get_Definition().ExplosionObjDef);
-				float Distance = 0.0f;
-				Building->Find_Closest_Poly(Beacon->Get_Position(),&Distance);
-				if (Distance <= Explosion->DamageRadius*Explosion->DamageRadius) {
-					DA::Team_Player_Message(Beacon->Get_Owner(),"Defend my beacon at the %s!",DATranslationManager::Translate(Building));
-				}
-				else {
-					PhysicalGameObj *FakeBuilding = Get_Closest_Fake_Building(Beacon->Get_Position(),!Beacon->Get_Player_Type());
-					if (FakeBuilding && Commands->Get_Distance(FakeBuilding->Get_Position(),Beacon->Get_Position()) <= Explosion->DamageRadius) {
-						DA::Team_Player_Message(Beacon->Get_Owner(),"Defend my beacon at the %s!",DATranslationManager::Translate(FakeBuilding));
+	if (Commands->Is_A_Star(Beacon->Get_Owner())) 
+	{
+		if ( BeaconMessages )
+		{
+			if (The_Cnc_Game()->BeaconPlacementEndsGame && Beacon->Is_In_Enemy_Base()) {
+				DA::Team_Player_Message(Beacon->Get_Owner(),"Defend my beacon on the pedestal!");
+			}
+			else {
+				BuildingGameObj *Building = Get_Closest_Building(Beacon->Get_Position(),!Beacon->Get_Player_Type());
+				if (Building) {
+					ExplosionDefinitionClass *Explosion = (ExplosionDefinitionClass*)Find_Definition(Beacon->Get_Definition().ExplosionObjDef);
+					float Distance = 0.0f;
+					Building->Find_Closest_Poly(Beacon->Get_Position(),&Distance);
+					if (Distance <= Explosion->DamageRadius*Explosion->DamageRadius) {
+						DA::Team_Player_Message(Beacon->Get_Owner(),"Defend my beacon at the %s!",DATranslationManager::Translate(Building));
 					}
 					else {
-						DA::Team_Player_Message(Beacon->Get_Owner(),"The beacon is a fake.");
+						PhysicalGameObj *FakeBuilding = Get_Closest_Fake_Building(Beacon->Get_Position(),!Beacon->Get_Player_Type());
+						if (FakeBuilding && Commands->Get_Distance(FakeBuilding->Get_Position(),Beacon->Get_Position()) <= Explosion->DamageRadius) {
+							DA::Team_Player_Message(Beacon->Get_Owner(),"Defend my beacon at the %s!",DATranslationManager::Translate(FakeBuilding));
+						}
+						else {
+							DA::Team_Player_Message(Beacon->Get_Owner(),"The beacon is a fake.");
+						}
 					}
 				}
 			}
@@ -199,6 +207,8 @@ int DAC4BeaconManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Base,
 
 class DAC4ChatCommandClass: public DAChatCommandClass {
 	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
+		if ( !C4Command )
+			return false;
 		int Remote = 0,Prox = 0;
 		int Team = Player->Get_Player_Type();
 		for (SLNode<C4GameObj> *x = GameObjManager::C4GameObjList.Head();x;x = x->Next()) {

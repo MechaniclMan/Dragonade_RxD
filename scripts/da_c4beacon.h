@@ -31,6 +31,7 @@ private:
 	virtual int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item);
 	
 	bool BlockFakeBeacons;
+	bool BeaconMessages;
 };
 
 #endif
