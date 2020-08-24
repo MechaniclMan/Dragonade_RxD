@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -62,6 +62,11 @@ protected:
 	friend	class								SoldierGameObj;
 	friend	class								SoldierObserverClass;
 	friend class PresetDump;
+public:
+	bool	GetInnateBehavior(){ return UseInnateBehavior;}
+	float	GetInnateAggressiveness(){ return InnateAggressiveness;}
+	float	GetInnateTakeCoverProbability(){ return InnateTakeCoverProbability;}
+	bool	GetInnateIsStationary(){ return InnateIsStationary;}
 }; // size: 912
 
 

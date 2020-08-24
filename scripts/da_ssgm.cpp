@@ -19,6 +19,9 @@
 #include "da_ssgm.h"
 #include "da_log.h"
 #include "engine_da.h"
+#include "engine_weap.h"
+#include "engine_obj2.h"
+#include "engine_player.h"
 
 //These functions allow DA to load SSGM plugins.
 
@@ -261,4 +264,29 @@ void DASSGMPluginManager::Object_Created_Event(GameObject *obj) {
 	for (int i = Events[EVENT_OBJECT_CREATE_HOOK].Count()-1;i >= 0;i--) {
 		Events[EVENT_OBJECT_CREATE_HOOK][i]->OnObjectCreate(0,obj);
 	}
+}
+
+SCRIPTS_API void Log_Killed_Message(GameObject* obj, GameObject* killer, const char* objectType)
+{
+	const char* killerPreset = Commands->Get_Preset_Name(killer);
+	const char* killerWeapon = Get_Current_Weapon(killer);
+	if (auto killerVehicle = Get_Vehicle(killer))
+	{
+		killerPreset = Commands->Get_Preset_Name(killerVehicle);
+		killerWeapon = Get_Current_Weapon(killerVehicle);
+	}
+
+	auto killedObj = obj;
+	if (auto killedVehicle = Get_Vehicle(obj))
+	{
+		killedObj = Get_Vehicle_Occupant(obj, 0);
+	}
+
+	Vector3	victimpos = Commands->Get_Position(obj);
+	Vector3	damagerpos = Commands->Get_Position(killer);
+	const char* str1 = Get_Translated_Preset_Name_Ex(obj);
+	const char* str2 = Get_Translated_Preset_Name_Ex(killer);
+	SSGMGameLog::Log_Gamelog("KILLED;%s;%d;%s;%d;%d;%d;%d;%d;%s;%d;%d;%d;%d;%s;%s;%s;%ls;%ls", objectType, Commands->Get_ID(obj), Commands->Get_Preset_Name(obj), int(victimpos.Y), int(victimpos.X), int(victimpos.Z), int(Commands->Get_Facing(obj)), Commands->Get_ID(killer), killerPreset, int(damagerpos.Y), int(damagerpos.X), int(damagerpos.Z), int(Commands->Get_Facing(killer)), killerWeapon, str1, str2, Get_Wide_Player_Name(killer), Get_Wide_Player_Name(killedObj));
+	delete[] str1;
+	delete[] str2;
 }

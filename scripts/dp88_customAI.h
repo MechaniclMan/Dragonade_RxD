@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -334,6 +334,7 @@ public:
   // Events
   virtual void Enemy_Seen ( GameObject *obj, GameObject *enemy );
   virtual void Timer_Expired( GameObject *obj, int number );
+  virtual void Damaged(GameObject *obj, GameObject *damager, float amount);
 
   // Custom AI initialisation script overrides
   virtual void Init( GameObject *obj );

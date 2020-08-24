@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -115,7 +115,7 @@ public:
 	void				Reset_Loiter_Delay( void )				{ HumanState.Reset_Loiter_Delay(); }
 	virtual	void	Get_Information( StringClass & string );
 	virtual void	Get_Description(StringClass & description);
-	SCRIPTS_API void		Toggle_Fly_Mode( void ); //DA
+	SCRIPTS_API void		Toggle_Fly_Mode(void); //DA
 	virtual float		Get_Max_Speed( void );
 	virtual void 		Set_Max_Speed( float speed );
 	virtual float		Get_Turn_Rate( void );
@@ -205,14 +205,21 @@ public:
 	void Set_Override_Muzzle_Direction(bool override){OverrideMuzzleDirection = override; Set_Object_Dirty_Bit(BIT_RARE, true);};
 	bool Get_Override_Muzzle_Direction(){return OverrideMuzzleDirection;};
 	virtual int Get_Contact_Surface_Type();
+	virtual float		Get_Skeleton_Heigth( void );
+	virtual void 		Set_Skeleton_Height( float height );
+	virtual float		Get_Skeleton_Width( void );
+	virtual void 		Set_Skeleton_Width( float width );
+	virtual void 		Set_Override_Weapon_Hold_Style(int overrideWeaponHoldStyleId);
+	virtual int			Get_Override_Weapon_Hold_Style();
+	virtual void 		Set_Human_Anim_Override(bool enableHumanAnimOverride);
+	virtual int			Get_Human_Anim_Override();
 
-	cPlayer *Get_Player() { //DA
+	cPlayer* Get_Player() { //DA
 		return (cPlayer*)Get_Player_Data();
 	}
-	DAPlayerClass *Get_DA_Player() { //DA
+	DAPlayerClass* Get_DA_Player() { //DA
 		return Get_Player()->Get_DA_Player();
 	}
-
 protected:
 	RenderObjClass		*	WeaponRenderModel; //2416
 	RenderObjClass		*	BackWeaponRenderModel; //2420
@@ -284,6 +291,12 @@ protected:
 	bool						OverrideMuzzleDirection;
 	bool						UpdatedTarget;
 	bool						DoTilt;
+	float						skeletonHeight;
+	float						skeletonWidth;
+	float						lastSkeletonHeight;
+	float						lastSkeletonWidth;
+	int							overrideWeaponHoldStyleId;
+	bool						enableHumanAnimOverride;
 	TT_DEPRECATED("Do not use") int						Check(void);
 }; // size: 3404
 

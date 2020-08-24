@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -60,15 +60,15 @@ public:
 	virtual int Get_Player_Type(void) const;
 	virtual	void	Apply_Damage_Extended( const OffenseObjectClass & offense, float scale = 1.0f,
 			const	Vector3 & direction = Vector3( 0,0,0 ), const char * collision_box_name = NULL );
-	SCRIPTS_API void	Add_Occupant( SoldierGameObj * occupant, int seat_id ); //DA
+	SCRIPTS_API void	Add_Occupant(SoldierGameObj* occupant, int seat_id); //DA
 	SCRIPTS_API void	Add_Occupant( SoldierGameObj * occupant );
 	void	Remove_Occupant( SoldierGameObj * occupant );
 	bool	Contains_Occupant( SoldierGameObj * occupant );
 	int	SCRIPTS_API Get_Occupant_Count(void);
 	int	Find_Seat( SoldierGameObj * occupant );
-	SCRIPTS_API SoldierGameObj * Get_Driver(void); //DA
-	SCRIPTS_API SoldierGameObj * Get_Gunner(void); //DA
-	SCRIPTS_API SoldierGameObj * Get_Actual_Gunner(void); //DA
+	SCRIPTS_API SoldierGameObj* Get_Driver(void); //DA
+	SCRIPTS_API SoldierGameObj* Get_Gunner(void); //DA
+	SCRIPTS_API SoldierGameObj* Get_Actual_Gunner(void); //DA
 	virtual bool Is_Entry_Permitted(SoldierGameObj * p_soldier);
 	void	Passenger_Entering( void );
 	void	Passenger_Exiting( void );
@@ -240,6 +240,10 @@ protected:
 	bool HasUpdatedTargeting;
 	bool CanDrive; //used to identify if it should apply analog control or not, for EMP purposes
 	bool DamageMeshesNetworkUpdate;
+	bool FixedTurretFacing;
+	bool LockedTurretFacing;
+	float DesiredTurretTurn;
+	float DesiredBarrelTilt;
 
 	void		Remove_Transitions( TransitionDataClass::StyleType transition_type );
 	void		Create_New_Transitions( TransitionDataClass::StyleType transition_type );
@@ -250,13 +254,77 @@ public:
 	void		Aquire_Turret_Bones( void );
 	void		Release_Turret_Bones( void );
 	void        Reset_Sound_Effects( void );
-protected:
 	void		Update_Turret( float weapon_turn, float weapon_tilt );
+protected:
 	void		Update_Sound_Effects( void );
 	void		Change_Engine_Sound_State( int new_state );
 	void		Update_Engine_Sound_Pitch( void );
 	virtual bool Is_Visible();
 public:
 	virtual int		Check_If_On_Surface(int surface_type);
+
+	void VehicleGameObj::Set_Fixed_Turret_Facing(bool fixed)
+	{
+		if(!LockedTurretFacing)
+		{
+			FixedTurretFacing = fixed;
+		}
+	}
+
+	void VehicleGameObj::Set_Locked_Turret_Facing(bool locked)
+	{
+		LockedTurretFacing = locked;
+	}
+
+	bool VehicleGameObj::Get_Fixed_Turret_Facing()
+	{
+		return FixedTurretFacing;
+	}
+
+	bool VehicleGameObj::Get_Locked_Turret_Facing()
+	{
+		return LockedTurretFacing;
+	}
+
+	void VehicleGameObj::Set_Desired_Turret_Turn(float angle)
+	{
+		DesiredTurretTurn = angle;
+	}
+
+	void VehicleGameObj::Set_Desired_Barrel_Tilt(float angle)
+	{
+		DesiredBarrelTilt = angle;
+	}
+
+	float VehicleGameObj::Get_Desired_Turret_Turn()
+	{
+		return DesiredTurretTurn;
+	}
+
+	float VehicleGameObj::Get_Desired_Barrel_Tilt()
+	{
+		return DesiredBarrelTilt;
+	}
+
+	float VehicleGameObj::Get_Turret_Turn()
+	{
+		return TurretTurn;
+	}
+
+	float VehicleGameObj::Get_Barrel_Tilt()
+	{
+		return BarrelTilt;
+	}
+
+	void VehicleGameObj::Set_Turret_Turn(float turn)
+	{
+		TurretTurn=turn;
+	}
+
+	void VehicleGameObj::Set_Barrel_Tilt(float tilt)
+	{
+		BarrelTilt=tilt;
+	}
+
 }; // size: 2541
 #endif

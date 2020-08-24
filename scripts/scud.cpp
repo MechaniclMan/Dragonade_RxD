@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -943,7 +943,7 @@ void SCUD_Set_Player_Type_OnCustom::Custom(GameObject *obj,int type,int param,Ga
 	msg = Get_Int_Parameter("Message");
 	if (type == msg)
 	{
-		Commands->Set_Player_Type(obj,type);
+		Commands->Set_Player_Type(obj,pltype);
 	}
 }
 

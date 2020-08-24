@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -78,6 +78,12 @@ public:
 		Y *= oolen;
 		Z *= oolen;
 	}
+	Vector3 Normalized() const
+    {
+        Vector3 v = *this;
+        v.Normalize();
+        return v;
+    }
 	TT_INLINE float Length() const
 	{
 		return WWMath::Sqrt(Length2());

@@ -34,8 +34,8 @@ void DAGameSpyGameFeatureClass::Init() {
 	sockaddr_in MasterAddress;
 	unsigned short MasterPort = htons(27900);
 
-	StringClass Masters;
-	DASettingsManager::Get_String(Masters,"GameSpyMasterServers","master.gamespy.com|renmaster.cncnet.org|master-gsa.renlist.n00b.hk");
+	StringClass Masters;								 
+	DASettingsManager::Get_String(Masters,"GameSpyMasterServers","renmaster.cncirc.net|renmaster-backup.cncirc.net|renmaster-backup2.cncirc.net");
 	DATokenParserClass Parser(Masters,'|');
 	while (char *Token = Parser.Get_String()) {
 		HostInfo = gethostbyname(Token);
@@ -197,6 +197,13 @@ void DAGameSpyGameFeatureClass::Think() {
 			}
 			Send.Format("\\final\\\\queryid\\%u.%d",QueryID,SendCount);
 			sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr*)&ClientAddress,sizeof(sockaddr_in));
+		}
+		else if (!strcmp(Buffer, "\\info\\")) {
+			StringClass Send;
+			Send.Format(
+				"\\hostname\\%ls\\hostport\\%d\\mapname\\%s\\gametype\\%s\\numplayers\\%i\\maxplayers\\%i\\final\\\\queryid\\%u.1",
+				Title, The_Game()->Get_Port(), The_Game()->Get_Map_Name(), DAGameManager::Get_Game_Mode_Long_Name(), The_Game()->Get_Current_Players(), The_Game()->Get_Max_Players(), QueryID);
+			sendto(ListenSocket, Send, Send.Get_Length() + 1, 0, (sockaddr*)&ClientAddress, sizeof(sockaddr_in));
 		}
 		else if (strstr(Buffer,"\\echo\\")) {
 			StringClass Send;

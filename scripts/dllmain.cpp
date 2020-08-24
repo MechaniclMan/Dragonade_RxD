@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -57,11 +57,13 @@ BOOL SCRIPTSAPI __stdcall DllMain(HINSTANCE hinstDLL,
 		case DLL_PROCESS_ATTACH:
 			TT_ASSERT(Exe != 6);
 
+			/*
 			if (Exe != 1)
 			{
 				MessageBox(HWND_DESKTOP, "Fatal error: Dragonade only works on the FDS. Please replace your scripts.dll with an appropriate version for the Renegade client.", "Renegade", MB_OK | MB_ICONERROR);
 				exit(0);
 			}
+			*/
 
 			if ((!Exe) || (Exe == 1))
 			{
@@ -344,7 +346,6 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Set_Object_Visibility = (sov)Address(tt,"Set_Object_Visibility");
 	Lock_Soldier_Collision_Group = (lscg)Address(tt,"Lock_Soldier_Collision_Group");
 	Unlock_Soldier_Collision_Group = (ulscg)Address(tt,"Unlock_Soldier_Collision_Group");
-	Unlock_Soldier_Collision_Group = (ulscg)Address(tt,"Unlock_Soldier_Collision_Group");
 	Is_Engine_Enabled = (iea)Address(tt,"Is_Engine_Enabled");
 	Stop_Timer = (ss)Address(tt,"Stop_Timer");
 	Create_2D_Wave_Sound_Dialog_Player = (cwsdp)Address(tt,"Create_2D_Wave_Sound_Dialog_Player");
@@ -355,6 +356,18 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Set_Camera_Player = (setcam)Address(tt,"Set_Camera_Player");
 	Set_Definition_TranslationID_Player = (settran)Address(tt,"Set_Definition_TranslationID_Player");
 	Set_Net_Update_Rate_Player = (setnur)Address(tt,"Set_Net_Update_Rate_Player");
+	Force_Orientation_Update = (fou)Address(tt,"Force_Orientation_Update");
+	Force_Orientation_Update_Player = (foup)Address(tt,"Force_Orientation_Update_Player");
+	Create_2D_Wave_Sound_Cinematic_Player = (cwscp)Address(tt,"Create_2D_Wave_Sound_Cinematic_Player");
+	Force_Turret_Update = (ftu)Address(tt,"Force_Turret_Update");
+	Force_Turret_Update_Player = (ftup)Address(tt,"Force_Turret_Update_Player");
+	Force_Velocity_Update = (fvu)Address(tt,"Force_Velocity_Update");
+	Force_Velocity_Update_Player = (fvup)Address(tt,"Force_Velocity_Update_Player");
+	Set_Camera_Host_Network = (schn)Address(tt,"Set_Camera_Host_Network");
+	Get_Pathfind_Distance = (gpd)Address(tt,"Get_Pathfind_Distance");
+	Cancel_Get_Pathfind_Distance = (cgpd)Address(tt,"Cancel_Get_Pathfind_Distance");
+	Get_Pathfind_Distance_Async = (gpda)Address(tt, "Get_Pathfind_Distance_Async");
+	Get_Pathfind_Distance_Blocking = (gpdb)Address(tt, "Get_Pathfind_Distance_Blocking");
 
 	DA::Init();
 

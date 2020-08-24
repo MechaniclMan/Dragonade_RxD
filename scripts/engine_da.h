@@ -55,12 +55,8 @@ public:
 	}
 };
 
-#define CID_Weapon 0xB001
-#define CID_Ammo 0xB002
-#define CID_Explosion 0xB003
 #define STYLE_C4 0
 #define STYLE_BEACON 6
-#define CID_Spawner 0x300D
 
 DA_API void Destroy_All_Objects_With_Script(const char *Script);
 DA_API bool Has_Beacon(ArmedGameObj *obj);

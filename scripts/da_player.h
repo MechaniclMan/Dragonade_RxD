@@ -347,13 +347,15 @@ private:
 	bool DeletePending;
 };
 
-class DAPlayerDataFactoryClass abstract {
+class DA_API DAPlayerDataFactoryClass abstract {
 public:
+	virtual ~DAPlayerDataFactoryClass() { }
 	virtual DAPlayerDataClass *Create_Data() = 0;
 };
 
 class DA_API DAPlayerDataClass abstract {
 public:
+	virtual ~DAPlayerDataClass() { }
 	inline cPlayer *Get_Owner() {
 		return Owner;
 	}

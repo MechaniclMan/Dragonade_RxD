@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -77,6 +77,7 @@ public:
 	virtual	void	Import_Creation( BitStreamClass & packet );
 	bool Is_Control_Data_Dirty(cPacket & packet);
 	bool	SCRIPTS_API Is_Obj_Visible( PhysicalGameObj *obj );
+	bool	SCRIPTS_API Is_Splash_Possible( PhysicalGameObj *obj );
 	void	Set_Enemy_Seen_Enabled( bool enabled )	{ IsEnemySeenEnabled = enabled; }
 	bool	Is_Enemy_Seen_Enabled( void )				{ return IsEnemySeenEnabled; }
 	virtual Matrix3D Get_Look_Transform(void) { return Get_Transform(); }

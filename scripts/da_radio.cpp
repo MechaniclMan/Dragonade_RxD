@@ -253,13 +253,15 @@ void DAExtraRadioCommandsGameFeatureClass::Radio7_Key_Hook(cPlayer *Player) {
 
 void DAExtraRadioCommandsGameFeatureClass::Radio8_Key_Hook(cPlayer *Player) {
 	if (!Player->Is_Flooding() && !Player->Get_DA_Player()->Is_Muted()) {
-		if (Player->Get_Id() % 2) {
-			DA::Team_Player_Message(Player,"Thanks.");
+		GameObject* Vehicle = Player->Get_GameObj() ? Player->Get_GameObj()->Get_Vehicle() : 0;
+		if (!Vehicle) {
+			DA::Private_Color_Message(Player->Get_Id(), COLORWHITE, "You are not in a vehicle.");
 		}
 		else {
-			DA::Team_Player_Message(Player,"Thank you.");
+			StringClass Translation = DATranslationManager::Translate(Vehicle);
+			DA::Team_Player_Message(Player, "Requesting more %ss for %s rush.", Translation, a_or_an_Prepend(Translation));
+			Set_Emot_Icon(Player->Get_Id(), "o_em_apc.w3d", Player->Get_Player_Type());
 		}
-		Set_Emot_Icon(Player->Get_Id(),"o_em_grnarr.w3d",Player->Get_Player_Type());
 	}
 }
 
@@ -305,14 +307,14 @@ void DAExtraRadioCommandsGameFeatureClass::Radio11_Key_Hook(cPlayer *Player) {
 
 void DAExtraRadioCommandsGameFeatureClass::Radio12_Key_Hook(cPlayer *Player) {
 	if (!Player->Is_Flooding() && !Player->Get_DA_Player()->Is_Muted()) {
-		GameObject *Vehicle = Player->Get_GameObj()?Player->Get_GameObj()->Get_Vehicle():0;
+		GameObject* Vehicle = Player->Get_GameObj() ? Player->Get_GameObj()->Get_Vehicle() : 0;
 		if (!Vehicle) {
-			DA::Private_Color_Message(Player->Get_Id(),COLORWHITE,"You are not in a vehicle.");
+			DA::Private_Color_Message(Player->Get_Id(), COLORWHITE, "You are not in a vehicle.");
 		}
 		else {
 			StringClass Translation = DATranslationManager::Translate(Vehicle);
-			DA::Team_Player_Message(Player,"Requesting more %ss for %s rush.",Translation,a_or_an_Prepend(Translation));
-			Set_Emot_Icon(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
+			DA::Team_Player_Message(Player, "Requesting more %ss for %s rush.", Translation, a_or_an_Prepend(Translation));
+			Set_Emot_Icon(Player->Get_Id(), "o_em_apc.w3d", Player->Get_Player_Type());
 		}
 	}
 }

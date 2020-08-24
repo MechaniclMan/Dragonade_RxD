@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
 	Renegade Role Play 2 Scripts
-	Copyright 2017 Jerad Gray
+	Copyright 2012 Jerad Gray
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under			
@@ -15,14 +15,11 @@
 #include "engine.h"
 #include "SoldierGameObj.h"
 #include "WeaponBagClass.h"
-#include "WeaponClass.h"
 #include "WeaponMgr.h"
 #include "GameObjManager.h"
 #include "MoveablePhysClass.h"
 #include "engine_tt.h"
-#include "cTeam.h"
 #include "PhysicsSceneClass.h"
-#include "physcoltest.h"
 #include "VehicleGameObj.h"
 
 #include "jmgUtility.h"
@@ -87,8 +84,8 @@ void MetroidGame::WinMap()
 		GameObject *BossMusic = Commands->Find_Object(MetroidGameControl.BossDefeatedMusicID);
 		if (BossMusic)
 			Commands->Destroy_Object(BossMusic);
-		for (int x = 0;x < 128;x++)
-			DefenseModeSystemControl.DefensePlayerDataNodes[x].TelepadID = 0;
+		for (int y = 0;y < 128;y++)
+			DefenseModeSystemControl.DefensePlayerDataNodes[y].TelepadID = 0;
 		DefenseModeSystemControl.RemoveAllButSpecial();
 		MetroidRoomObjectives.Set_Objective_Status(7,NewObjectiveSystem::Accomplished);
 	}
@@ -310,6 +307,7 @@ void JMG_Metroid_Game_Control::Destroyed(GameObject *obj)
 }
 void JMG_Metroid_Game_Control::IncreasePlayerTimeScores()
 {
+	JmgUtility::GenericDateTime currentTime = JmgUtility::GenericDateTime();
 	for (int y = 1;y < 128;y++)
 	{
 		GameObject *Player = Get_GameObj(y);
@@ -327,6 +325,7 @@ void JMG_Metroid_Game_Control::IncreasePlayerTimeScores()
 		if (abs(Facing - pobj->LastFacing) < 1.0f)
 			IsTurning = false;
 		pobj->LastFacing = Facing;
+		pobj->LastPlayTime = currentTime;
 		if (pobj->IsMoving == IsMoving && pobj->IsTurning == IsTurning)
 			if (pobj->IdleDelay > 60)
 			{
@@ -813,6 +812,8 @@ void JMG_Metroid_Move_To_Random_Ambush_Spot::Created(GameObject *obj)
 }
 void JMG_Metroid_Move_To_Random_Ambush_Spot::Enemy_Seen(GameObject *obj,GameObject *seen)
 {
+	if (!Commands->Get_Health(seen))
+		return;
 	if (!EnemySeen)
 		currentEnemyID = Commands->Get_ID(seen);
 	EnemySeen = 5;
@@ -1535,6 +1536,8 @@ void JMG_Metroid_Boss_Turret::Created(GameObject *obj)
 }
 void JMG_Metroid_Boss_Turret::Enemy_Seen(GameObject *obj,GameObject *seen)
 {
+	if (!Commands->Get_Health(seen))
+		return;
 	if (seen->As_VehicleGameObj())
 	{
 		int SeatCount = Get_Vehicle_Seat_Count(seen);
@@ -1557,7 +1560,7 @@ void JMG_Metroid_Boss_Turret::Enemy_Seen(GameObject *obj,GameObject *seen)
 	if (TargetID == IgnoreID)
 		return;
 	float TempDist = JmgUtility::SimpleDistance(Commands->Get_Position(obj),Commands->Get_Position(seen));
-	if (TempDist >= MinDistance && TempDist <= MaxDistance && (!SeenID || SeenID == TargetID || (SeenID && TempDist < TargetDistance)))
+	if (TempDist >= MinDistance && TempDist <= MaxDistance && (!SeenID || SeenID == TargetID || TempDist < TargetDistance))
 	{
 		TargetDistance = TempDist;
 		ClearTarget = Get_Int_Parameter("AttackTimer");
@@ -1965,9 +1968,9 @@ void JMG_Metroid_Mine_Computer_Console::Timer_Expired(GameObject *obj,int number
 }
 void JMG_Metroid_Mine_Computer_Console::Poked(GameObject *obj,GameObject *poker)
 {
-	int ID = Commands->Get_ID(obj);
+	int id = Commands->Get_ID(obj);
 	for (int x = 0;x < 3;x++)
-		if (ID == MetroidGameControl.MineTerminalID[x])
+		if (id == MetroidGameControl.MineTerminalID[x])
 			if (MetroidGameControl.MineTerminalDeactivated[x])
 			{
 				MetroidGameControl.DisplayDialogMessage(poker,21);
@@ -2292,7 +2295,7 @@ void JMG_Metroid_Support_Health_Powerup_Beacon::Created(GameObject *obj)
 	//GameObject *Medpack = Commands->Create_Object(Commands->Get_Random(0.0f,1.0f) < 0.75 ? "NSE_POW_Health_025" : (Commands->Get_Random(0.0f,1.0f) < 0.75 ? "NSE_POW_Health_050" : "NSE_POW_Health_100"),PlacePosition);
 	GameObject *Medpack = Commands->Create_Object("NSE_POW_Health_025",PlacePosition);
 	Commands->Set_Facing(Medpack,Commands->Get_Facing(Player));
-	int PlayerID = JmgUtility::JMG_Get_Player_ID(Player);
+	PlayerID = JmgUtility::JMG_Get_Player_ID(Player);
 	char params[256];
 	sprintf(params,"%d",PlayerID);
 	Commands->Attach_Script(Medpack,"JMG_Metroid_Support_Health_Powerup",params);
@@ -2495,6 +2498,8 @@ void JMG_Metroid_AI_Hunt_Attack::Created(GameObject *obj)
 }
 void JMG_Metroid_AI_Hunt_Attack::Enemy_Seen(GameObject *obj,GameObject *seen)
 {
+	if (!Commands->Get_Health(seen))
+		return;
 	int seenID = Commands->Get_ID(seen);
 	if (!EnemyID || seenID == EnemyID)
 	{
@@ -2685,12 +2690,6 @@ void JMG_Metroid_Lockdown_Controller::Timer_Expired(GameObject *obj,int number)
 		RoomLockdownControl[Get_Int_Parameter("LockDownZoneID")].Update();
 		Commands->Start_Timer(obj,this,1.0f,1);
 	}
-}
-void JMG_Metroid_Lockdown_Controller::Destroyed(GameObject *obj)
-{
-	char msg[220];
-	sprintf(msg,"msg controller destroyed %d",Get_Int_Parameter("LockDownZoneID"));
-	Console_Input(msg);
 }
 void JMG_Metroid_Lockdown_Lockdown_Object::Created(GameObject *obj)
 {
@@ -3327,6 +3326,7 @@ void JMG_Metroid_Kill_On_Damage_Amounts::Created(GameObject *obj)
 	char Delim = Get_Parameter("Delim")[0];
 	int StringLength = strlen(Get_Parameter("Values"));
 	char Value[2000];
+	sprintf(Value,"\0");
 	int strPos = 0;
 	int DamagePos = 0;
 	for (int x = 0;x < 256;x++)
@@ -3420,6 +3420,8 @@ void JMG_Metroid_AI_Hunt_Equipment::Created(GameObject *obj)
 }
 void JMG_Metroid_AI_Hunt_Equipment::Enemy_Seen(GameObject *obj,GameObject *seen)
 {
+	if (!Commands->Get_Health(seen))
+		return;
 	int seenID = Commands->Get_ID(seen);
 	if (!EnemyID || seenID == EnemyID)
 	{
@@ -3561,6 +3563,8 @@ void JMG_Metroid_Base_Defense::Enemy_Seen(GameObject *obj,GameObject *seen)
 	GameObject *vehicle = Get_Vehicle(seen);
 	if (vehicle)
 		seen = vehicle;
+	if (!Commands->Get_Health(seen))
+		return;
 	float distance = JmgUtility::SimpleDistance(Commands->Get_Position(obj),Commands->Get_Position(seen));
 	int seenId = Commands->Get_ID(seen);
 	if (!enemyID && distance >= MinDist && distance <= MaxDist)
@@ -3621,6 +3625,8 @@ void JMG_Metroid_Camera_Behavior::Created(GameObject *obj)
 }
 void JMG_Metroid_Camera_Behavior::Enemy_Seen(GameObject *obj,GameObject *seen)
 {
+	if (!Commands->Get_Health(seen))
+		return;
 	int seenID = Commands->Get_ID(seen);
 	if (!EnemyID)
 	{
@@ -3789,6 +3795,8 @@ void JMG_Metroid_AI_Snow_Mini_Boss::Created(GameObject *obj)
 }
 void JMG_Metroid_AI_Snow_Mini_Boss::Enemy_Seen(GameObject *obj,GameObject *seen)	
 {
+	if (!Commands->Get_Health(seen))
+		return;
 	int SeenID = Commands->Get_ID(seen);
 	if (!currentTargetID || !LastSeen)
 	{
@@ -4931,6 +4939,8 @@ void JMG_Metroid_AI_Forest_Mini_Boss::Created(GameObject *obj)
 }
 void JMG_Metroid_AI_Forest_Mini_Boss::Enemy_Seen(GameObject *obj,GameObject *seen)	
 {
+	if (!Commands->Get_Health(seen))
+		return;
 	int SeenID = Commands->Get_ID(seen);
 	if (!currentTargetID || !LastSeen)
 	{
@@ -5181,14 +5191,21 @@ void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_At_Custom::FireProjectil
 }
 void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Attach::Created(GameObject *obj)
 {
-	Commands->Start_Timer(obj,this,0.025f,1);
+	Force_Position_Update(obj);
+	Force_Orientation_Update(obj);
+	Force_Velocity_Update(obj);
+	Update_Network_Object(obj);
+	Commands->Start_Timer(obj,this,0.1f,1);
 }
 void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Attach::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
 	{
 		Force_Position_Update(obj);
-		Commands->Start_Timer(obj,this,0.025f,1);
+		Force_Orientation_Update(obj);
+		Force_Velocity_Update(obj);
+		Update_Network_Object(obj);
+		Commands->Start_Timer(obj,this,1.0f,1);
 	}
 }
 void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Attach::Destroyed(GameObject *obj)

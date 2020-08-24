@@ -399,12 +399,12 @@ inline StringClass::operator const char * (void) const
 
 inline bool StringClass::operator== (const char *rvalue) const
 {
-	return (Compare_No_Case(rvalue) == 0);
+	return (Compare(rvalue) == 0);
 }
 
 inline bool StringClass::operator!= (const char *rvalue) const
 {
-	return (Compare_No_Case(rvalue) != 0);
+	return (Compare(rvalue) != 0);
 }
 
 inline bool StringClass::operator < (const char *string) const

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -113,6 +113,7 @@ public:
 	void                Clear_Animation() {if (AnimControl) {AnimControl->Set_Animation((const char*)NULL, 0, 0);AnimControl->Set_Mode(ANIM_MODE_STOP,0);ClearAnimation = true;Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);}}
 	void                Set_Team_Visibility(TeamVisibilitySetting setting) {TeamVisibility = (char)setting;Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);}
 	void                Set_Player_Visible(bool visible) {PlayerVisible = visible;}
+	GameObject *		Get_Parent_Object(){return HostGameObj;}
 protected:
 	ActiveConversationClass *ActiveConversation;
 private:

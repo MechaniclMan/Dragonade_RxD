@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -34,7 +34,7 @@ void dp88_customAI::Created( GameObject *obj )
 void dp88_customAI::Timer_Expired(GameObject *obj, int number)
 {
   if (TIMER_AI_THINK == number)
-    Commands->Start_Timer(obj, this, 1.0, TIMER_AI_THINK);
+    Commands->Start_Timer(obj, this, 0.10f, TIMER_AI_THINK);
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -45,11 +45,17 @@ void dp88_customAI::Custom ( GameObject* pObj, int message, int param, GameObjec
   {
     m_bAiEnabled = false;
     AIStateChanged(pObj, false);
+	targetID = 0;
+	targetPriority = 0.0f;
+	targetLastSeen = 0;
   }
 
   else if ( message == CUSTOM_AI_ENABLEAI && !m_bAiEnabled )
   {
     m_bAiEnabled = true;
+	targetID = 0;
+	targetPriority = 0.0f;
+	targetLastSeen = 0;
     AIStateChanged(pObj, true);
   }
 }
@@ -107,18 +113,10 @@ void dp88_customAI::Init(GameObject *obj)
   Commands->Enable_Hibernation(obj, false);
   Commands->Innate_Enable(obj);
   Commands->Enable_Enemy_Seen(obj, true);
-  Commands->Enable_Vehicle_Transitions(obj, false);
-
-  //Make Turret Face default direction
-  if(obj->As_VehicleGameObj())
-  {
-	  Vector3 pos = Commands->Get_Position(obj);
-	  Vector3 target_direction = obj->As_VehicleGameObj()->Get_Muzzle(0).Get_X_Vector();
-	  obj->As_VehicleGameObj()->Set_Targeting(pos + target_direction * 100);
-  }
+ // Commands->Enable_Vehicle_Transitions(obj, false);
 
   // Start timer which runs for the lifetime of this object
-  Commands->Start_Timer ( obj, this, 1.0, TIMER_AI_THINK );
+  Commands->Start_Timer ( obj, this, 0.10f, TIMER_AI_THINK );
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -202,8 +200,9 @@ float dp88_customAI::getPriority(GameObject *obj, GameObject *target)
   if ( debug ) fprintf ( debugFile, "Calculating priority of %d (%s)\n", Commands->Get_ID(target), Commands->Get_Preset_Name(target) );
 
   // Priority is 0 if the unit is dead or not on teams 0 or 1
-  if ( ( Commands->Get_Health ( target ) + Commands->Get_Shield_Strength ( target ) ) == 0
-    || ( Commands->Get_Player_Type ( target ) != 0 && Commands->Get_Player_Type ( target ) != 1 ) )
+ if ( ( Commands->Get_Health ( target ) + Commands->Get_Shield_Strength ( target ) ) == 0 
+	  || ( Commands->Get_Player_Type ( target ) == -2) )
+    //|| ( Commands->Get_Player_Type ( target ) != 0 && Commands->Get_Player_Type ( target ) != 1 ) )
   {
     if ( debug ) fprintf ( debugFile, "Target %d is dead or unteamed, ignoring\n", Commands->Get_ID(target));
     return 0.0;
@@ -735,15 +734,31 @@ void dp88_AI_Turret::Enemy_Seen ( GameObject *obj, GameObject *enemy )
 		targetPriority = enemyPriority;
 		m_bTargetPrimaryFire = attackPrimary;
 
-		if ( splashInfantry && enemy->As_SoldierGameObj() )
+		if ( splashInfantry && enemy->As_SoldierGameObj())
 		{
 			if ( debug ) fprintf ( debugFile, "Using splash damage against this target\n" );
-			attackLocation(obj,Commands->Get_Position(enemy),m_bTargetPrimaryFire);
+			if(obj->As_SmartGameObj()->Is_Splash_Possible(enemy->As_PhysicalGameObj()))
+			{
+				attackLocation ( obj, Commands->Get_Position(enemy), m_bTargetPrimaryFire );
+			}
+			else
+			{
+				attackLocation ( obj, enemy->As_SoldierGameObj()->Get_Bullseye_Position(), m_bTargetPrimaryFire );
+			}
 		}
 		else
 			attackTarget(obj,enemy,m_bTargetPrimaryFire);
 	}
 	else if ( debug ) fprintf ( debugFile, "Current target has a higher priority than new enemy, continuing to attack current target\n" );
+}
+
+void dp88_AI_Turret::Damaged(GameObject *obj, GameObject *damager, float amount)
+{
+	if (!damager || amount <= 0 || !checkTeam(obj,damager) || Get_Object_Type(obj)==-2 || obj->As_SmartGameObj()->Is_Enemy_Seen_Enabled()==false)
+	{
+		return;
+	}
+	Enemy_Seen(obj,damager);
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -772,8 +787,17 @@ void dp88_AI_Turret::Timer_Expired( GameObject *obj, int number )
 
 			// Otherwise we are OK to continue attacking... if this is an infantry unit
 			// and splash targetting is enabled then update targetting position
-			else if ( splashInfantry && target->As_SoldierGameObj() )
-				attackLocation ( obj, Commands->Get_Position(target), m_bTargetPrimaryFire );
+			else if ( splashInfantry && target->As_SoldierGameObj())
+			{
+				if(obj->As_SmartGameObj()->Is_Splash_Possible(target->As_PhysicalGameObj()))
+				{
+					attackLocation ( obj, Commands->Get_Position(target), m_bTargetPrimaryFire );
+				}
+				else
+				{
+					attackLocation ( obj, target->As_SoldierGameObj()->Get_Bullseye_Position(), m_bTargetPrimaryFire );
+				}
+			}
 		}
 	}
 
@@ -870,12 +894,12 @@ void dp88_AI_Turret::attackLocation ( GameObject* obj, Vector3 location, bool pr
 	// Otherwise setup a new action
 	else
 	{
+		params.AttackObject = 0;
 		// Reset any current attack (note: specifically use the function from THIS
 		// class and not a derived class as we do not know what functionality may
 		// be implemented in a derived class)
 		dp88_AI_Turret::stopAttacking(obj);
 
-		params.AttackObject = 0;
 		params.Set_Basic( this, 100.0f, 8951 );
 		params.Set_Attack( location, (primary)?(float)primary_maxRange:(float)secondary_maxRange, 0.0, primary);
 		params.AttackCheckBlocked = false;

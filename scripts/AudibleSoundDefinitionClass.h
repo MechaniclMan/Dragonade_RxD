@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -55,6 +55,8 @@ public:
 	virtual void Set_Pitch_Factor_Randomizer(float f) {m_PitchFactorRandomizer = f;}
 	virtual void Set_Virtual_Channel(int i) {m_VirtualChannel = i;}
 	virtual LogicalSoundClass* Create_Logical() const;
+	float Get_Logical_DropOff_Radius() const {return m_LogicalDropoffRadius;}
+	int Get_Logical_Type() const {return m_LogicalType;}
 	AudibleSoundDefinitionClass();
 	bool Save_Variables(ChunkSaveClass&);
 	bool Load_Variables(ChunkLoadClass&);

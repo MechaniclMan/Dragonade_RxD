@@ -3,8 +3,6 @@
 #include "engine_def.h"
 #include "VehicleGameObjDef.h"
 #include "BeaconGameObjDef.h"
-#include "gmplugin.h"
-#include "gmgame.h"
 #include "TeamPurchaseSettingsDefClass.h"
 #include "PurchaseSettingsDefClass.h"
 #include "PowerupGameObj.h"
@@ -20,7 +18,14 @@
 #include "MoveablePhysClass.h"
 #include "DB_General.h"
 
-
+#include "engine_tdb.h"
+#include "engine_obj.h"
+#include "engine_script.h"
+#include "engine_player.h"
+#include "engine_phys.h"
+#include "engine_game.h"
+#include "engine_obj2.h"
+#include "engine_dmg.h"
 
 class DB_Captureable_Silo : public ScriptImpClass {
 	bool Play_Damage;
@@ -51,7 +56,7 @@ void Created(GameObject *obj)
 		Upgraded=true;
 	}
 
-	if(Commands->Get_Player_Type(obj)!=-2)
+	if(Get_Object_Type(obj)!=-2)
 	{
 		Attach_Script_Once_V(obj,"dp88_buildingScripts_functionMoneyTrickle","%f",amount);
 		Play_Killed = true;
@@ -88,17 +93,17 @@ void Created(GameObject *obj)
 
 		if (damage < 0.0f)
 		{
-			if (Commands->Get_Player_Type(obj) == -2)
+			if (Get_Object_Type(obj) == -2)
 			{
 				if (Commands->Get_Health(obj) == Commands->Get_Max_Health(obj))
 				{
-					Commands->Set_Player_Type(obj,Get_Object_Type(damager));
-					if (Commands->Get_Player_Type(obj) == 0)
+					Set_Object_Type(obj,Get_Object_Type(damager));
+					if (Get_Object_Type(obj) == 0)
 					{
 						Send_Message_Team(0,255,0,0,StringClass::getFormattedString("Nod has captured the %s!", Building));
 							Attach_Script_Once_V(obj,"dp88_buildingScripts_functionMoneyTrickle","%f",amount);
 					}
-					else if (Commands->Get_Player_Type(obj) == 1)
+					else if (Get_Object_Type(obj) == 1)
 					{
 						Send_Message_Team(1,255,201,0,StringClass::getFormattedString("GDI has captured the %s!", Building));
 							Attach_Script_Once_V(obj,"dp88_buildingScripts_functionMoneyTrickle","%f",amount);
@@ -111,7 +116,7 @@ void Created(GameObject *obj)
 
 		if (damage > Commands->Get_Health(obj))
 		{
-			if (Commands->Get_Player_Type(obj) == 0)
+			if (Get_Object_Type(obj) == 0)
 			{
 				if (Play_Killed)
 				{
@@ -121,7 +126,7 @@ void Created(GameObject *obj)
 					Remove_Script(obj,"dp88_buildingScripts_functionMoneyTrickle");
 				}
 			}
-			else if (Commands->Get_Player_Type(obj) == 1)
+			else if (Get_Object_Type(obj) == 1)
 			{
 				if (Play_Killed)
 				{
@@ -131,7 +136,7 @@ void Created(GameObject *obj)
 					Remove_Script(obj,"dp88_buildingScripts_functionMoneyTrickle");
 				}
 			}
-			Commands->Set_Player_Type(obj,-2);
+			Set_Object_Type(obj,-2);
 			Commands->Set_Health(obj,1.0f);
 		}
 	}
@@ -150,7 +155,7 @@ void Created(GameObject *obj)
 	Commands->Set_Animation_Frame(obj,Get_Model(obj),0);
 	Set_Object_Type(obj, Get_Int_Parameter("Team"));
 
-	if(Commands->Get_Player_Type(obj)!=-2)
+	if(Get_Object_Type(obj)!=-2)
 	{
 		Play_Killed = true;
 		Play_Damage = true;
@@ -198,7 +203,7 @@ void Created(GameObject *obj)
 	{
 		if (damage > Commands->Get_Health(obj))
 		{
-			if (Commands->Get_Player_Type(obj) == 0)
+			if (Get_Object_Type(obj) == 0)
 			{
 				if (Play_Killed)
 				{
@@ -208,7 +213,7 @@ void Created(GameObject *obj)
 					Commands->Set_Animation_Frame(obj,Get_Model(obj),0);
 				}
 			}
-			else if (Commands->Get_Player_Type(obj) == 1)
+			else if (Get_Object_Type(obj) == 1)
 			{
 				if (Play_Killed)
 				{
@@ -218,24 +223,24 @@ void Created(GameObject *obj)
 					Commands->Set_Animation_Frame(obj,Get_Model(obj),0);
 				}
 			}
-			Commands->Set_Player_Type(obj,-2);
+			Set_Object_Type(obj,-2);
 			Commands->Set_Health(obj,1.0f);
 
 		}
 
 		if (damage < 0.0f)
 		{
-			if (Commands->Get_Player_Type(obj) == -2)
+			if (Get_Object_Type(obj) == -2)
 			{
 				if (Commands->Get_Health(obj) == Commands->Get_Max_Health(obj))
 				{
-					Commands->Set_Player_Type(obj,Get_Object_Type(damager));
-					if (Commands->Get_Player_Type(obj) == 0)
+					Set_Object_Type(obj,Get_Object_Type(damager));
+					if (Get_Object_Type(obj) == 0)
 					{
 						Send_Message_Team(0,255,0,0,StringClass::getFormattedString("Nod has captured the %s!",Building));
 						Commands->Set_Animation_Frame(obj,Get_Model(obj),1);
 					}
-					else if (Commands->Get_Player_Type(obj) == 1)
+					else if (Get_Object_Type(obj) == 1)
 					{
 						Send_Message_Team(1,255,201,0,StringClass::getFormattedString("GDI has captured the %s!",Building));
 						Commands->Set_Animation_Frame(obj,Get_Model(obj),3);
@@ -326,7 +331,7 @@ void Created(GameObject *obj)
 	{
 		if (damage > Commands->Get_Health(obj))
 		{
-			if (Commands->Get_Player_Type(obj) == 0)
+			if (Get_Object_Type(obj) == 0)
 			{
 				if (Play_Killed)
 				{
@@ -337,7 +342,7 @@ void Created(GameObject *obj)
 					Commands->Set_Animation_Frame(obj,Get_Model(obj),0);
 				}
 			}
-			else if (Commands->Get_Player_Type(obj) == 1)
+			else if (Get_Object_Type(obj) == 1)
 			{
 				if (Play_Killed)
 				{
@@ -348,25 +353,25 @@ void Created(GameObject *obj)
 					Commands->Set_Animation_Frame(obj,Get_Model(obj),0);
 				}
 			}
-			Commands->Set_Player_Type(obj,-2);
+			Set_Object_Type(obj,-2);
 			Commands->Set_Health(obj,1.0f);
 
 		}
 
 		if (damage < 0.0f)
 		{
-			if (Commands->Get_Player_Type(obj) == -2)
+			if (Get_Object_Type(obj) == -2)
 			{
 				if (Commands->Get_Health(obj) == Commands->Get_Max_Health(obj))
 				{
-					Commands->Set_Player_Type(obj,Get_Object_Type(damager));
-					if (Commands->Get_Player_Type(obj) == 0)
+					Set_Object_Type(obj,Get_Object_Type(damager));
+					if (Get_Object_Type(obj) == 0)
 					{
 						Send_Message_Team(0,255,0,0,StringClass::getFormattedString("Nod has captured the %s!", Building));
 						Attach_Script_Once(Commands->Find_Object(zoneid), "JFW_Sell_Zone", "0");
 						Commands->Set_Animation_Frame(obj,Get_Model(obj),1);
 					}
-					else if (Commands->Get_Player_Type(obj) == 1)
+					else if (Get_Object_Type(obj) == 1)
 					{
 						Send_Message_Team(1,255,201,0,StringClass::getFormattedString("GDI has captured the %s!", Building));
 						Attach_Script_Once(Commands->Find_Object(zoneid), "JFW_Sell_Zone", "1");
@@ -402,7 +407,7 @@ void Created(GameObject *obj)
 	Play_Damage = false;
 	Play_Killed = false;
 
-	if(Commands->Get_Player_Type(obj)!=-2)
+	if(Get_Object_Type(obj)!=-2)
 	{
 		Play_Killed = true;
 		Play_Damage = true;
@@ -415,7 +420,7 @@ void Created(GameObject *obj)
 	{
 		if (damage > Commands->Get_Health(obj))
 		{
-			if (Commands->Get_Player_Type(obj) == 0)
+			if (Get_Object_Type(obj) == 0)
 			{
 				if (Play_Killed)
 				{
@@ -434,7 +439,7 @@ void Created(GameObject *obj)
 					Commands->Action_Reset(obj,200);
 				}
 			}
-			else if (Commands->Get_Player_Type(obj) == 1)
+			else if (Get_Object_Type(obj) == 1)
 			{
 				if (Play_Killed)
 				{
@@ -453,24 +458,24 @@ void Created(GameObject *obj)
 					Commands->Action_Reset(obj,200);
 				}
 			}
-			Commands->Set_Player_Type(obj,-2);
+			Set_Object_Type(obj,-2);
 			Commands->Set_Health(obj,1.0f);
 
 		}
 
 		if (damage < 0.0f)
 		{
-			if (Commands->Get_Player_Type(obj) == -2)
+			if (Get_Object_Type(obj) == -2)
 			{
 				if (Commands->Get_Health(obj) == Commands->Get_Max_Health(obj))
 				{
-					Commands->Set_Player_Type(obj,Get_Object_Type(damager));
-					if (Commands->Get_Player_Type(obj) == 0)
+					Set_Object_Type(obj,Get_Object_Type(damager));
+					if (Get_Object_Type(obj) == 0)
 					{
 						Send_Message_Team(0,255,0,0,StringClass::getFormattedString("Nod has captured the %s!",Building));
 						//DALogManager::Write_Log("_INFO","Nod has captured the %s!",Building);
 					}
-					else if (Commands->Get_Player_Type(obj) == 1)
+					else if (Get_Object_Type(obj) == 1)
 					{
 						Send_Message_Team(1,255,201,0,StringClass::getFormattedString("GDI has captured the %s!",Building));
 						//DALogManager::Write_Log("_INFO","GDI has captured the %s!",Building);
@@ -564,26 +569,36 @@ void  PlayInsufficientFunds(GameObject *obj)
 
 class DB_capturable_Helipad_Terminal : public ScriptImpClass {
 	bool Do_Poke_Stuff;
+	ReferencerClass building;
 void  DB_capturable_Helipad_Terminal::Created(GameObject *obj)
 {
 	Do_Poke_Stuff = true; 
 	Commands->Enable_HUD_Pokable_Indicator(obj, true);
+	Commands->Set_Animation_Frame(obj,Get_Model(obj),0);
+	Commands->Start_Timer(obj,this,0.5f,1);
+	building = Commands->Find_Object(Get_Int_Parameter("BuildingID"));
 }
 void  DB_capturable_Helipad_Terminal::Poked(GameObject *obj,GameObject *poker)
 {
 	if (Do_Poke_Stuff)
 	{
 		Do_Poke_Stuff = false; Commands->Start_Timer(obj,this,5.0f,12345);
-		if (Get_Object_Type(Commands->Find_Object(Get_Int_Parameter("BuildingID")))==Get_Object_Type(poker))
+		if (Get_Object_Type(building)==Get_Object_Type(poker))
 		{
 			const char *preset;
-			int cost;
+			float cost;
 			int spawnlocation;
 			Vector3 location;
-			cost=Get_Int_Parameter("Cost");
+			bool powered=true;
+			cost=Get_Float_Parameter("Cost");
 			preset = Get_Parameter("Preset");
 			spawnlocation = Get_Int_Parameter("SpawnLocation");
 			location = Commands->Get_Position(Commands->Find_Object(spawnlocation));
+			if(!Is_Base_Powered(Get_Object_Type(poker)))
+			{
+				powered=false;
+				cost=cost*1.5f;
+			}
 			if (cost <= Commands->Get_Money(poker))
 			{
 				cost = -cost;
@@ -595,20 +610,24 @@ void  DB_capturable_Helipad_Terminal::Poked(GameObject *obj,GameObject *poker)
 				{
 					Set_Object_Type(Purchase,Get_Object_Type(poker));
 					Purchase->As_VehicleGameObj()->Lock_Vehicle(poker,45.0f);
-					//if(!Purchase->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass()->Can_Teleport(Purchase->As_PhysicalGameObj()->Get_Transform()))
-						//Fix_Stuck_Object(Purchase->As_VehicleGameObj(),15);
 				}
-				Send_Message_Player(poker,255,255,255,"Purchase request granted!");
+				Send_Message_Team(Get_Object_Type(poker),160,160,255,StringClass::getFormattedString("Building: %s - %s",Get_Translated_Definition_Name(preset),Get_Player_Name(poker)));
+				Send_Message_Player(poker,178,178,178,"Purchase request granted!");
+				Stop_Timer2(obj,this,1);
+				DB_capturable_Helipad_Terminal::Timer_Expired(obj, 1);
 			}
 			else
 			{
 				PlayInsufficientFunds(poker);
-				Send_Message_Player(poker,255,255,255,"Access Denied! Insufficient Funds!");
+				if(!powered)
+					Send_Message_Player(poker,255,255,255,"Access Denied! Insufficient Funds! (Power Down - Cost x 1.5)");
+				else
+					Send_Message_Player(poker,255,255,255,"Access Denied! Insufficient Funds!");
 			}
 		}
 		else
 		{
-			const char *Building = Get_Translated_Preset_Name(Commands->Find_Object(Get_Int_Parameter("BuildingID")));
+			const char *Building = Get_Translated_Preset_Name(building);
 			Send_Message_Player(poker,255,255,255,StringClass::getFormattedString("Sorry, the %s is not captured. Purchase denied.",Building));
 
 		}
@@ -617,11 +636,74 @@ void  DB_capturable_Helipad_Terminal::Poked(GameObject *obj,GameObject *poker)
 }
 void  DB_capturable_Helipad_Terminal::Timer_Expired(GameObject *obj, int number)
 {
-	if (number == 12345)
+	if(number == 1)
+	{
+		int team = Get_Object_Type(building);
+		int frame = 0;
+		if(team == 1)
+		{
+			if(Do_Poke_Stuff)
+			{
+				if(Is_Base_Powered(1))
+					frame=7;
+				else
+					frame=5;
+			}
+			else
+			{
+				if(Is_Base_Powered(1))
+					frame=8;
+				else
+					frame=6;
+			}
+			if(Get_Object_Type(obj) != -2)
+			{
+				Set_Object_Type(obj,1);
+			}
+		}
+		else if (team == 0)
+		{
+			if(Do_Poke_Stuff)
+			{
+				if(Is_Base_Powered(0))
+					frame=3;
+				else
+					frame=1;
+			}
+			else
+			{
+				if(Is_Base_Powered(0))
+					frame=4;
+				else
+					frame=2;
+			}
+			if(Get_Object_Type(obj) != 0)
+			{
+				Set_Object_Type(obj,0);
+			}
+		}
+		else
+		{
+			frame=0;
+			if(Get_Object_Type(obj) != -2)
+			{
+				Set_Object_Type(obj,-2);
+			}
+		}
+		if(Get_Animation_Frame(obj) != frame)
+		{
+			Commands->Set_Animation_Frame(obj,Get_Model(obj),frame);
+		}
+		Commands->Start_Timer(obj,this,0.5f,1);
+	}
+
+	else if (number == 12345)
 	{
 		Do_Poke_Stuff = true;
 		Commands->Enable_HUD_Pokable_Indicator(obj, true);
 	}
+
+
 }
 };
 
@@ -693,7 +775,7 @@ class DB_capturable_helipadzone_reload : public ScriptImpClass {
 	void DB_capturable_helipadzone_reload::Entered(GameObject *obj, GameObject *enterer)
 {
 	if(Commands->Find_Object(Get_Int_Parameter("BuildingID")))
-		if (Commands->Get_Player_Type(enterer) == Commands->Get_Player_Type(Commands->Find_Object(Get_Int_Parameter("BuildingID"))) && enterer->As_VehicleGameObj() && Is_VTOL(enterer))
+		if (Get_Object_Type(enterer) == Get_Object_Type(Commands->Find_Object(Get_Int_Parameter("BuildingID"))) && enterer->As_VehicleGameObj() && Is_VTOL(enterer))
 		{
 			if(!Has_Timer(obj,this,enterer->Get_ID()))
 				Commands->Start_Timer(obj, this, 1, Commands->Get_ID(enterer));
@@ -747,7 +829,7 @@ void DB_capturable_Repairzone::Entered(GameObject *obj,GameObject *enterer)
 	{
 		return;
 	}
-	if (enterer->As_VehicleGameObj())
+	if (enterer->As_VehicleGameObj() && !enterer->As_VehicleGameObj()->Is_Turret())
 	{
 		if(Get_Vehicle_Driver(enterer))
 		{
@@ -807,9 +889,9 @@ void DB_Capturable_Infantry_Terminal::Created(GameObject *obj)
 	InfantryFactoryID = Get_Int_Parameter("InfantryFactoryID");
 	Cost = Get_Float_Parameter("Cost");
 	Preset = Get_Parameter("Preset");
-	Team = Commands->Get_Player_Type(Commands->Find_Object(InfantryFactoryID));
+	Team = Get_Object_Type(Commands->Find_Object(InfantryFactoryID));
 	Allowpoke = true;
-	Commands->Set_Player_Type(obj, Team);
+	Set_Object_Type(obj, Team);
 	Commands->Start_Timer(obj, this, 10.0f, 102031);//set the team of the console to that of the associated helipad
 }
 void DB_Capturable_Infantry_Terminal::Poked(GameObject *obj, GameObject *poker)
@@ -817,9 +899,9 @@ void DB_Capturable_Infantry_Terminal::Poked(GameObject *obj, GameObject *poker)
 	if (Allowpoke)
 	{
 		Commands->Enable_HUD_Pokable_Indicator(obj, false);
-		Team = Commands->Get_Player_Type(Commands->Find_Object(InfantryFactoryID));//request the helipad team again and check it against poker
+		Team = Get_Object_Type(Commands->Find_Object(InfantryFactoryID));//request the helipad team again and check it against poker
 		Allowpoke = false; Commands->Start_Timer(obj, this, 3.0f, 102030);//No poking for 5s
-		if (Commands->Get_Player_Type(poker) == Team)
+		if (Get_Object_Type(poker) == Team)
 		{
 			if (Is_Base_Powered(Team))
 			{
@@ -882,8 +964,8 @@ void DB_Capturable_Infantry_Terminal::Timer_Expired(GameObject *obj, int number)
 	}
 	else if (number == 102031)
 	{
-		Team = Commands->Get_Player_Type(Commands->Find_Object(InfantryFactoryID));
-		Commands->Set_Player_Type(obj, Team);
+		Team = Get_Object_Type(Commands->Find_Object(InfantryFactoryID));
+		Set_Object_Type(obj, Team);
 		Commands->Start_Timer(obj, this, 10.0f, 102031);//re-set the team of the console to that of the associated helipad
 	}
 }
@@ -906,9 +988,9 @@ void DB_Capturable_Powerup_Terminal::Created(GameObject *obj)
 	CheckObjectID = Get_Int_Parameter("CheckObjectID");
 	Cost = Get_Float_Parameter("Cost");
 	Preset = Get_Parameter("Powerup");
-	Team = Commands->Get_Player_Type(Commands->Find_Object(CheckObjectID));
+	Team = Get_Object_Type(Commands->Find_Object(CheckObjectID));
 	Allowpoke = true;
-	Commands->Set_Player_Type(obj, Team);
+	Set_Object_Type(obj, Team);
 	Commands->Start_Timer(obj, this, 10.0f, 102031);//set the team of the console to that of the associated helipad
 }
 void DB_Capturable_Powerup_Terminal::Poked(GameObject *obj, GameObject *poker)
@@ -916,9 +998,9 @@ void DB_Capturable_Powerup_Terminal::Poked(GameObject *obj, GameObject *poker)
 	if (Allowpoke)
 	{
 		Commands->Enable_HUD_Pokable_Indicator(obj, false);
-		Team = Commands->Get_Player_Type(Commands->Find_Object(CheckObjectID));//request the helipad team again and check it against poker
+		Team = Get_Object_Type(Commands->Find_Object(CheckObjectID));//request the helipad team again and check it against poker
 		Allowpoke = false; Commands->Start_Timer(obj, this, 3.0f, 102030);//No poking for 5s
-		if (Commands->Get_Player_Type(poker) == Team)
+		if (Get_Object_Type(poker) == Team)
 		{
 			if (Is_Base_Powered(Team))
 			{
@@ -977,8 +1059,8 @@ void DB_Capturable_Powerup_Terminal::Timer_Expired(GameObject *obj, int number)
 	}
 	else if (number == 102031)
 	{
-		Team = Commands->Get_Player_Type(Commands->Find_Object(CheckObjectID));
-		Commands->Set_Player_Type(obj, Team);
+		Team = Get_Object_Type(Commands->Find_Object(CheckObjectID));
+		Set_Object_Type(obj, Team);
 		Commands->Start_Timer(obj, this, 10.0f, 102031);//re-set the team of the console to that of the associated helipad
 	}
 }
@@ -990,13 +1072,13 @@ class Nod_Turret_DeathSound : public ScriptImpClass {
 	int team;
 	void Nod_Turret_DeathSound::Created(GameObject *obj)
 	{
-		team=Commands->Get_Player_Type(obj);
+		team=Get_Object_Type(obj);
 		
 	}
 
 	void Nod_Turret_DeathSound::Killed(GameObject *obj, GameObject *killer)
 	{
-		team=Commands->Get_Player_Type(obj);
+		team=Get_Object_Type(obj);
 		if(team==0)
 			Create_2D_WAV_Sound_Team("m00bntu_kill0001i1evan_snd.wav",team);
 		else if(team==1)
@@ -1010,13 +1092,13 @@ class GDI_Guard_Tower_DeathSound : public ScriptImpClass {
 	int team;
 	void  GDI_Guard_Tower_DeathSound::Created(GameObject *obj)
 	{
-		team=Commands->Get_Player_Type(obj);
+		team=Get_Object_Type(obj);
 		
 	}
 
 	void  GDI_Guard_Tower_DeathSound::Killed(GameObject *obj, GameObject *killer)
 	{
-		team=Commands->Get_Player_Type(obj);
+		team=Get_Object_Type(obj);
 		if(team==1)
 			Create_2D_WAV_Sound_Team("m00bggt_kill0001i1evag_snd.wav",team);
 		else if(team==0)
@@ -1028,13 +1110,13 @@ class Nod_SamSite_DeathSound : public ScriptImpClass {
 	int team;
 	void Nod_SamSite_DeathSound::Created(GameObject *obj)
 	{
-		team=Commands->Get_Player_Type(obj);
+		team=Get_Object_Type(obj);
 		
 	}
 
 	void Nod_SamSite_DeathSound::Killed(GameObject *obj, GameObject *killer)
 	{
-		team=Commands->Get_Player_Type(obj);
+		team=Get_Object_Type(obj);
 		if(team==0)
 			Create_2D_WAV_Sound_Team("m00bnss_kill0001i1evan_snd.wav",team);
 		else if(team==1)
@@ -1047,7 +1129,7 @@ class DB_Power_Plant_fix : public ScriptImpClass {
 	int team;
 	void DB_Power_Plant_fix::Created(GameObject *obj)
 	{
-		team=Commands->Get_Player_Type(obj);
+		team=Get_Object_Type(obj);
 		
 	}
 
@@ -1139,104 +1221,47 @@ class DB_Enter_Teleport_Random : public ScriptImpClass {
 };
 
 class DB_Face_Forward: public ScriptImpClass {
-	int TargetID;
-	int BoneID;
-	GameObject *BoneObject;
-	GameObject *TargetObject;
 	Vector3 DefaultPos;
-	bool expired;
+	float Duration;
 	void DB_Face_Forward::Created(GameObject *obj) 	{
-		expired=false;
-		float Duration = Get_Float_Parameter("Duration");
-		/*
-		Vector3 Position = Commands->Get_Position(obj);
-		BoneObject = Commands->Create_Object("Invisible_Object",Position);
-		BoneID = BoneObject->Get_ID();
-		Commands->Set_Model(BoneObject,"facebone");
-		Commands->Attach_To_Object_Bone(BoneObject,obj,"origin");
-
-		TargetObject = Commands->Create_Object("Invisible_Object",Position);
-		TargetID = TargetObject->Get_ID();
-		Commands->Attach_To_Object_Bone(TargetObject,BoneObject,"facebone");
-		Commands->Disable_Physical_Collisions(TargetObject);
-		*/
-		ActionParamsStruct var;
-		var.Priority=10;
-
-		Vector3 pos = Commands->Get_Position(obj);
-		Vector3 target_direction = obj->As_VehicleGameObj()->Get_Muzzle(0).Get_X_Vector();
+		Duration = Get_Float_Parameter("Duration");
+		Vector3 pos = Commands->Get_Bone_Position(obj,"barrel");
+		Vector3 target_direction = obj->As_PhysicalGameObj()->Peek_Model()->Get_Bone_Transform( obj->As_PhysicalGameObj()->Peek_Model()->Get_Bone_Index("Barrel")).Get_X_Vector();
 		DefaultPos = pos + target_direction * 100;
 
-		//DefaultPos = Commands->Get_Position(TargetObject);
-
 		if(stristr(Commands->Get_Preset_Name(obj),"Sam") || stristr(Commands->Get_Preset_Name(obj),"AA_Gun"))
+		{
 			DefaultPos.Z+=36;
-
+		}
+		ActionParamsStruct var;
+		var.Priority=10;
 		var.Set_Face_Location(DefaultPos,0,Duration);
-
 		Commands->Action_Face_Location(obj,var);
-		if(TargetObject)
-			Commands->Start_Timer(obj,this,Duration,77);
-	}
-
-	void DB_Face_Forward::Killed(GameObject *obj, GameObject *killer)
-	{
-		if(!expired)
-		{
-			BoneObject = 0;
-			TargetObject = 0;
-
-			BoneObject = Commands->Find_Object(BoneID);
-			if(BoneObject)
-			{
-				Commands->Destroy_Object(BoneObject);
-			}
-
-			TargetObject = Commands->Find_Object(TargetID);
-			if(TargetObject)
-			{
-				Commands->Destroy_Object(TargetObject);
-			}
-		}
-	}
-	
-	void DB_Face_Forward::Timer_Expired(GameObject *obj, int Number)
-	{
-		if(Number==77)
-		{
-			expired=true;
-			//Commands->Action_Reset(obj,120);
-			//Commands->Innate_Force_State_Enemy_Seen(obj,TargetObject);
-			BoneObject = 0;
-			TargetObject = 0;
-			TargetObject = Commands->Find_Object(TargetID);
-			if(TargetObject)
-			{
-				Commands->Destroy_Object(TargetObject);
-			}
-			
-			BoneObject = Commands->Find_Object(BoneID);
-			if(BoneObject)
-			{
-				Commands->Destroy_Object(BoneObject);
-			}
-			//Destroy_Script();
-		}
-
 	}
 
 	void DB_Face_Forward::Custom(GameObject *obj,int type,int param,GameObject *sender)
 	{
+		if(type==8765)
+		{
+			GameObject *target = Commands->Find_Object(param);
+			if(obj->As_VehicleGameObj() && obj->As_VehicleGameObj()->Is_Turret())
+			{
+				ActionParamsStruct var;
+				var.Priority=71;
+				var.Set_Attack(target,1000,0,true);
+				Commands->Action_Attack(obj,var);
+			}
+		}
 
-		if(type==5432)
+		else if(type==5432)
 		{
 			ActionParamsStruct var;
 			var.Priority=71;
-			var.Set_Face_Location(DefaultPos,0,0.1f);
+			var.Set_Face_Location(DefaultPos,0,Duration);
 			Commands->Action_Face_Location(obj,var);
 		}
 
-		if(type==7654)
+		else if(type==7654)
 		{
 			GameObject *target = Commands->Find_Object(param);
 			if(target)
@@ -1247,7 +1272,7 @@ class DB_Face_Forward: public ScriptImpClass {
 				Vector3 TargetPos = Commands->Get_Position(target);
 				ActionParamsStruct var;
 				var.Priority=71;
-				var.Set_Face_Location(TargetPos,0,0.1f);
+				var.Set_Face_Location(TargetPos,0,Duration);
 				Commands->Action_Face_Location(obj,var);
 				}
 			}
@@ -1255,10 +1280,7 @@ class DB_Face_Forward: public ScriptImpClass {
 	}
 };
 
-
 ScriptRegistrant<DB_Face_Forward> DB_Face_Forward_Registrant("DB_Face_Forward", "Duration=1:float");
-
-
 
 ScriptRegistrant<DB_Captureable_Silo>DB_Captureable_Silo_Registrant("DB_Captureable_Silo","Team=-2:int,Amount=2:float,UpgradeAmount=3:float,UpgradeID=0:int");
 ScriptRegistrant<DB_Helipad_Captureable> DB_Capturable_Helipad_Registrant("DB_Capturable_Helipad","Team=-2:int,ReloadZoneID=0:int");

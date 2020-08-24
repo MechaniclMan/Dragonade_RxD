@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -96,7 +96,9 @@ public:
 	safe_float		TargetingRange;//new
 	int             C4Preset;
 	bool			DisableHitscan;
-	bool			TrackingIgnoreTarget;
+	bool			TrackingIgnoreVehicle;
+	bool			TrackingIgnoreSoldier;
+	bool			TrackingIgnoreVTOL;
 
 #if (PARAM_EDITING_ON) || (DDBEDIT) || (W3DVIEWER)
     Vector3 ProjectileExtent;
@@ -188,6 +190,7 @@ public:
 	float CameraShakeRadius;
 	float CameraShakeDuration;
 	float CollisionDamageMultiplier;
+	bool ResetMappers;
 	ExplosionDefinitionClass();
 	virtual ~ExplosionDefinitionClass();
 	virtual const PersistFactoryClass &Get_Factory() const;

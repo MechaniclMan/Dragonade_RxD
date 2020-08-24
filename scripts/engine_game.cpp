@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -80,6 +80,8 @@ AT2(0x00477CD0,0x004773A0);
 RENEGADE_FUNCTION
 cGameDataSinglePlayer SCRIPTS_API *The_Single_Player_Game()
 AT2(0x00477CB0,0x00477380);
+
+bool AllMapsAreFlying = false;
 
 void BaseControllerClass::Check_Vehicle_Factory()
 {
@@ -257,7 +259,7 @@ GameObject SCRIPTS_API *Find_Base_Defense(int team)
 
 bool SCRIPTS_API Is_Map_Flying()
 {
-	return IsMapVTOL;
+	return IsMapVTOL || AllMapsAreFlying;
 }
 
 GameObject SCRIPTS_API *Create_Building(const char *preset,const Vector3 & Position)

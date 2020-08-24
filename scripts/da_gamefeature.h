@@ -19,6 +19,7 @@ class DAGameFeatureClass;
 class DAGameFeatureFactoryClass abstract {
 public:
 	DA_API DAGameFeatureFactoryClass(const char *Name,const char *EnableSetting,const char *RequiredData = 0);
+	virtual ~DAGameFeatureFactoryClass() { }
 	inline const char *Get_Name() const {
 		return Name;
 	}

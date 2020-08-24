@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -1140,7 +1140,8 @@ void JFW_Cinematic::Command_Control_Camera(char *command)
 		GameObject *obj = Commands->Find_Object(Slots[slot]);
 		if (obj)
 		{
-			Commands->Set_Camera_Host(obj);
+			Update_Network_Object(obj);
+			Set_Camera_Host_Network(obj);
 			Commands->Control_Enable(Commands->Get_The_Star(),false);
 			Commands->Enable_HUD(false);
 			CameraControl = true;
@@ -1150,7 +1151,7 @@ void JFW_Cinematic::Command_Control_Camera(char *command)
 	}
 	else
 	{
-		Commands->Set_Camera_Host(0);
+		Set_Camera_Host_Network(0);
 		Commands->Control_Enable(Commands->Get_The_Star(),true);
 		Commands->Enable_HUD(true);
 	}

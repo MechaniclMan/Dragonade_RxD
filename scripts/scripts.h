@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -318,6 +318,18 @@ const float	DONT_MOVE_ARRIVED_DIST	= 1000.0F;
 class ActionParamsStruct {
 public:
 	ActionParamsStruct( void );
+	void Set_Basic_Old(ScriptClass *s,unsigned long priority,unsigned long ID,long state);
+	void Set_Attack_Hold(GameObject *Target,float range,float deviation,bool primary,bool Hold);
+	void Set_Attack_Position(const Vector3 & position,float Range,float Deviation,bool Primary);
+	void Set_Goto_Location(const Vector3 & position,float speed,float arrivedistance,bool crouch);
+	void Set_Goto_Following(GameObject *Target,float speed,float arrivedistance,bool following);
+	void Set_Goto_Crouch(GameObject *Target,float speed,float arrivedistance,bool crouch);
+	void Set_Goto_Crouch_Following(GameObject *Target,float speed,float arrivedistance,bool crouch,bool following);
+	void Set_Goto(GameObject *Target,float speed,float arrivedistance);
+	void Set_Goto_Waypath_Start(unsigned long waypathID,unsigned long waypathstartID,unsigned long waypathendID,bool splined);
+	void Set_Goto_Waypath(unsigned long waypathID,bool splined,bool v57,bool Hold);
+	void Set_Goto_Waypath_ID(unsigned long waypathID);
+	void Set_Move_Arrive_Distance(float distance);
 	void Set_Basic( GameObjObserverClass * script, float priority, int action_id, SoldierAIState ai_state = NO_AI_STATE_CHANGE ) { ObserverID = script->Get_ID(); Priority = (int)priority; ActionID = action_id; AIState = ai_state; }
 	void Set_Basic( long observer_id, float priority, int action_id, SoldierAIState ai_state = NO_AI_STATE_CHANGE ) { ObserverID = observer_id; Priority = (int)priority; ActionID = action_id; AIState = ai_state; }
 	void Set_Look( const Vector3 & location, float duration ) { LookLocation = location; LookDuration = duration; }	
@@ -449,6 +461,89 @@ void	inline ActionParamsStruct::Set_Look( const Vector3 &obj_pos, float angle,  
 	LookLocation.Y	+= ::sin( angle );
 	LookDuration	= duration;
 	return ;
+}
+void inline ActionParamsStruct::Set_Move_Arrive_Distance(float distance)
+{
+	MoveArrivedDistance = distance;
+}
+void inline ActionParamsStruct::Set_Goto_Location(const Vector3 & position,float speed,float arrivedistance,bool crouch)
+{
+	MoveLocation.X = position.X;
+	MoveLocation.Y = position.Y;
+	MoveLocation.Z = position.Z;
+	MoveSpeed = speed;
+	MoveArrivedDistance = arrivedistance;
+	MoveCrouched = crouch;
+}
+void inline ActionParamsStruct::Set_Goto_Following(GameObject *Target,float speed,float arrivedistance,bool following)
+{
+	MoveObject = Target;
+	MoveSpeed = speed;
+	MoveArrivedDistance = arrivedistance;
+	MoveFollow = following;
+}
+void inline ActionParamsStruct::Set_Goto_Crouch(GameObject *Target,float speed,float arrivedistance,bool crouch)
+{
+	MoveObject = Target;
+	MoveSpeed = speed;
+	MoveArrivedDistance = arrivedistance;
+	MoveCrouched = crouch;
+}
+void inline ActionParamsStruct::Set_Goto_Crouch_Following(GameObject *Target,float speed,float arrivedistance,bool crouch,bool following)
+{
+	MoveObject = Target;
+	MoveSpeed = speed;
+	MoveArrivedDistance = arrivedistance;
+	MoveCrouched = crouch;
+	MoveFollow = following;
+}
+void inline ActionParamsStruct::Set_Goto(GameObject *Target,float speed,float arrivedistance)
+{
+	MoveObject = Target;
+	MoveSpeed = speed;
+	MoveArrivedDistance = arrivedistance;
+}
+void inline ActionParamsStruct::Set_Goto_Waypath_Start(unsigned long waypathID,unsigned long waypathstartID,unsigned long waypathendID,bool splined)
+{
+	WaypathID = waypathID;
+	WaypointStartID = waypathstartID;
+	WaypointEndID = waypathendID;
+	WaypathSplined = splined;
+}
+void inline ActionParamsStruct::Set_Goto_Waypath(unsigned long waypathID,bool splined,bool v57,bool Hold)
+{
+	WaypathID = waypathID;
+	WaypathSplined = splined;
+	AttackActive = v57;
+	AttackCheckBlocked = Hold;
+}
+void inline ActionParamsStruct::Set_Goto_Waypath_ID(unsigned long waypathID)
+{
+	WaypathID = waypathID;
+}
+void inline ActionParamsStruct::Set_Basic_Old(ScriptClass *s,unsigned long priority,unsigned long ID,long state)
+{
+	ID = s->Get_ID();
+	Priority = priority;
+	ActionID = ID;
+	AIState = (SoldierAIState)state;
+}
+void inline ActionParamsStruct::Set_Attack_Hold(GameObject *Target,float Range,float Deviation,bool Primary,bool Hold)
+{
+	AttackObject = Target;
+	AttackRange = Range;
+	AttackError = Deviation;
+	AttackPrimaryFire = Primary;
+	AttackCheckBlocked = Hold;
+}
+void inline ActionParamsStruct::Set_Attack_Position(const Vector3 & position,float Range,float Deviation,bool Primary)
+{
+	AttackRange = Range;
+	AttackLocation.X = position.X;
+	AttackLocation.Y = position.Y;
+	AttackLocation.Z = position.Z;
+	AttackError = Deviation;
+	AttackPrimaryFire = Primary;
 }
 
 enum {

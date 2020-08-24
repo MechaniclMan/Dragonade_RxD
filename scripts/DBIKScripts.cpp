@@ -6,9 +6,17 @@
 #include "engine_obj.h"
 #include "engine_script.h"
 #include "VehicleGameObj.h"
+#include "WeaponClass.h"
 #include "PurchaseSettingsDefClass.h"
 #include "GameObjManager.h"
 #include "DB_General.h"
+#include "PurchaseSettingsDefClass.h"
+#include "dp88_custom_timer_defines.h"
+#ifdef DRAGONADE
+#include "engine_da.h"
+#endif // DRAGONADE
+
+
 
 #define PI 3.14159265
 
@@ -95,6 +103,8 @@ ScriptRegistrant<DB_Shield_Generator_Vehicle> DB_Shield_Generator_Vehicle_Regist
 	void DB_Controllable_Turret::Created(GameObject *obj) 	{
 		Team = Get_Object_Type(obj);
 		obj->As_VehicleGameObj()->Set_Lock_Team(Team);
+		Commands->Enable_Vehicle_Transitions(obj,true);
+		Commands->Start_Timer(obj,this,0.1f,11);
 	}
 
 	void DB_Controllable_Turret::Custom(GameObject *obj,int type,int param,GameObject *sender)
@@ -116,7 +126,17 @@ ScriptRegistrant<DB_Shield_Generator_Vehicle> DB_Shield_Generator_Vehicle_Regist
 
 	void DB_Controllable_Turret::Timer_Expired(GameObject *obj,int Number)
 	{
-		if(Number == 12)
+		if(Number == 11)
+		{
+			int Team2 = Get_Object_Type(obj);
+			if(Team != Team)
+			{
+				Team=Team2;
+				obj->As_VehicleGameObj()->Set_Lock_Team(Team);
+			}
+			Commands->Enable_Vehicle_Transitions(obj,true);
+		}
+		else if(Number == 12)
 		{
 			Set_Object_Type(obj,Team);
 		}
@@ -127,15 +147,14 @@ ScriptRegistrant<DB_Controllable_Turret> DB_Controllable_Turret_Registrant("DB_C
 
 void DB_Guard_Bot::Created(GameObject *obj)
 {
-	HomePosition = Commands->Get_Position(obj);
-	Commands->Set_Innate_Soldier_Home_Location(obj,HomePosition,70);
-	Commands->Innate_Soldier_Enable_Footsteps_Heard(obj,false);
-	Commands->Innate_Soldier_Enable_Gunshot_Heard(obj,false);
-	Commands->Innate_Soldier_Enable_Bullet_Heard(obj,false);
 	if(obj->As_SoldierGameObj())
 	{
+		Attach_Script_Once(obj,"DB_Innate_Soldier","0.5,70,0,0");
+		HomePosition = Commands->Get_Position(obj);
+		Commands->Set_Innate_Soldier_Home_Location(obj,HomePosition,70);
+		Commands->Innate_Soldier_Enable_Footsteps_Heard(obj,false);
+		Commands->Innate_Soldier_Enable_Gunshot_Heard(obj,false);
 		Commands->Start_Timer(obj,this,Commands->Get_Random(0,10),87);
-		Update_Network_Object(obj);
 		Set_Current_Clip_Bullets(obj,-1);
 	}
 }
@@ -211,9 +230,17 @@ ScriptRegistrant<DB_Guard_Bot> DB_Guard_Bot_Registrant("DB_Guard_Bot","");
 
 void DB_Support_Bot::Created(GameObject *obj)
 {
+	if(!obj->As_SoldierGameObj())
+	{
+		Destroy_Script();
+		return;
+	}
 	followid=0;
+	distance = Get_Float_Parameter("Distance");
+	speed = Get_Float_Parameter("Speed");
+	Attach_Script_Once(obj,"DB_Innate_Soldier","0.5,0,0,0");
 	Commands->Enable_HUD_Pokable_Indicator(obj,1);
-	Commands->Start_Timer(obj,this,5.0f,1);
+	Commands->Start_Timer(obj,this,4.0f,1);
 }
 
 void DB_Support_Bot::Damaged(GameObject *obj,GameObject *damager,float amount)
@@ -230,11 +257,7 @@ void DB_Support_Bot::Damaged(GameObject *obj,GameObject *damager,float amount)
 void DB_Support_Bot::Poked(GameObject *obj,GameObject *poker)
 {
 	ActionParamsStruct actionThingy;
-	float d;
-	float s;
 	actionThingy.Set_Basic(this,70,1);
-	d = Get_Float_Parameter("Distance");
-	s = Get_Float_Parameter("Speed");
 	if (Commands->Get_Player_Type(obj) == Commands->Get_Player_Type(poker))
 	{
 		if(followid==poker->Get_ID())
@@ -246,9 +269,6 @@ void DB_Support_Bot::Poked(GameObject *obj,GameObject *poker)
 		else
 		{
 			followid=poker->Get_ID();
-			actionThingy.Set_Movement(poker,s,d);
-			actionThingy.MoveFollow = true;
-			Commands->Action_Goto(obj,actionThingy);
 			Send_Message_Player(poker,255,255,255,"This bot will now follow you.");
 		}
 	}
@@ -261,19 +281,20 @@ void DB_Support_Bot::Timer_Expired(GameObject *obj,int number)
 		GameObject *follow = Commands->Find_Object(followid);
 		if(follow)
 		{
-			ActionParamsStruct actionThingy;
-			float d;
-			float s;
-			actionThingy.Set_Basic(this,70,1);
-			d = Get_Float_Parameter("Distance");
-			s = Get_Float_Parameter("Speed");
-			actionThingy.Set_Movement(follow,s,d);
-			actionThingy.MoveFollow = true;
-			Commands->Action_Goto(obj,actionThingy);
+			if(obj && !obj->As_SoldierGameObj()->Is_On_Ladder() && !obj->As_SoldierGameObj()->Is_In_Elevator())
+			{
+				if(Commands->Get_Distance(Commands->Get_Position(obj),Commands->Get_Position(follow)) > distance * 1.5f)
+				{
+					ActionParamsStruct action;
+					action.Set_Basic(this,70,1);
+					action.Set_Movement(follow,speed,distance);
+					Commands->Action_Goto(obj,action);
+				}
+			}
 		}
 		else
 			followid = 0;
-		Commands->Start_Timer(obj,this,5.0f,1);
+		Commands->Start_Timer(obj,this,4.0f,1);
 	}
 }
 
@@ -762,7 +783,7 @@ void DB_Power_Down_Building_Console::Poked(GameObject *obj,GameObject *poker)
 {
 	team = Commands->Get_Player_Type(poker);
 	GameObject *building = Commands->Find_Object(buildingID);
-	if (Is_Base_Powered(Get_Object_Type(building)) && !reset)
+	if (Is_Base_Powered(Get_Object_Type(building)) && !Is_Building_Dead(building) && !reset)
 	{
 		Commands->Create_2D_Sound(Get_Parameter("Sound"));
 		Commands->Set_Building_Power(building,false);
@@ -789,12 +810,12 @@ void DB_Power_Down_Building_Console::Timer_Expired(GameObject *obj,int number)
 	if (number == 1)
 	{
 		GameObject *building = Commands->Find_Object(buildingID);
-		if(Is_Base_Powered(Get_Object_Type(building)))
+		if(Is_Base_Powered(Get_Object_Type(building)) && !Is_Building_Dead(building))
 		{
 			Commands->Create_2D_Sound(Get_Parameter("Sound2"));
 			Commands->Set_Building_Power(building,true);
 			StringClass message;
-			message.Format("% %s online.",Get_Team_Name(Get_Object_Type(building)),Get_Translated_Preset_Name(building));
+			message.Format("%s %s online.",Get_Team_Name(Get_Object_Type(building)),Get_Translated_Preset_Name(building));
 			Send_Message(255,200,200,message);
 		}
 		reset = true;
@@ -996,7 +1017,7 @@ void  DB_Infantry_Place_Buildable_Object::Custom(GameObject *obj,int message,int
 		if (Get_Float_Parameter("Cost") && Commands->Get_Money(obj) < Get_Float_Parameter("Cost"))
 		{
 			char costMessage[220];
-			sprintf(costMessage,"You need $%d to place this.",Get_Float_Parameter("Cost"));
+			sprintf(costMessage,"You need $%i to place this.",(int)Get_Float_Parameter("Cost"));
 			Send_Message_Player(obj,255,255,255,costMessage);
 			return;
 		}
@@ -1014,7 +1035,7 @@ void  DB_Infantry_Place_Buildable_Object::Custom(GameObject *obj,int message,int
 			//Commands->Set_Player_Type(placed,Commands->Get_Player_Type(obj));
 		Commands->Set_Facing(placed,Commands->Get_Facing(obj));
 		char params[220];
-		sprintf(params,"%d,%d,%s,%.0f,%d",this->Get_ID(),Commands->Get_ID(obj),Get_Parameter("RepairedPreset"),Get_Int_Parameter("MatchTeam"),Commands->Get_Player_Type(obj));
+		sprintf(params,"%d,%d,%s,%d,%d",this->Get_ID(),Commands->Get_ID(obj),Get_Parameter("RepairedPreset"),Get_Int_Parameter("MatchTeam"),Commands->Get_Player_Type(obj));
 		Commands->Attach_Script(placed,"JMG_Utility_Infantry_Placed_Buildable_Object_Attached",params);
 	}
 	if (message == Get_Int_Parameter("EnableCustom"))
@@ -1221,6 +1242,8 @@ void DB_Turret_Spawn::Created(GameObject *obj)
 	if (turret->As_VehicleGameObj())
 		turret->As_VehicleGameObj()->Set_Is_Scripts_Visible(false);
 	hasDriver = false;
+	bombard = false;
+	Attach_Script_Once(obj,"DB_Turret_Bombard_Ability","");
 }
 void DB_Turret_Spawn::Custom(GameObject *obj,int message,int param,GameObject *sender)
 {
@@ -1234,6 +1257,7 @@ void DB_Turret_Spawn::Custom(GameObject *obj,int message,int param,GameObject *s
 			{
 				Commands->Set_Player_Type(turret,Commands->Get_Player_Type(sender));
 				Commands->Action_Reset(turret,100);
+				Commands->Send_Custom_Event(turret,turret,CUSTOM_AI_ENABLEAI,0,0);
 			}
 		}
 	}
@@ -1246,7 +1270,9 @@ void DB_Turret_Spawn::Custom(GameObject *obj,int message,int param,GameObject *s
 			if (turret)
 			{
 				Commands->Set_Player_Type(turret,Commands->Get_Player_Type(obj));
-				Commands->Action_Reset(turret,100);
+				Commands->Action_Reset(turret,201);
+				bombard=false;
+				Commands->Send_Custom_Event(turret,turret,CUSTOM_AI_DISABLEAI,0,0);
 			}
 		}
 	}
@@ -1256,6 +1282,36 @@ void DB_Turret_Spawn::Custom(GameObject *obj,int message,int param,GameObject *s
 		if (turret)
 		{
 			Commands->Attach_To_Object_Bone(turret,obj,Get_Parameter("Bone_Name"));
+		}
+	}
+
+	if(message == BOMBARD_TOGGLE)
+	{
+		if(bombard == false)
+		{
+			GameObject *turret = Commands->Find_Object(turretId);
+			if(turret)
+			{
+				ActionParamsStruct var;
+				var.Priority=200;
+				var.AttackCheckBlocked = false;
+				var.Set_Attack(obj->As_VehicleGameObj()->Get_Targeting_Pos(),1000,0,true);
+				Commands->Action_Attack(turret,var);
+				bombard=true;
+				Commands->Send_Custom_Event(turret,turret,CUSTOM_AI_DISABLEAI,0,0);
+				Set_HUD_Help_Text_Player_Text(sender,7403,"Manual Targeting set, Press 'T' to switch to auto targeting",Vector3(0.3f,0.3f,1.0f));
+			}
+		}
+		else
+		{
+			GameObject *turret = Commands->Find_Object(turretId);
+			if(turret)
+			{
+				Commands->Action_Reset(turret,201);
+				bombard=false;
+				Commands->Send_Custom_Event(turret,turret,CUSTOM_AI_ENABLEAI,0,0);
+				Set_HUD_Help_Text_Player_Text(sender,7403,"Auto Targeting set, Press 'T' to set manual target location",Vector3(0.3f,0.3f,1.0f));
+			}
 		}
 	}
 }
@@ -1273,3 +1329,518 @@ void DB_Turret_Spawn::Destroyed(GameObject *obj)
 }
 
 ScriptRegistrant<DB_Turret_Spawn> DB_Turret_Spawn_Registrant("DB_Turret_Spawn","Turret_Preset:string,Bone_Name=Tur_Mount:string");
+
+void DB_Spawned_Visible_Ammo::Created(GameObject *obj)
+{
+	Ammo = Commands->Create_Object(Get_Parameter("Ammo_Preset"),Vector3());
+	if(!Ammo)
+	{
+		Destroy_Script();
+		return;
+	}
+	Commands->Disable_All_Collisions(Ammo);
+	Commands->Attach_To_Object_Bone(Ammo,obj,Get_Parameter("Bone_Name"));
+	DB_Spawned_Visible_Ammo::Timer_Expired(obj,1);
+}
+
+void DB_Spawned_Visible_Ammo::Timer_Expired(GameObject *obj,int number)
+{
+	VehicleGameObj *vgo = ((ScriptableGameObj *)obj)->As_VehicleGameObj();
+	if (vgo && number == 1 && Ammo)
+	{
+        if(vgo->Get_Weapon() != NULL)
+        {
+	    	int ammo = vgo->Get_Weapon()->Get_Total_Rounds();
+	    	if (ammo == -1)
+	    	{
+	    		ammo = vgo->Get_Weapon()->Get_Clip_Rounds();
+	    	}
+	    	if (ammo != 0)
+	    	{
+				Commands->Set_Is_Rendered(Ammo,true);
+	    	}
+			else
+			{
+				Commands->Set_Is_Rendered(Ammo,false);
+			}
+        }
+		Commands->Start_Timer(obj,this,0.01f,1);
+	}
+}
+
+void DB_Spawned_Visible_Ammo::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == REATTACH_BONES_CUSTOM)
+	{
+		if (Ammo)
+		{
+			Commands->Attach_To_Object_Bone(Ammo,obj,Get_Parameter("Bone_Name"));
+		}
+	}
+}
+
+void DB_Spawned_Visible_Ammo::Destroyed(GameObject *obj)
+{
+	if (Ammo)
+	{
+		Commands->Destroy_Object(Ammo);
+	}
+}
+
+ScriptRegistrant<DB_Spawned_Visible_Ammo> DB_Spawned_Visible_Ammo_Registrant("DB_Spawned_Visible_Ammo","Ammo_Preset:string,Bone_Name=AmmoMount:string");
+
+void DB_Vehicle_Visible_Ammo::Created(GameObject *obj)
+{
+	enabled = Get_Int_Parameter("StartEnabled");
+	messageOn = Get_Int_Parameter("EnableMessage");
+	messageOff = Get_Int_Parameter("DisableMessage");
+	Commands->Start_Timer(obj,this,0.01f,1);
+}
+
+void DB_Vehicle_Visible_Ammo::Timer_Expired(GameObject *obj,int number)
+{
+	VehicleGameObj *vgo = ((ScriptableGameObj *)obj)->As_VehicleGameObj();
+	if (vgo && number == 1)
+	{
+        if(enabled && vgo->Get_Weapon() != NULL)
+        {
+	    	int ammo = vgo->Get_Weapon()->Get_Clip_Rounds();
+	    	if (ammo >= 0)
+	    	{
+	    		Commands->Set_Animation_Frame(obj,Get_Parameter("Animation"),ammo);
+	    	}
+        }
+		Commands->Start_Timer(obj,this,0.01f,1);
+	}
+}
+
+void DB_Vehicle_Visible_Ammo::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == messageOn)
+	{
+		enabled=true;
+	}
+	else if (message == messageOff)
+	{
+		enabled=false;
+	}
+}
+
+ScriptRegistrant<DB_Vehicle_Visible_Ammo> DB_Vehicle_Visible_Ammo_Registrant("DB_Vehicle_Visible_Ammo","Animation:string,StartEnabled=0:int,EnableMessage=9320945:int,DisableMessage=9320946:int");
+
+void DB_Orca_Lifter::Created(GameObject *obj)
+{
+	zoneID=0;
+}
+
+void DB_Orca_Lifter::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == DEPLOY_COMPLETE_CUSTOM)
+	{
+		Matrix3 rotation(true);
+		rotation.Rotate_Z(DEG2RAD(Commands->Get_Facing(obj)));
+
+		// Define the bounding box and create the zone
+		OBBoxClass zoneBoundingBox ( Commands->Get_Bone_Position(obj,Get_Parameter("Zone_Bone")), Get_Vector3_Parameter("Zone_Size"), rotation );
+		if ( GameObject* reloadZone = Create_Zone("Script_Zone_All",zoneBoundingBox) )
+		{
+			zoneID = Commands->Get_ID(reloadZone);
+			Attach_Script_Once_V(reloadZone,"DB_capturable_helipadzone_reload","%i,%s",obj->Get_ID(),Get_Parameter("Reload_Preset"));
+			Attach_Script_Once_V(reloadZone,"DB_capturable_Repairzone","%i",obj->Get_ID());
+		}
+	}
+	else if (message == UNDEPLOY_BEGIN_CUSTOM)
+	{
+		if(GameObject *reloadZone = Commands->Find_Object(zoneID))
+		{
+			Commands->Destroy_Object(reloadZone);
+		}
+		zoneID = 0;
+	}
+
+	else if (message == CUSTOM_EVENT_VEHICLE_EXITED && zoneID && obj->As_VehicleGameObj()->Get_Occupant_Count() == 0)
+	{
+		Update_Network_Object(obj);
+		Commands->Set_Player_Type(obj,Commands->Get_Player_Type(sender));
+	}
+}
+
+void DB_Orca_Lifter::Destroyed(GameObject *obj)
+{
+	if(GameObject *reloadZone = Commands->Find_Object(zoneID))
+	{
+		Commands->Destroy_Object(reloadZone);
+	}
+	zoneID = 0;
+}
+
+ScriptRegistrant<DB_Orca_Lifter> DB_Orca_Lifter_Registrant("DB_Orca_Lifter","Zone_Bone=Origin:string,Zone_Size:vector3,Reload_Preset:string");
+
+void DB_Turret_Bombard_Ability::Created(GameObject *obj)
+{
+	PilotID = 0;
+}
+
+void DB_Turret_Bombard_Ability::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == CUSTOM_EVENT_VEHICLE_ENTERED)
+	{
+		if (!PilotID)
+		{
+			PilotID = Commands->Get_ID(sender);
+			char params[50];
+			sprintf(params,"IKDeploy,%d",Commands->Get_ID(obj));
+			if(!Is_Script_Attached(sender,"Reborn_Deployable_Vehicle_Player"))
+				Commands->Attach_Script(sender,"DB_Turret_Bombard_Player",params);
+		}
+	}
+	else if (message == CUSTOM_EVENT_VEHICLE_EXITED)
+	{
+		if (PilotID == Commands->Get_ID(sender))
+		{
+			PilotID = 0;
+			Remove_Script(sender,"DB_Turret_Bombard_Player");
+		}
+	}
+}
+
+ScriptRegistrant<DB_Turret_Bombard_Ability> DB_Turret_Bombard_Ability_Registrant("DB_Turret_Bombard_Ability","");
+
+void DB_Turret_Bombard_Player::Created(GameObject *obj)
+{
+	InstallHook(Get_Parameter("Key"),obj);
+	Set_HUD_Help_Text_Player_Text(obj,7403,"Press the 'T' key to toggle auxilery turret manual targeting",Vector3(0.3f,0.3f,1.0f));
+}
+
+void DB_Turret_Bombard_Player::KeyHook()
+{
+	Commands->Send_Custom_Event(Owner(),Commands->Find_Object(Get_Int_Parameter("ID")),BOMBARD_TOGGLE,0,0);
+}
+
+ScriptRegistrant<DB_Turret_Bombard_Player>  DB_Turret_Bombard_Player_Registrant("DB_Turret_Bombard_Player","Key=Deploy:string,ID=0:int");
+
+void DB_Health_Sound_Timer::Created(GameObject *obj)
+{
+	float timertime;
+	int timernumber;
+	timertime = Get_Float_Parameter("Time");
+	timernumber = Get_Int_Parameter("TimerNum");
+	Commands->Start_Timer(obj,this,timertime,timernumber);
+}
+
+void DB_Health_Sound_Timer::Timer_Expired(GameObject *obj,int number)
+{
+	int timernumber;
+	float minhealth,maxhealth,health;
+	float timertime;
+	int repeat;
+	const char *c;
+	timertime = Get_Float_Parameter("Time");
+	timernumber = Get_Int_Parameter("TimerNum");
+	repeat = Get_Int_Parameter("Repeat");
+	minhealth = Get_Float_Parameter("Min_Health");
+	maxhealth = Get_Float_Parameter("Max_Health");
+	c = Get_Parameter("Sound");
+	if (number == timernumber)
+	{
+		health = Commands->Get_Health(obj);
+		if ((health >= minhealth) && (health <= maxhealth))
+		{
+			Commands->Create_3D_Sound_At_Bone(c,obj,"origin");
+		}
+		if (repeat == 1)
+		{	
+			Commands->Start_Timer(obj,this,timertime,timernumber);
+		}
+	}
+}
+
+ScriptRegistrant<DB_Health_Sound_Timer> DB_Health_Sound_Timer_Registrant("DB_Health_Sound_Timer","Time:float,TimerNum:int,Repeat:int,Sound:string,Min_Health:float,Max_Health:float");
+
+void DB_Visible_Passenger::Created(GameObject *obj)
+{
+	modelid = 0;
+	passengerid = 0;
+	stealth = false;
+	Commands->Start_Timer(obj, this, 0.25f, 1);
+}
+
+void DB_Visible_Passenger::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	
+	if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
+	{
+		int seat=Get_Occupant_Seat(obj,sender);
+		if(seat==Get_Int_Parameter("Seat"))
+		{
+			
+			Vector3 position = Commands->Get_Bone_Position(obj,Get_Parameter("BoneName"));
+			GameObject *object = Commands->Create_Object("Invisible_Object",position);
+			Commands->Disable_All_Collisions(object);
+			Commands->Attach_To_Object_Bone(object,obj,Get_Parameter("BoneName"));
+			Commands->Set_Model(object,Get_Model(sender));
+			modelid = Commands->Get_ID(object);
+			passengerid = Commands->Get_ID(sender);
+			int staticAnim = Get_Int_Parameter("StaticAnim");
+			if(staticAnim)
+			{
+				int frame = Get_Int_Parameter("StaticFrame");
+				Commands->Set_Animation_Frame(object,Get_Parameter("Animation"),frame);
+			}
+			else
+			{
+				Commands->Set_Animation(object,Get_Parameter("Animation"),true,0,Get_Animation_Frame(obj),-1,false);
+			}
+		}
+	}
+	if (type == CUSTOM_EVENT_VEHICLE_EXITED && modelid && sender->Get_ID()==passengerid)
+	{
+		Commands->Destroy_Object(Commands->Find_Object(modelid));
+		modelid = 0;
+		passengerid = 0;
+	}
+}
+
+void DB_Visible_Passenger::Destroyed(GameObject *obj)
+{
+	if (modelid)
+	{
+		Commands->Destroy_Object(Commands->Find_Object(modelid));
+	}
+}
+
+void DB_Visible_Passenger::Timer_Expired(GameObject *obj, int number)
+{
+	bool b = Is_Stealth(obj);
+	if (stealth != b)
+	{
+		stealth = b;
+		if (modelid)
+		{
+			Commands->Set_Is_Rendered(Commands->Find_Object(modelid), !stealth);
+		}
+	}
+	Commands->Start_Timer(obj, this, 0.25f, 1);
+}
+
+void DB_Visible_Passenger::Register_Auto_Save_Variables()
+{
+	Auto_Save_Variable(&passengerid,4,1);
+	Auto_Save_Variable(&modelid,4,1);
+	Auto_Save_Variable(&stealth,1,2);
+}
+
+ScriptRegistrant<DB_Visible_Passenger> DB_Visible_Passenger_Registrant("DB_Visible_Passenger","Seat=0:int,BoneName=seat0:string,Animation=s_a_human.h_a_a0a0:string,StaticAnim=0:int,StaticFrame=0:int");
+
+void DB_Drop_Wreckage_On_Death::Killed(GameObject *obj,GameObject *killer)
+{
+	if(Get_Damage_Warhead()!=25)
+	{
+		if(Find_Named_Definition(Get_Parameter("Wreckage_Preset")) && obj->As_VehicleGameObj())
+		{
+			Matrix3D transform = obj->As_PhysicalGameObj()->Get_Transform();
+			GameObject *CurTank;		
+			CurTank = Commands->Create_Object(Get_Parameter("Wreckage_Preset"),Commands->Get_Position(obj));
+			if(CurTank)
+			{
+				PhysicalGameObj *Shell = (PhysicalGameObj*)Commands->Create_Object("Mounted",Commands->Get_Position(obj));
+				if(Shell)
+				{
+					Shell->Set_Transform(transform);
+					Commands->Set_Model(Shell,Get_Model(CurTank));
+					Shell->Set_Collision_Group(SOLDIER_GHOST_COLLISION_GROUP);
+					Shell->Set_Player_Type(-2);
+					Commands->Enable_Vehicle_Transitions(Shell,false);
+					DefenseObjectClass *WreckDefense = CurTank->As_DamageableGameObj()->Get_Defense_Object();
+					DefenseObjectClass *ShellDefense = Shell->Get_Defense_Object();
+					ShellDefense->Set_Health_Max(WreckDefense->Get_Health_Max());
+					ShellDefense->Set_Shield_Strength_Max(WreckDefense->Get_Shield_Strength_Max());
+					Commands->Set_Health(Shell,WreckDefense->Get_Health());
+					Commands->Set_Shield_Strength(Shell,WreckDefense->Get_Shield_Strength());
+					ShellDefense->Set_Skin(WreckDefense->Get_Skin());
+					ShellDefense->Set_Shield_Type(WreckDefense->Get_Shield_Type());
+					ShellDefense->Set_Damage_Points(0.0f);
+					ShellDefense->Set_Death_Points(0.0f);
+					CurTank->Set_Delete_Pending();
+					Commands->Attach_Script(Shell,"DB_Wreckage_Rebuildable",Commands->Get_Preset_Name(obj));
+					Update_Network_Object(Shell);
+					Force_Orientation_Update(Shell);
+				}
+			}
+		}
+	}
+}
+
+void DB_Wreckage_Rebuildable::Created(GameObject *obj)
+{
+	obj->As_PhysicalGameObj()->Set_Collision_Group(SOLDIER_GHOST_COLLISION_GROUP);
+	Commands->Set_Player_Type(obj,-2);
+	obj->As_DamageableGameObj()->Get_Defense_Object()->Set_Can_Object_Die(false);
+	firstdamage=false;
+	Commands->Start_Timer(obj,this,0.01f,1);
+}
+
+void DB_Wreckage_Rebuildable::Damaged(GameObject *obj,GameObject *damager,float amount)
+{
+	if(!firstdamage)
+	{
+		obj->As_DamageableGameObj()->Get_Defense_Object()->Set_Can_Object_Die(true);
+		firstdamage=true;
+	}
+
+	if (amount < 0)
+	{
+		float TotalHealth = Commands->Get_Health(obj) + Commands->Get_Shield_Strength(obj);
+		const float MaxHealth = Commands->Get_Max_Health(obj) + Commands->Get_Max_Shield_Strength(obj);
+		Vector3 CurPosition = Commands->Get_Position(obj);
+		if (TotalHealth == MaxHealth)
+		{
+			GameObject *CurTank = Commands->Create_Object(Get_Parameter("Vehicle_Preset"),Commands->Get_Position(obj));
+			Commands->Set_Facing(CurTank,Commands->Get_Facing(obj));
+			Commands->Set_Health(CurTank,5);
+			Commands->Set_Shield_Strength(CurTank,0);
+			Commands->Set_Player_Type(CurTank,Commands->Get_Player_Type(damager));
+			CurPosition.Z += 1;
+			Commands->Set_Position(CurTank,CurPosition);
+			if(CurTank->As_VehicleGameObj())
+				Attach_Script_Once(CurTank,"DB_Face_Forward","0.1");
+			Commands->Destroy_Object(obj); 
+			#ifdef DRAGONADE
+				Fix_Stuck_Objects(Commands->Get_Position(obj),10.0f,15.0f,false);
+			#endif // DRAGONADE
+		}
+	}
+}
+
+void DB_Wreckage_Rebuildable::Killed(GameObject *obj,GameObject *killer)
+{
+	Commands->Create_Explosion("Explosion_with_Debris_small",Commands->Get_Position(obj),killer);
+}
+
+void DB_Wreckage_Rebuildable::Timer_Expired(GameObject *obj, int number)
+{
+	if(number==1)
+	{
+		obj->As_DamageableGameObj()->Get_Defense_Object()->Set_Can_Object_Die(true);
+	}
+}
+
+ScriptRegistrant<DB_Drop_Wreckage_On_Death> DB_Drop_Wreckage_On_Death_Registrant("DB_Drop_Wreckage_On_Death","Wreckage_Preset:string");
+ScriptRegistrant<DB_Wreckage_Rebuildable> DB_Wreckage_Rebuildable_Registrant("DB_Wreckage_Rebuildable","Vehicle_Preset:string");
+
+void DB_Supply_Truck::Custom(GameObject *obj, int message, int param, GameObject *sender)
+{
+	if (message == CUSTOM_EVENT_VEHICLE_ENTERED)
+	{
+		if (Commands->Get_ID(Get_Vehicle_Driver(obj)) == Commands->Get_ID(sender))
+		{
+			Send_Message_Player(sender,255,255,255,"Supply Truck: You refill everyone that enters your Truck");
+		}
+		else
+		{
+			if (Get_Vehicle_Driver(obj))
+			{
+				Commands->Give_PowerUp(sender,"CnC_Ammo_Crate",false);
+				Commands->Set_Health(sender,Commands->Get_Max_Health(sender));
+				Commands->Set_Shield_Strength(sender,Commands->Get_Max_Shield_Strength(sender));
+				Send_Message_Player(sender,255,255,255,"Your ammo, health and armor have been refilled");
+			}
+		}
+	}
+}
+
+ScriptRegistrant<DB_Supply_Truck> DB_Supply_Truck_Registrant("DB_Supply_Truck","");
+
+void DB_Damage_Vehicle_Occupants_Area_Killed::Killed(GameObject *obj, GameObject *shooter)
+{
+	if(Get_Float_Parameter("Damage_Distance")>100)
+	{
+		//Console_Input(StringClass::getFormattedString("msg bad occupant damage settings - %s",Commands->Get_Preset_Name(obj)));
+		Set_Parameters_String(",Fire,150,3.5");
+	}
+	Vector3 pos = Commands->Get_Position(obj);
+	GameObject *dmgobj = Commands->Create_Object("Invisible_Object",pos);
+	char prms[512];
+	if(shooter)
+		sprintf(prms,"%f,%s,%f,%i",Get_Float_Parameter("Occupants_Damage_Amount"),Get_Parameter("Occupants_Damage_Warhead"),Get_Float_Parameter("Damage_Distance"),shooter->Get_ID());
+	else
+		sprintf(prms,"%f,%s,%f,%i",Get_Float_Parameter("Occupants_Damage_Amount"),Get_Parameter("Occupants_Damage_Warhead"),Get_Float_Parameter("Damage_Distance"),0);
+	Attach_Script_Once(dmgobj,"DB_Damage_Vehicle_Occupants_Area_Timer",prms);
+}
+
+void DB_Damage_Vehicle_Occupants_Area_Timer::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,0.1f,10000);
+}
+void DB_Damage_Vehicle_Occupants_Area_Timer::Timer_Expired(GameObject *obj, int number)
+{
+	if (number == 10000)
+	{
+		GameObject *damager = Commands->Find_Object(Get_Int_Parameter("ShooterID"));
+		if(damager)
+			Damage_All_Objects_Area_By_Team(Get_Float_Parameter("Occupants_Damage_Amount"),Get_Parameter("Occupants_Damage_Warhead"),Commands->Get_Position(obj),Get_Float_Parameter("Damage_Distance"),damager,1,0,2);
+		else
+			Damage_All_Objects_Area_By_Team(Get_Float_Parameter("Occupants_Damage_Amount"),Get_Parameter("Occupants_Damage_Warhead"),Commands->Get_Position(obj),Get_Float_Parameter("Damage_Distance"),0,1,0,2);
+		Commands->Destroy_Object(obj);
+	}
+}
+
+ScriptRegistrant<DB_Damage_Vehicle_Occupants_Area_Timer> DB_Damage_Vehicle_Occupants_Area_Timer_Registrant("DB_Damage_Vehicle_Occupants_Area_Timer","Occupants_Damage_Amount=1000:float,Occupants_Damage_Warhead=warhead:string,Damage_Distance=1000:float,ShooterID=0:int");
+ScriptRegistrant<DB_Damage_Vehicle_Occupants_Area_Killed> DB_Damage_Vehicle_Occupants_Area_Killed_Registrant("DB_Damage_Vehicle_Occupants_Area_Killed","Area_Damaging_Explosion=explosion:string,Occupants_Damage_Warhead=warhead:string,Occupants_Damage_Amount=1000:float,Damage_Distance=1000:float");
+
+void DB_Set_PT_Slot::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,0.0f,12321);
+	int Type=Get_Int_Parameter("Type");
+		int Team=Get_Int_Parameter("Team");
+		int Slot=Get_Int_Parameter("Slot");
+		int Alt=Get_Int_Parameter("Alt");
+		StringClass Preset=Get_Parameter("Preset");
+		if(stristr(Preset,"mirage"))
+		{
+			Team=0;
+			Type=1;
+			Slot=9;
+			Alt=0;
+		}
+		PurchaseSettingsDefClass *PT = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)Type,(PurchaseSettingsDefClass::TEAM)Team);
+		if(PT)
+		{
+			int PresetID = Get_Definition_ID(Preset);
+			if(PresetID)
+			{
+				if(Alt==0 || Alt==1 || Alt==2)
+				{
+					PT->Set_Alt_Definition(Slot,Alt,PresetID);
+				}
+				else
+				{
+					PT->Set_Definition(Slot,PresetID);
+				}
+			}
+			else
+			{
+				if(Alt==0 || Alt==1 || Alt==2)
+				{
+					PT->Set_Alt_Definition(Slot,Alt,0);
+				}
+				else
+				{
+					PT->Set_Definition(Slot,0);
+				}
+			}
+		}
+
+}
+
+void DB_Set_PT_Slot::Timer_Expired(GameObject *obj,int number)
+{
+#ifdef DRAGONADE
+	if(number==12321)
+	{
+		Console_Input("reload");
+	}
+#endif // DRAGONADE
+}
+
+ScriptRegistrant<DB_Set_PT_Slot> DB_Set_PT_Slot_Registrant("DB_Set_PT_Slot","Team=0:int,Type=0:int,Slot=0:int,Alt=-1:int,Preset=CnC_Nod_Light_Tank:String");

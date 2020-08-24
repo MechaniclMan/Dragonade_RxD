@@ -42,7 +42,7 @@ void DAC4BeaconManager::Settings_Loaded_Event() {
 
 void DAC4BeaconManager::Object_Created_Event(GameObject *obj) {
 	BeaconGameObj *Beacon = (BeaconGameObj*)obj;
-	if (Beacon->Get_Owner()) {
+	if (Commands->Is_A_Star(Beacon->Get_Owner())) {
 		BuildingGameObj *Building = Get_Closest_Building(Beacon->Get_Position(),!Beacon->Get_Player_Type());
 		if (Building) {
 			bool Ped = Beacon->Is_In_Enemy_Base();
@@ -72,7 +72,7 @@ void DAC4BeaconManager::Object_Created_Event(GameObject *obj) {
 }
 
 void DAC4BeaconManager::Beacon_Deploy_Event(BeaconGameObj *Beacon) {
-	if (Beacon->Get_Owner()) {
+	if (Commands->Is_A_Star(Beacon->Get_Owner())) {
 		if (The_Cnc_Game()->BeaconPlacementEndsGame && Beacon->Is_In_Enemy_Base()) {
 			DA::Team_Player_Message(Beacon->Get_Owner(),"Defend my beacon on the pedestal!");
 		}
@@ -104,7 +104,7 @@ void DAC4BeaconManager::Beacon_Deploy_Event(BeaconGameObj *Beacon) {
 }
 
 void DAC4BeaconManager::Beacon_Detonate_Event(BeaconGameObj *Beacon) {
-	if (Beacon->Get_Owner()) {
+	if (Commands->Is_A_Star(Beacon->Get_Owner())) {
 		DALogManager::Write_Log("_BEACON","%ls %s has detonated.",Make_Possessive(Beacon->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(Beacon));
 	}
 	else {
@@ -113,7 +113,7 @@ void DAC4BeaconManager::Beacon_Detonate_Event(BeaconGameObj *Beacon) {
 }
 
 void DAC4BeaconManager::C4_Detonate_Event(C4GameObj *C4) {
-	if (C4->Get_Owner()) {
+	if (Commands->Is_A_Star(C4->Get_Owner())) {
 		DALogManager::Write_Log("_C4","%ls %s has detonated (Attached to: %s)",Make_Possessive(C4->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(C4),C4->Get_Stuck_Object()?DATranslationManager::Translate(C4->Get_Stuck_Object()):"None");
 	}
 	else {
@@ -143,7 +143,7 @@ void DAC4BeaconManager::Poke_Event(cPlayer *Player,PhysicalGameObj *obj) {
 void DAC4BeaconManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	if (((PhysicalGameObj*)Victim)->As_BeaconGameObj()) {
 		BeaconGameObj *Beacon = (BeaconGameObj*)Victim;
-		if (Beacon->Get_Owner()) {
+		if (Commands->Is_A_Star(Beacon->Get_Owner())) {
 			if (Is_Player(Killer)) {
 				DALogManager::Write_Log("_BEACON","%ls disarmed %ls %s.",((SoldierGameObj*)Killer)->Get_Player()->Get_Name(),Make_Possessive(Beacon->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(Beacon));
 			}
@@ -162,7 +162,7 @@ void DAC4BeaconManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Kille
 	}
 	else {
 		C4GameObj *C4 = (C4GameObj*)Victim;
-		if (C4->Get_Owner()) {
+		if (Commands->Is_A_Star(C4->Get_Owner())) {
 			if (Is_Player(Killer)) {
 				DALogManager::Write_Log("_C4","%ls disarmed %ls %s (Attached to: %s)",((SoldierGameObj*)Killer)->Get_Player()->Get_Name(),Make_Possessive(C4->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(C4),C4->Get_Stuck_Object()?DATranslationManager::Translate(C4->Get_Stuck_Object()):"None");
 			}

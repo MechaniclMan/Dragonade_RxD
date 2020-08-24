@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,7 +15,7 @@
 // (float) is merely there to make sure that it uses the float overloads to send the version over network.
 // and to make sure we do not forget the f suffix on the version number.
 #define TT_VERSION_MAGIC '!TT!'
-#define TT_VERSION ((float)4.3f)
+#define TT_VERSION ((float)4.6f)
 
 #define SAFE_DELETE_ARRAY(p)	{ delete[] p; p = NULL; }
 #define SAFE_DELETE(p)			{ delete p; p = NULL; }
