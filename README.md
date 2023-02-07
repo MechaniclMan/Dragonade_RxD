@@ -1,5 +1,81 @@
 # Dragonade_RxD
+
+Dragonade 2.0
+RxD supported version of Dragaonade. 
+Update Scripts 4.7 Update 4.
+
+JonWill
+
+I would like to thank Jerad2142,  dblaney, cyberarm and Unstoppable for their contributions to 4.7 Update 4 (If I missed anyone else who contributed to 4.7 Update 4, sorry).
  
+
+Changes made since 4.7 Update 3:
+
+Made the ssgm.ini setting ExtraKillMessages able to be set per map.
+
+New scripts and fixes to existing scripts by Jerad2142, as a reminder you can check JmgUtility.h to see more details on the scripts added.
+
+Fix RA_Gap_Generator_Building to work properly with base power turning off and on.
+
+Fixed a bug in GSA listing that would cause the listing to be stuck at "Waiting server list..." when a server had 0 digit in it's IP address.
+
+Add console commands destroybuildingbytype, destroybuildingbypreset and destroybuildingbyname to destroy buildings by type, ID, name or preset.
+
+Added bad connection indicator to the "FPS" display (top right corner of the screen) that tells how many times a packet was re-sent and the time left to disconnect.
+
+Added Remote Console feature, that allows executing commands in remote server from client console and relaying server console output to clients using the "Menu" key with optional password authorization.
+
+Players will now see GAMEPLAY IS PENDING when server is waiting all players to load if they loaded before the server, instead of being free in the map.
+
+Add new dialog to tell players if they are waiting for a server load or for other players to load.
+
+Add new engine calls Is_Gameplay_Pending and Set_Gameplay_Pending that lets server code pause/unpause the game (with clients seeing "GAMEPLAY IS PENDING" while its paused)
+
+Fixes to the custom dialog logic.
+
+Add new console command whereami that tells you your current x,y,z position and what map you are on.
+
+Player ID and Name changes are now correctly sent over the network.
+
+Add new engine call Set_Gravity_Multiplier that lets you change the gravity multiplier of an object at runtime and have it sync up over the network.
+
+Owned keycards now display on HUD properly.
+
+Fix incorrect text on Options button & GameSpy Options menu in GSA listing dialog after leaving a game.
+
+Added the server.ini command DisableConsoleOutput which will disable the text output for large servers (console output can cause lag if there is a lot of it).
+
+Set AGT/Obelisk gun teams to building's team so scripts will target the correct enemy.
+
+Add new engine call Is_In_Pathfind_Sector to check if given point is inside a pathfind sector or not.
+
+Add new engine calls Print_Client_Console and Print_Client_Console_Player, to print text into client's console. (at top left corner)
+
+New feature where .mix, .dat and .pkg files contained inside TTFS downloads will be loaded (and the files inside them available to the game). This should improve download times (much faster to download one big mix file than many small files)
+
+Add URL protocol handler support (details to come)
+
+New engine calls Get_Repository_URL, Set_Repository_URL, Get_Screenshot_URL and Set_Screenshot_URL to change the repository and screenshot URLs
+
+New engine call Take_Screenshot to take a client screenshot (same thing as the sshot console command)
+
+Fix a backwards compatibility issue presented in previous version when maximum player count is greater than 1.
+
+Added the server.ini setting UseStockTeamNames, which if set to true will force Game_Info to print out GDI and Nod instead of whatever team name replacements exist for the map/mod. This is useful for brenbot which expects team names to always be the same from map to map.
+
+ 
+
+If you are running 4.7 Update 3 (or any earlier version) you will be automatically updated to 4.7 Update 4.
+
+People wanting a full installer (to install from scratch or to do a full reinstall), a server download or a tools download can find them on the Tiberian Technologies website (www.tiberiantechnologies.org) in the downloads section. Appropriate source code for 4.7 Update 4 as well as the source files for the map fixes in 4.7 (which are the latest fixes we have) can also be found on the site.
+
+People who need Dragonade will have to wait for a compatible version of Dragonade to be released.
+
+ 
+
+
+
+
 Dragonade 1.10
 Created by Whitedragon and Black-Cell.net
 
