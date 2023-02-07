@@ -1,0 +1,65 @@
+﻿Build started 2/7/2023 2:24:06 PM.
+     1>Project "X:\GitHub\Renegade\Dragonade_RxD\shared\shared.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /I. /I..\scripts /I..\MemoryManager /Zi /nologo /W4 /WX /MP /O2 /Ob2 /Oi /Ot /Oy /GL /D MEMORY_MANAGER /D NDEBUG /D SHARED_EXPORTS /D WIN32 /D _CRT_SECURE_NO_DEPRECATE /D _HAS_EXCEPTIONS=0 /D _SECURE_SCL=0 /D _WINDOWS /D _USING_V110_SDK71_ /D _WINDLL /D _MBCS /GF /Gm- /MD /GS- /arch:SSE2 /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Yc"General.h" /Fp"X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\shared.Release.pch" /Fo"X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\\" /Fd"X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt General.cpp
+         General.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /I. /I..\scripts /I..\MemoryManager /Zi /nologo /W4 /WX /MP /O2 /Ob2 /Oi /Ot /Oy /GL /D MEMORY_MANAGER /D NDEBUG /D SHARED_EXPORTS /D WIN32 /D _CRT_SECURE_NO_DEPRECATE /D _HAS_EXCEPTIONS=0 /D _SECURE_SCL=0 /D _WINDOWS /D _USING_V110_SDK71_ /D _WINDLL /D _MBCS /GF /Gm- /MD /GS- /arch:SSE2 /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Yu"General.h" /Fp"X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\shared.Release.pch" /Fo"X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\\" /Fd"X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt ..\scripts\ChunkClasses.cpp ..\scripts\DefinitionMgrClass.cpp ..\scripts\engine_common.cpp ..\scripts\engine_string.cpp ..\scripts\HashTemplateKeyClass.cpp ..\scripts\multilist.cpp ..\scripts\PersistFactoryClass.cpp ..\scripts\PointerRemapClass.cpp ..\scripts\TDBCategoryClass.cpp ..\scripts\TDBObjClass.cpp ..\scripts\TranslateDBClass.cpp shared.cpp
+         ChunkClasses.cpp
+         DefinitionMgrClass.cpp
+         engine_common.cpp
+         engine_string.cpp
+         HashTemplateKeyClass.cpp
+         multilist.cpp
+         PersistFactoryClass.cpp
+         PointerRemapClass.cpp
+         TDBCategoryClass.cpp
+         TDBObjClass.cpp
+         TranslateDBClass.cpp
+         shared.cpp
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"X:\GitHub\Renegade\Dragonade_RxD\bin\Release\shared.dll" /INCREMENTAL:NO /NOLOGO /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"X:\GitHub\Renegade\Dragonade_RxD\bin\Release\shared.pdb" /MAP:"X:\GitHub\Renegade\Dragonade_RxD\bin\Release\shared.map" /SUBSYSTEM:WINDOWS,"5.01" /OPT:REF /OPT:ICF /LTCG /TLBID:1 /RELEASE /BASE:"0x12800000" /DYNAMICBASE /NXCOMPAT /IMPLIB:"X:\GitHub\Renegade\Dragonade_RxD\bin\Release\shared.lib" /MACHINE:X86 /SAFESEH:NO /DLL X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\ChunkClasses.obj
+         X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\DefinitionMgrClass.obj
+         X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\engine_common.obj
+         X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\engine_string.obj
+         X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\HashTemplateKeyClass.obj
+         X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\multilist.obj
+         X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\PersistFactoryClass.obj
+         X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\PointerRemapClass.obj
+         X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\TDBCategoryClass.obj
+         X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\TDBObjClass.obj
+         X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\TranslateDBClass.obj
+         X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\General.obj
+         X:\GitHub\Renegade\Dragonade_RxD\temp\shared\Release\shared.obj
+         X:\GitHub\Renegade\Dragonade_RxD\bin\Release\MemoryManager.lib
+            Creating library X:\GitHub\Renegade\Dragonade_RxD\bin\Release\shared.lib and object X:\GitHub\Renegade\Dragonade_RxD\bin\Release\shared.exp
+         Generating code
+         Finished generating code
+         shared.vcxproj -> X:\GitHub\Renegade\Dragonade_RxD\bin\Release\shared.dll
+       PostBuildEvent:
+         if defined RenPath (
+         del "%RenPath%\shared.dll.removeme" 1>NUL 2>NUL
+         move "%RenPath%\shared.dll" "%RenPath%\shared.dll.removeme" 1>NUL 2>NUL
+         del "%RenPath%\shared.dll.removeme" 1>NUL 2>NUL
+         )
+         
+         if defined RenServerPath (
+         del "%RenServerPath%\shared.dll.removeme" 1>NUL 2>NUL
+         move "%RenServerPath%\shared.dll" "%RenServerPath%\shared.dll.removeme" 1>NUL 2>NUL
+         del "%RenServerPath%\shared.dll.removeme" 1>NUL 2>NUL
+         )
+         
+         verify >NUL
+         
+         if defined RenPath (
+         copy "X:\GitHub\Renegade\Dragonade_RxD\bin\Release\shared.dll" "%RenPath%\shared.dll"
+         )
+         if defined RenServerPath (
+         copy "X:\GitHub\Renegade\Dragonade_RxD\bin\Release\shared.dll" "%RenServerPath%\shared.dll"
+         )
+         
+         :VCEnd
+     1>Done Building Project "X:\GitHub\Renegade\Dragonade_RxD\shared\shared.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:01.53
