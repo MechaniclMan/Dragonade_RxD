@@ -52,14 +52,14 @@ void DAC4BeaconManager::Object_Created_Event(GameObject *obj) {
 			bool Ped = Beacon->Is_In_Enemy_Base();
 			ExplosionDefinitionClass *Explosion = (ExplosionDefinitionClass*)Find_Definition(Beacon->Get_Definition().ExplosionObjDef);
 			if (Explosion) {
-				float Distance = 0.0f;
-				float FakeDistance = 0.0f;
+				float Distance = FLT_MAX;
+				float FakeDistance = FLT_MAX;
 				Building->Find_Closest_Poly(Beacon->Get_Position(),&Distance);
 				PhysicalGameObj *FakeBuilding = Get_Closest_Fake_Building(Beacon->Get_Position(),!Beacon->Get_Player_Type());
 				if (FakeBuilding) {
 					FakeDistance = Commands->Get_Distance(FakeBuilding->Get_Position(),Beacon->Get_Position());
 				}
-				if (BlockFakeBeacons && (!The_Cnc_Game()->BeaconPlacementEndsGame || !Ped) && Distance > Explosion->DamageRadius*Explosion->DamageRadius && FakeDistance > Explosion->DamageRadius) {
+				if (BlockFakeBeacons && (!The_Cnc_Game()->BeaconPlacementEndsGame || !Ped) && !(WWMath::Sqrt(Distance) <= Explosion->DamageRadius || FakeDistance <= Explosion->DamageRadius)) {
 					WeaponClass *Weapon = Beacon->Get_Owner()->Get_Weapon_Bag()->Find_Weapon(Beacon->Get_WeaponDef());
 					if (Weapon) { //Refund the ammo used to plant this beacon.
 						Weapon->Set_Clip_Rounds(Weapon->Get_Clip_Rounds()+Weapon->PrimaryAmmoDefinition->SprayBulletCost);
@@ -87,9 +87,9 @@ void DAC4BeaconManager::Beacon_Deploy_Event(BeaconGameObj *Beacon) {
 				BuildingGameObj *Building = Get_Closest_Building(Beacon->Get_Position(),!Beacon->Get_Player_Type());
 				if (Building) {
 					ExplosionDefinitionClass *Explosion = (ExplosionDefinitionClass*)Find_Definition(Beacon->Get_Definition().ExplosionObjDef);
-					float Distance = 0.0f;
+					float Distance = FLT_MAX;
 					Building->Find_Closest_Poly(Beacon->Get_Position(),&Distance);
-					if (Distance <= Explosion->DamageRadius*Explosion->DamageRadius) {
+					if (WWMath::Sqrt(Distance) <= Explosion->DamageRadius) {
 						DA::Team_Player_Message(Beacon->Get_Owner(),"Defend my beacon at the %s!",DATranslationManager::Translate(Building));
 					}
 					else {
@@ -115,6 +115,9 @@ void DAC4BeaconManager::Beacon_Detonate_Event(BeaconGameObj *Beacon) {
 	if (Commands->Is_A_Star(Beacon->Get_Owner())) {
 		DALogManager::Write_Log("_BEACON","%ls %s has detonated.",Make_Possessive(Beacon->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(Beacon));
 	}
+	else if (Is_Smart_Bot(Beacon->Get_Owner())) {
+		DALogManager::Write_Log("_BEACON", "%ls %s has detonated.", Make_Possessive(Beacon->Get_Owner()->Get_Bot_Tag()), DATranslationManager::Translate(Beacon));
+	}
 	else {
 		DALogManager::Write_Log("_BEACON", "%s has detonated.",A_Or_An_Prepend(DATranslationManager::Translate(Beacon)));
 	}
@@ -124,6 +127,9 @@ void DAC4BeaconManager::C4_Detonate_Event(C4GameObj *C4) {
 	if (Commands->Is_A_Star(C4->Get_Owner())) {
 		DALogManager::Write_Log("_C4","%ls %s has detonated (Attached to: %s)",Make_Possessive(C4->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(C4),C4->Get_Stuck_Object()?DATranslationManager::Translate(C4->Get_Stuck_Object()):"None");
 	}
+	else if (Is_Smart_Bot(C4->Get_Owner())) {
+		DALogManager::Write_Log("_C4", "%ls %s has detonated (Attached to: %s)", Make_Possessive(C4->Get_Owner()->Get_Bot_Tag()), DATranslationManager::Translate(C4), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
+	}
 	else {
 		DALogManager::Write_Log("_C4", "%s has detonated (Attached to: %s)",A_Or_An_Prepend(DATranslationManager::Translate(C4)), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
 	}
@@ -132,7 +138,15 @@ void DAC4BeaconManager::C4_Detonate_Event(C4GameObj *C4) {
 void DAC4BeaconManager::Poke_Event(cPlayer *Player,PhysicalGameObj *obj) {
 	if (obj->As_BeaconGameObj()) {
 		if (((BeaconGameObj*)obj)->Get_Owner()) {
-			DA::Page_Player(Player,"The owner of this beacon is %ls.",((BeaconGameObj*)obj)->Get_Owner()->Get_Player()->Get_Name());
+			if (((BeaconGameObj*)obj)->Get_Owner()->Get_Player()) {
+				DA::Page_Player(Player,"The owner of this beacon is %ls.",((BeaconGameObj*)obj)->Get_Owner()->Get_Player()->Get_Name());
+			}
+			else if (Is_Smart_Bot(((BeaconGameObj*)obj)->Get_Owner())) {
+				DA::Page_Player(Player,"The owner of this beacon is %ls.",((BeaconGameObj*)obj)->Get_Owner()->Get_Bot_Tag());
+			}
+			else {
+				DA::Page_Player(Player,"The owner of this beacon is %s.",a_or_an_Prepend(DATranslationManager::Translate(((BeaconGameObj*)obj)->Get_Owner())));
+			}
 		}
 		else {
 			DA::Page_Player(Player,"This beacon has no owner.");
@@ -140,7 +154,15 @@ void DAC4BeaconManager::Poke_Event(cPlayer *Player,PhysicalGameObj *obj) {
 	}
 	else {
 		if (((C4GameObj*)obj)->Get_Owner()) {
-			DA::Page_Player(Player,"The owner of this C4 is %ls.",((C4GameObj*)obj)->Get_Owner()->Get_Player()->Get_Name());
+			if (((C4GameObj*)obj)->Get_Owner()->Get_Player()) {
+				DA::Page_Player(Player,"The owner of this C4 is %ls.",((C4GameObj*)obj)->Get_Owner()->Get_Player()->Get_Name());
+			}
+			else if (Is_Smart_Bot(((C4GameObj*)obj)->Get_Owner())) {
+				DA::Page_Player(Player,"The owner of this C4 is %ls.",((C4GameObj*)obj)->Get_Owner()->Get_Bot_Tag());
+			}
+			else {
+				DA::Page_Player(Player,"The owner of this C4 is %s.",a_or_an_Prepend(DATranslationManager::Translate(((C4GameObj*)obj)->Get_Owner())));
+			}
 		}
 		else {
 			DA::Page_Player(Player,"This C4 has no owner.");
@@ -155,13 +177,45 @@ void DAC4BeaconManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Kille
 			if (Is_Player(Killer)) {
 				DALogManager::Write_Log("_BEACON","%ls disarmed %ls %s.",((SoldierGameObj*)Killer)->Get_Player()->Get_Name(),Make_Possessive(Beacon->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(Beacon));
 			}
+			else if (Is_Smart_Bot(Killer)) {
+				if (Killer->As_VehicleGameObj()) {
+					DALogManager::Write_Log("_BEACON", "%ls disarmed %ls %s.", ((VehicleGameObj*)Killer)->Get_Driver()->Get_Bot_Tag(), Make_Possessive(Beacon->Get_Owner()->Get_Player()->Get_Name()), DATranslationManager::Translate(Beacon));
+				}
+				else {
+					DALogManager::Write_Log("_BEACON", "%ls disarmed %ls %s.", ((SoldierGameObj*)Killer)->Get_Bot_Tag(), Make_Possessive(Beacon->Get_Owner()->Get_Player()->Get_Name()), DATranslationManager::Translate(Beacon));
+				}
+			}
 			else {
 				DALogManager::Write_Log("_BEACON","%ls %s was disarmed.",Make_Possessive(Beacon->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(Beacon));
+			}
+		}
+		else if (Is_Smart_Bot(Beacon->Get_Owner())) {
+			if (Is_Player(Killer)) {
+				DALogManager::Write_Log("_BEACON", "%ls disarmed %ls %s.", ((SoldierGameObj*)Killer)->Get_Player()->Get_Name(), Make_Possessive(Beacon->Get_Owner()->Get_Bot_Tag()), DATranslationManager::Translate(Beacon));
+			}
+			else if (Is_Smart_Bot(Killer)) {
+				if (Killer->As_VehicleGameObj()) {
+					DALogManager::Write_Log("_BEACON", "%ls disarmed %ls %s.", ((VehicleGameObj*)Killer)->Get_Driver()->Get_Bot_Tag(), Make_Possessive(Beacon->Get_Owner()->Get_Bot_Tag()), DATranslationManager::Translate(Beacon));
+				}
+				else {
+					DALogManager::Write_Log("_BEACON", "%ls disarmed %ls %s.", ((SoldierGameObj*)Killer)->Get_Bot_Tag(), Make_Possessive(Beacon->Get_Owner()->Get_Bot_Tag()), DATranslationManager::Translate(Beacon));
+				}
+			}
+			else {
+				DALogManager::Write_Log("_BEACON", "%ls %s was disarmed.", Make_Possessive(Beacon->Get_Owner()->Get_Bot_Tag()), DATranslationManager::Translate(Beacon));
 			}
 		}
 		else {
 			if (Is_Player(Killer)) {
 				DALogManager::Write_Log("_BEACON", "%ls disarmed %s.", ((SoldierGameObj*)Killer)->Get_Player()->Get_Name(),a_or_an_Prepend(DATranslationManager::Translate(Beacon)));
+			}
+			else if (Is_Smart_Bot(Killer)) {
+				if (Killer->As_VehicleGameObj()) {
+					DALogManager::Write_Log("_BEACON", "%ls disarmed %s.", ((VehicleGameObj*)Killer)->Get_Driver()->Get_Bot_Tag(), a_or_an_Prepend(DATranslationManager::Translate(Beacon)));
+				}
+				else {
+					DALogManager::Write_Log("_BEACON", "%ls disarmed %s.", ((SoldierGameObj*)Killer)->Get_Bot_Tag(), a_or_an_Prepend(DATranslationManager::Translate(Beacon)));
+				}
 			}
 			else {
 				DALogManager::Write_Log("_BEACON", "%s was disarmed.",A_Or_An_Prepend(DATranslationManager::Translate(Beacon)));
@@ -174,13 +228,45 @@ void DAC4BeaconManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Kille
 			if (Is_Player(Killer)) {
 				DALogManager::Write_Log("_C4","%ls disarmed %ls %s (Attached to: %s)",((SoldierGameObj*)Killer)->Get_Player()->Get_Name(),Make_Possessive(C4->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(C4),C4->Get_Stuck_Object()?DATranslationManager::Translate(C4->Get_Stuck_Object()):"None");
 			}
+			else if (Is_Smart_Bot(Killer)) {
+				if (Killer->As_VehicleGameObj()) {
+					DALogManager::Write_Log("_C4", "%ls disarmed %ls %s (Attached to: %s)", ((VehicleGameObj*)Killer)->Get_Driver()->Get_Bot_Tag(), Make_Possessive(C4->Get_Owner()->Get_Player()->Get_Name()), DATranslationManager::Translate(C4), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
+				}
+				else {
+					DALogManager::Write_Log("_C4", "%ls disarmed %ls %s (Attached to: %s)", ((SoldierGameObj*)Killer)->Get_Bot_Tag(), Make_Possessive(C4->Get_Owner()->Get_Player()->Get_Name()), DATranslationManager::Translate(C4), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
+				}
+			}
 			else {
 				DALogManager::Write_Log("_C4","%ls %s was disarmed (Attached to: %s)",Make_Possessive(C4->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(C4),C4->Get_Stuck_Object()?DATranslationManager::Translate(C4->Get_Stuck_Object()):"None");
+			}
+		}
+		else if (Is_Smart_Bot(C4->Get_Owner())) {
+			if (Is_Player(Killer)) {
+				DALogManager::Write_Log("_C4", "%ls disarmed %ls %s (Attached to: %s)", ((SoldierGameObj*)Killer)->Get_Player()->Get_Name(), Make_Possessive(C4->Get_Owner()->Get_Bot_Tag()), DATranslationManager::Translate(C4), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
+			}
+			else if (Is_Smart_Bot(Killer)) {
+				if (Killer->As_VehicleGameObj()) {
+					DALogManager::Write_Log("_C4", "%ls disarmed %ls %s (Attached to: %s)", ((VehicleGameObj*)Killer)->Get_Driver()->Get_Bot_Tag(), Make_Possessive(C4->Get_Owner()->Get_Bot_Tag()), DATranslationManager::Translate(C4), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
+				}
+				else {
+					DALogManager::Write_Log("_C4", "%ls disarmed %ls %s (Attached to: %s)", ((SoldierGameObj*)Killer)->Get_Bot_Tag(), Make_Possessive(C4->Get_Owner()->Get_Bot_Tag()), DATranslationManager::Translate(C4), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
+				}
+			}
+			else {
+				DALogManager::Write_Log("_C4", "%ls %s was disarmed (Attached to: %s)", Make_Possessive(C4->Get_Owner()->Get_Bot_Tag()), DATranslationManager::Translate(C4), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
 			}
 		}
 		else {
 			if (Is_Player(Killer)) {
 				DALogManager::Write_Log("_C4", "%ls disarmed %s (Attached to: %s)", ((SoldierGameObj*)Killer)->Get_Player()->Get_Name(), a_or_an_Prepend(DATranslationManager::Translate(C4)), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
+			}
+			else if (Is_Smart_Bot(Killer)) {
+				if (Killer->As_VehicleGameObj()) {
+					DALogManager::Write_Log("_C4", "%ls disarmed %s (Attached to: %s)", ((VehicleGameObj*)Killer)->Get_Driver()->Get_Bot_Tag(), a_or_an_Prepend(DATranslationManager::Translate(C4)), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
+				}
+				else {
+					DALogManager::Write_Log("_C4", "%ls disarmed %s (Attached to: %s)", ((SoldierGameObj*)Killer)->Get_Bot_Tag(), a_or_an_Prepend(DATranslationManager::Translate(C4)), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
+				}
 			}
 			else {
 				DALogManager::Write_Log("_C4", "%s was disarmed (Attached to: %s)", A_Or_An_Prepend(DATranslationManager::Translate(C4)), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");

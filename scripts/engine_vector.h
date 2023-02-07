@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -221,6 +221,16 @@ public:
 			}
 		}
 		return -1;
+	}
+
+	T* begin()
+	{
+		return Vector;
+	}
+
+	const T* begin() const
+	{
+		return Vector;
 	}
 }; // 0010
 
@@ -490,12 +500,52 @@ public:
 		}
 		return &((*this)[ActiveCount++]);
 	}
+	void Add_Multiple(const DynamicVectorClass<T>& elements)
+	{
+		Add_Multiple(elements.begin(), elements.Count());
+	}
+	void Add_Multiple(const T* elements, int count)
+	{
+		int newcount = ActiveCount + count;
+		Grow(newcount);
+
+		for (int i = 0; i < count; i++)
+		{
+			Vector[ActiveCount + i] = elements[i];
+		}
+		ActiveCount = newcount;
+	}
 	void Add_Multiple(int number_to_add)
 	{
-		for (int i = 0;i < number_to_add;i++)
+		int newcount = ActiveCount + number_to_add;
+		Grow(newcount);
+		ActiveCount = newcount;
+	}
+	// Grows by 1.5x if growth step is 0, otherwise grows according to step size.
+	// Returns false if the resize fails.
+	bool Grow()
+	{
+		if (GrowthStep == 0)
 		{
-			Uninitialized_Add();
+			int len = VectorClass<T>::Length();
+			int newlen = len + (len >> 1); // 1.5x
+			if (newlen < 10) newlen = 10; // minimum length 10
+			return Grow(newlen);
 		}
+		else if (GrowthStep > 0)
+		{
+			return Grow(VectorClass<T>::Length() + GrowthStep);
+		}
+		TT_UNREACHABLE; // somebody set the growth step to negative
+	}
+	// Returns false if the resize fails or we don't need to grow (current length is greater than newlen).
+	bool Grow(int newlen)
+	{
+		if (newlen > Length() && (VectorClass<T>::IsAllocated || !VectorClass<T>::VectorMax))
+		{
+			return Resize(newlen);
+		}
+		return false;
 	}
 }; // 0018
 
@@ -807,11 +857,22 @@ public:
 	{
 		int index = ActiveCount;
 		ActiveCount += number_to_add;
-		if (ActiveCount >= VectorMax)
+		if (ActiveCount > VectorMax)
 		{
-			Grow( ActiveCount );
+			Grow(ActiveCount);
 		}
 		return &Vector[index];
+	}
+	void Add_Multiple(const SimpleDynVecClass<T>& elements)
+	{
+		Add_Multiple(elements.begin(), elements.Count());
+	}
+	void Add_Multiple(const T* elements, int count)
+	{
+		int newcount = ActiveCount + count;
+		if (newcount > VectorMax) Grow(newcount);
+		memcpy(Vector + ActiveCount, elements, count * sizeof(T));
+		ActiveCount = newcount;
 	}
 	bool Add_Head(const T& object)
 	{

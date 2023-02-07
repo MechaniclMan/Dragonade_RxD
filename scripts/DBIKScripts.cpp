@@ -1319,7 +1319,11 @@ void DB_Turret_Spawn::Killed(GameObject *obj,GameObject *killer)
 {
 	GameObject *turret = Commands->Find_Object(turretId);
 	if (turret)
-		Commands->Destroy_Object(turret);
+	{
+		Commands->Set_Health(turret,0);
+		Commands->Set_Shield_Strength(turret,0);
+		Commands->Apply_Damage(obj, 100.00, "BlamoKiller", killer);
+	}
 }
 void DB_Turret_Spawn::Destroyed(GameObject *obj)
 {
@@ -1803,6 +1807,9 @@ void DB_Set_PT_Slot::Created(GameObject *obj)
 			Slot=9;
 			Alt=0;
 		}
+
+
+
 		PurchaseSettingsDefClass *PT = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)Type,(PurchaseSettingsDefClass::TEAM)Team);
 		if(PT)
 		{
@@ -1844,3 +1851,125 @@ void DB_Set_PT_Slot::Timer_Expired(GameObject *obj,int number)
 }
 
 ScriptRegistrant<DB_Set_PT_Slot> DB_Set_PT_Slot_Registrant("DB_Set_PT_Slot","Team=0:int,Type=0:int,Slot=0:int,Alt=-1:int,Preset=CnC_Nod_Light_Tank:String");
+
+void DB_Spawn_When_Killed::Killed(GameObject *obj,GameObject *killer)
+{
+	if(Find_Named_Definition(Get_Parameter("PresetName")))
+	{
+		float facing = Commands->Get_Facing(obj);
+		Vector3 position = Commands->Get_Position(obj);
+		GameObject *newobj;
+		position.Z += Get_Float_Parameter("DropHeight");
+		newobj = Commands->Create_Object(Get_Parameter("PresetName"),position);
+		if(newobj)
+		{
+			if (Get_Int_Parameter("SameFacing"))
+			{
+				Commands->Set_Facing(newobj,facing);
+			}
+			if (Get_Int_Parameter("MatchObjectTeam"))
+			{
+				Set_Object_Type(newobj,Get_Object_Type(obj));
+			}
+			float maxhealth = Commands->Get_Max_Health(newobj);
+			float maxarmor = Commands->Get_Max_Shield_Strength(newobj);
+			if (maxhealth) Commands->Set_Health(newobj,maxhealth*Get_Float_Parameter("HealthPercent") / 100);
+			if (maxarmor) Commands->Set_Shield_Strength(newobj,maxarmor*Get_Float_Parameter("ArmorPercent") / 100);
+			Update_Network_Object(newobj);
+			Force_Position_Update(newobj);
+		#ifdef DRAGONADE
+			if(obj->As_SoldierGameObj())
+			{
+				obj->As_PhysicalGameObj()->Set_Collision_Group(TERRAIN_ONLY_COLLISION_GROUP);
+			}
+			Fix_Stuck_Objects(position,10,15,false);
+		#endif // DRAGONADE
+		}
+	}
+}
+
+void DB_Replace_When_Repaired::Damaged(GameObject *obj,GameObject *damager,float amount)
+{
+	if (amount >= 0 || Commands->Get_Health(obj) < Commands->Get_Max_Health(obj) || Commands->Get_Shield_Strength(obj) < Commands->Get_Max_Shield_Strength(obj))
+	{
+		return;
+	}
+
+	if(Find_Named_Definition(Get_Parameter("PresetName")))
+	{
+		float facing = Commands->Get_Facing(obj);
+		Vector3 position = Commands->Get_Position(obj);
+		GameObject*newobj;
+		Commands->Destroy_Object(obj);
+		position.Z += Get_Float_Parameter("DropHeight");
+		newobj = Commands->Create_Object(Get_Parameter("PresetName"),position);
+		if(newobj)
+		{
+			if (Get_Int_Parameter("SameFacing"))
+			{
+				Commands->Set_Facing(newobj,facing);
+			}
+			if (Get_Int_Parameter("MatchRepairTeam") && damager)
+			{
+				Set_Object_Type(newobj,Get_Object_Type(damager));
+			}
+			float maxhealth = Commands->Get_Max_Health(newobj);
+			float maxarmor = Commands->Get_Max_Shield_Strength(newobj);
+			if (maxhealth) Commands->Set_Health(newobj,maxhealth*Get_Float_Parameter("HealthPercent") / 100);
+			if (maxarmor) Commands->Set_Shield_Strength(newobj,maxarmor*Get_Float_Parameter("ArmorPercent") / 100);
+			Update_Network_Object(newobj);
+			Force_Position_Update(newobj);
+		#ifdef DRAGONADE
+			Fix_Stuck_Objects(position,10,15,false);
+		#endif // DRAGONADE
+		}
+	}
+}
+
+ScriptRegistrant<DB_Spawn_When_Killed> DB_Spawn_When_Killed_Registrant("DB_Spawn_When_Killed","PresetName:string,DropHeight=0:float,SameFacing=1:int,HealthPercent=100.0000:float,ArmorPercent=100.0000:float,MatchObjectTeam=0:int");
+ScriptRegistrant<DB_Replace_When_Repaired> DB_Replace_When_Repaired_Registrant("DB_Replace_When_Repaired","PresetName:string,DropHeight=0:float,SameFacing=1:int,HealthPercent=100.0000:float,ArmorPercent=100.0000:float,MatchRepairTeam=0:int");
+
+void DB_Force_Fire::Created(GameObject *obj)
+{
+	float startDelay = Get_Float_Parameter("StartDelay");
+	if(!startDelay)
+		Start_Attack(obj);
+	else
+		Commands->Start_Timer(obj,this,startDelay,2);
+}
+
+void DB_Force_Fire::Start_Attack(GameObject *obj)
+{
+	if(obj && obj->As_SmartGameObj())
+	{
+		ActionParamsStruct action;
+		action.AttackCheckBlocked = false;
+		action.AttackForceFire = true;
+		action.AttackLocation = obj->As_SmartGameObj()->Get_Targeting_Pos();
+		action.AttackRange = 10000000;
+		action.Priority = 100;
+		action.AttackPrimaryFire = !Get_Int_Parameter("Use_Secondary_Fire");
+		Commands->Action_Attack(obj,action);
+		float time = Get_Float_Parameter("ResetTime");
+		if(time)
+			Commands->Start_Timer(obj,this,time,1);
+	}
+}
+
+void DB_Force_Fire::Timer_Expired(GameObject *obj, int number)
+{
+	if(number == 1)
+		Commands->Action_Reset(obj,101);
+	else if(number == 2)
+		Start_Attack(obj);
+}
+
+void DB_Force_Fire::Detach(GameObject *obj)
+{
+	if(Exe != 4)
+	{
+		Commands->Action_Reset(obj,101);
+	}
+}
+
+ScriptRegistrant<DB_Force_Fire>DB_Force_Fire_Registrant("DB_Force_Fire","UseSecondaryFire=0:int,ResetTime=0:float,StartDelay=0:float");

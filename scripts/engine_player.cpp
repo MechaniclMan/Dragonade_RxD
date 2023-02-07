@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -77,9 +77,13 @@ const char SCRIPTS_API *Get_Player_Name(GameObject *obj)
 	{
 		return newstr("None");
 	}
-	if (!((cPlayer *)o->Get_Player_Data()))
+	if (!((cPlayer *)o->Get_Player_Data()) && o->Get_Bot_Tag().Is_Empty())
 	{
 		return newstr("None");
+	}
+	if (!o->Get_Bot_Tag().Is_Empty())
+	{
+		return WideCharToChar(o->Get_Bot_Tag());
 	}
 	return WideCharToChar(((cPlayer *)o->Get_Player_Data())->Get_Name());
 }
@@ -505,9 +509,13 @@ const wchar_t SCRIPTS_API *Get_Wide_Player_Name(GameObject *obj)
 	{
 		return L"None";
 	}
-	if (!((cPlayer *)o->Get_Player_Data()))
+	if (!((cPlayer *)o->Get_Player_Data()) && o->Get_Bot_Tag().Is_Empty())
 	{
 		return L"None";
+	}
+	if (!o->Get_Bot_Tag().Is_Empty())
+	{
+		return o->Get_Bot_Tag().Peek_Buffer();
 	}
 	return ((cPlayer *)o->Get_Player_Data())->Get_Name().Peek_Buffer();
 }

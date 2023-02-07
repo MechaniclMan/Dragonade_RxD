@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <assemblyIdentity type="win32" name="Westwood.WOLAPI" version="1.20.0.0"></assemblyIdentity>
+  <file name="WOLAPI.dll" hashalg="SHA1" hash="bcb9e125963ed9e8e052ec28a2ad36580c2e7c81">
+    <comClass clsid="{925CDEDF-71B9-11D1-B1C5-006097176556}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" description="RTPatcher Class"></comClass>
+    <comClass clsid="{4DD3BAF5-7579-11D1-B1C6-006097176556}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" description="Chat Class"></comClass>
+    <comClass clsid="{BF6EA206-9E55-11D1-9DC6-006097C54321}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" description="Download Class"></comClass>
+    <comClass clsid="{ABF6FC8F-1344-46DE-84C9-8371118DC3FF}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" description="IGROptions Class"></comClass>
+    <comClass clsid="{B832B0AB-A7D3-11D1-97C3-00609706FA0C}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" description="NetUtil Class"></comClass>
+    <comClass clsid="{8B938191-EF3F-11D1-9808-00609706FA0C}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" description="Chat2 Class"></comClass>
+    <typelib tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" resourceid="1" version="1.3" helpdir="" flags="HASDISKIMAGE"></typelib>
+  <asmv2:hash xmlns:asmv2="urn:schemas-microsoft-com:asm.v2" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"><dsig:Transforms><dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity"></dsig:Transform></dsig:Transforms><dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></dsig:DigestMethod><dsig:DigestValue>gi8Q9bip2nF9rK9zn/JTUSDlsvI=</dsig:DigestValue></asmv2:hash></file>
+  <file name="WOLBrowser.dll" hashalg="SHA1" hash="2ab5223c8cab87886f32e5b4d5b037d29f3a4a7c">
+    <comClass clsid="{E6F33E57-C630-4EAF-AA4A-43F3A59EA608}" tlbid="{3F326056-5B6D-4ECB-8603-B36116D3F857}" description="WOLBrowser Class"></comClass>
+    <typelib tlbid="{3F326056-5B6D-4ECB-8603-B36116D3F857}" resourceid="1" version="1.0" helpdir="" flags="HASDISKIMAGE"></typelib>
+  <asmv2:hash xmlns:asmv2="urn:schemas-microsoft-com:asm.v2" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"><dsig:Transforms><dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity"></dsig:Transform></dsig:Transforms><dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></dsig:DigestMethod><dsig:DigestValue>GrapvP4mqpoowKjSaaRc4hWL7CQ=</dsig:DigestValue></asmv2:hash></file>
+  <comInterfaceExternalProxyStub name="IRTPatcher" iid="{925CDEDE-71B9-11D1-B1C5-006097176556}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" proxyStubClsid32="{925CDEDE-71B9-11D1-B1C5-006097176556}"></comInterfaceExternalProxyStub>
+  <comInterfaceExternalProxyStub name="IRTPatcherEvent" iid="{925CDEE3-71B9-11D1-B1C5-006097176556}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" proxyStubClsid32="{925CDEE3-71B9-11D1-B1C5-006097176556}"></comInterfaceExternalProxyStub>
+  <comInterfaceExternalProxyStub name="IChat" iid="{4DD3BAF4-7579-11D1-B1C6-006097176556}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" proxyStubClsid32="{4DD3BAF4-7579-11D1-B1C6-006097176556}"></comInterfaceExternalProxyStub>
+  <comInterfaceExternalProxyStub name="IChatEvent" iid="{4DD3BAF6-7579-11D1-B1C6-006097176556}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" proxyStubClsid32="{4DD3BAF6-7579-11D1-B1C6-006097176556}"></comInterfaceExternalProxyStub>
+  <comInterfaceExternalProxyStub name="IDownload" iid="{0BF5FCEB-9F03-11D1-9DC7-006097C54321}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" proxyStubClsid32="{00020424-0000-0000-C000-000000000046}"></comInterfaceExternalProxyStub>
+  <comInterfaceExternalProxyStub name="IDownloadEvent" iid="{6869E99D-9FB4-11D1-9DC8-006097C54321}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" proxyStubClsid32="{6869E99D-9FB4-11D1-9DC8-006097C54321}"></comInterfaceExternalProxyStub>
+  <comInterfaceExternalProxyStub name="IIGROptions" iid="{89DD1ECD-0DCA-49D8-8EF3-3375E6D6EE9D}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" proxyStubClsid32="{00020424-0000-0000-C000-000000000046}"></comInterfaceExternalProxyStub>
+  <comInterfaceExternalProxyStub name="INetUtil" iid="{B832B0AA-A7D3-11D1-97C3-00609706FA0C}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" proxyStubClsid32="{B832B0AA-A7D3-11D1-97C3-00609706FA0C}"></comInterfaceExternalProxyStub>
+  <comInterfaceExternalProxyStub name="INetUtilEvent" iid="{B832B0AC-A7D3-11D1-97C3-00609706FA0C}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" proxyStubClsid32="{B832B0AC-A7D3-11D1-97C3-00609706FA0C}"></comInterfaceExternalProxyStub>
+  <comInterfaceExternalProxyStub name="IChat2" iid="{8B938190-EF3F-11D1-9808-00609706FA0C}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" proxyStubClsid32="{8B938190-EF3F-11D1-9808-00609706FA0C}"></comInterfaceExternalProxyStub>
+  <comInterfaceExternalProxyStub name="IChat2Event" iid="{8B938192-EF3F-11D1-9808-00609706FA0C}" tlbid="{925CDED1-71B9-11D1-B1C5-006097176556}" proxyStubClsid32="{8B938192-EF3F-11D1-9808-00609706FA0C}"></comInterfaceExternalProxyStub>
+  <comInterfaceExternalProxyStub name="IWOLBrowserScript" iid="{4A992E36-766A-4FF9-AF04-8541DC43B2DD}" tlbid="{3F326056-5B6D-4ECB-8603-B36116D3F857}" proxyStubClsid32="{00020424-0000-0000-C000-000000000046}"></comInterfaceExternalProxyStub>
+</assembly>

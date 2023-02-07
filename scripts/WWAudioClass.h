@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -198,6 +198,10 @@ public:
 	AudibleSoundClass *	Create_Sound (int definition_id, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
 	AudibleSoundClass *	Create_Sound (const char *def_name, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
 	SoundSceneObjClass *	Find_Sound_Object (uint32 sound_obj_id);
+#if !defined(W3DVIEWER) && !defined(TTLE_EXPORTS)
+	SoundSceneObjClass* Find_Server_Sound_Object(uint32 server_sound_obj_id); // Added by TT
+	uint32 Get_New_Server_Sound_ID(); // Added by TT
+#endif
 	SoundSceneClass *	Get_Sound_Scene (void) const		{ return m_SoundScene; }
 	bool					Set_Cache_Size (int kbytes = DEF_CACHE_SIZE)	{ m_MaxCacheSize = (kbytes * 1024); }
 	int					Get_Cache_Size (void) const						{ return m_MaxCacheSize / 1024; }

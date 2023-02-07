@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -31,7 +31,7 @@ DECLARE_DEFINITION_FACTORY(AudibleSoundDefinitionClass, 20480, "Sound") _SoundDe
 AudibleSoundDefinitionClass::AudibleSoundDefinitionClass() : m_Priority(0.5), m_Volume(1), m_VolumeRandomizer(0), m_Pan(0.5), m_LoopCount(1), m_VirtualChannel(0), m_DropoffRadius(40), m_MaxVolRadius(20), m_Is3DSound(true), m_Type(1), m_StartOffset(0), m_PitchFactor(1), m_PitchFactorRandomizer(0), m_LogicalType(0), m_LogicalNotifDelay(2.0), m_LogicalDropoffRadius(-1.0), m_CreateLogicalSound(false), m_SphereColor(0,0.75,0.75)
 {
 #ifdef PARAM_EDITING_ON
-	NAMED_EDITABLE_PARAM(AudibleSoundDefinitionClass,ParameterClass::TYPE_FILENAME,m_Filename,"Filename");
+	NAMED_EDITABLE_PARAM(AudibleSoundDefinitionClass,ParameterClass::TYPE_SOUND_FILENAME,m_Filename,"Filename");
 	INT_EDITABLE_PARAM(AudibleSoundDefinitionClass,m_VirtualChannel,0,100);
 	NAMED_EDITABLE_PARAM(AudibleSoundDefinitionClass,ParameterClass::TYPE_FLOAT,m_DropoffRadius,"Drop-off Radius");
 	NAMED_EDITABLE_PARAM(AudibleSoundDefinitionClass,ParameterClass::TYPE_FLOAT,m_MaxVolRadius,"Max-Vol Radius");

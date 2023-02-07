@@ -23,6 +23,7 @@
 #include "BuildingGameObj.h"
 #include "SmartGameObj.h"
 #include "SoldierGameObj.h"
+#include "VehicleGameObj.h"
 #include "SoldierGameObjDef.h"
 #include "PowerupGameObjDef.h"
 #include "weaponmgr.h"
@@ -68,7 +69,7 @@ DA_API bool RxDMap();
 DA_API void Set_Emot_Icon_VisableAll(int ID, const char *Model );
 DA_API void Check_Stealth_ICON(int ID, const char *Model, int Team );
 DA_API bool Check_Stealth(int ID);
-DA_API void Set_Emot_Icon(int ID,const char *Model,int Team);
+DA_API void Set_Emot_Icon2(int ID,const char *Model,int Team);
 
 DA_API bool Find_Active_Beacon();
 //DA_API GameObject *Find_Any_Beacon();
@@ -178,6 +179,9 @@ inline bool Is_DecorationPhys(GameObject *obj) {
 inline bool Is_Player(GameObject *obj) {
 	return (obj && obj->As_SoldierGameObj() && ((SoldierGameObj*)obj)->Get_Player_Data());
 }
+inline bool Is_Smart_Bot(GameObject* obj) {
+	return (obj && ((obj->As_SoldierGameObj() && wcslen(((SoldierGameObj*)obj)->Get_Bot_Tag()) > 0) || (obj->As_VehicleGameObj() && ((VehicleGameObj*)obj)->Get_Driver() && wcslen(((VehicleGameObj*)obj)->Get_Driver()->Get_Bot_Tag()) > 0)));
+}
 
 DA_API bool Is_Stealth_Enabled2(GameObject *obj);
 DA_API bool Is_Stealth_Unit(GameObject *obj);
@@ -243,8 +247,9 @@ DA_API bool Exit_Vehicle(SoldierGameObj *Soldier);
 
 DA_API void Reverse_Damage(GameObject *obj,float Amount);
 
-
+DA_API void Set_Emote_Icon(int ID,const char *Model,int Team);
 class SpawnerClass;
 extern REF_DECL(DynamicVectorClass<SpawnerClass*>,SpawnerList);
+extern REF_DECL(float, TimeScale);
 
 #endif

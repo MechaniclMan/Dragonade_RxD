@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -27,14 +27,14 @@ void JFW_User_Controllable_Base_Defence::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -105,14 +105,6 @@ void JFW_User_Controllable_Base_Defence::Enemy_Seen(GameObject *obj,GameObject *
 	}
 }
 
-void JFW_User_Controllable_Base_Defence::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
-	}
-}
-
 void JFW_User_Controllable_Base_Defence::Timer_Expired(GameObject *obj,int number)
 {
 	ActionParamsStruct var;
@@ -180,14 +172,14 @@ void JFW_Base_Defence::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -233,14 +225,6 @@ void JFW_Base_Defence::Enemy_Seen(GameObject *obj,GameObject *enemy)
 		attacktimer = Get_Float_Parameter("AttackTimer");
 		Stop_Timer2(obj,this,2);
 		Commands->Start_Timer(obj,this,attacktimer,2);
-	}
-}
-
-void JFW_Base_Defence::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -307,14 +291,14 @@ void JFW_Base_Defence_No_Aircraft::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -363,14 +347,6 @@ void JFW_Base_Defence_No_Aircraft::Enemy_Seen(GameObject *obj,GameObject *enemy)
 			Stop_Timer2(obj,this,2);
 			Commands->Start_Timer(obj,this,attacktimer,2);
 		}
-	}
-}
-
-void JFW_Base_Defence_No_Aircraft::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -437,14 +413,14 @@ void JFW_Base_Defence_Aircraft_Only::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -493,14 +469,6 @@ void JFW_Base_Defence_Aircraft_Only::Enemy_Seen(GameObject *obj,GameObject *enem
 			Stop_Timer2(obj,this,2);
 			Commands->Start_Timer(obj,this,attacktimer,2);
 		}
-	}
-}
-
-void JFW_Base_Defence_Aircraft_Only::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -568,14 +536,14 @@ void JFW_Base_Defence_Secondary::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -629,14 +597,6 @@ void JFW_Base_Defence_Secondary::Enemy_Seen(GameObject *obj,GameObject *enemy)
 		{
 			primary = true;
 		}
-	}
-}
-
-void JFW_Base_Defence_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -705,14 +665,14 @@ void JFW_Base_Defence_No_Aircraft_Secondary::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -769,14 +729,6 @@ void JFW_Base_Defence_No_Aircraft_Secondary::Enemy_Seen(GameObject *obj,GameObje
 				primary = true;
 			}
 		}
-	}
-}
-
-void JFW_Base_Defence_No_Aircraft_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -845,14 +797,14 @@ void JFW_Base_Defence_Aircraft_Only_Secondary::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -909,14 +861,6 @@ void JFW_Base_Defence_Aircraft_Only_Secondary::Enemy_Seen(GameObject *obj,GameOb
 				primary = true;
 			}
 		}
-	}
-}
-
-void JFW_Base_Defence_Aircraft_Only_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -1008,11 +952,6 @@ void JFW_Base_Defence_Animated::Enemy_Seen(GameObject *obj,GameObject *enemy)
 	}
 }
 
-void JFW_Base_Defence_Animated::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -1070,11 +1009,6 @@ void JFW_Base_Defence_Animated_No_Aircraft::Enemy_Seen(GameObject *obj,GameObjec
 	}
 }
 
-void JFW_Base_Defence_Animated_No_Aircraft::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_No_Aircraft::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -1130,11 +1064,6 @@ void JFW_Base_Defence_Animated_Aircraft_Only::Enemy_Seen(GameObject *obj,GameObj
 			Commands->Action_Attack(obj,params);
 		}
 	}
-}
-
-void JFW_Base_Defence_Animated_Aircraft_Only::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void JFW_Base_Defence_Animated_Aircraft_Only::Timer_Expired(GameObject *obj,int number)
@@ -1198,11 +1127,6 @@ void JFW_Base_Defence_Animated_Secondary::Enemy_Seen(GameObject *obj,GameObject 
 			primary = true;
 		}
 	}
-}
-
-void JFW_Base_Defence_Animated_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void JFW_Base_Defence_Animated_Secondary::Timer_Expired(GameObject *obj,int number)
@@ -1272,11 +1196,6 @@ void JFW_Base_Defence_Animated_No_Aircraft_Secondary::Enemy_Seen(GameObject *obj
 	}
 }
 
-void JFW_Base_Defence_Animated_No_Aircraft_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_No_Aircraft_Secondary::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -1344,11 +1263,6 @@ void JFW_Base_Defence_Animated_Aircraft_Only_Secondary::Enemy_Seen(GameObject *o
 	}
 }
 
-void JFW_Base_Defence_Animated_Aircraft_Only_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_Aircraft_Only_Secondary::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -1380,14 +1294,14 @@ void JFW_Base_Defence_No_VTOL::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -1436,14 +1350,6 @@ void JFW_Base_Defence_No_VTOL::Enemy_Seen(GameObject *obj,GameObject *enemy)
 			Stop_Timer2(obj,this,2);
 			Commands->Start_Timer(obj,this,attacktimer,2);
 		}
-	}
-}
-
-void JFW_Base_Defence_No_VTOL::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -1548,14 +1454,14 @@ void JFW_Base_Defence_VTOL_Only::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -1604,14 +1510,6 @@ void JFW_Base_Defence_VTOL_Only::Enemy_Seen(GameObject *obj,GameObject *enemy)
 			Stop_Timer2(obj,this,2);
 			Commands->Start_Timer(obj,this,attacktimer,2);
 		}
-	}
-}
-
-void JFW_Base_Defence_VTOL_Only::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -1679,14 +1577,14 @@ void JFW_Base_Defence_No_VTOL_Secondary::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -1743,14 +1641,6 @@ void JFW_Base_Defence_No_VTOL_Secondary::Enemy_Seen(GameObject *obj,GameObject *
 				primary = true;
 			}
 		}
-	}
-}
-
-void JFW_Base_Defence_No_VTOL_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -1819,14 +1709,14 @@ void JFW_Base_Defence_VTOL_Only_Secondary::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -1883,14 +1773,6 @@ void JFW_Base_Defence_VTOL_Only_Secondary::Enemy_Seen(GameObject *obj,GameObject
 				primary = true;
 			}
 		}
-	}
-}
-
-void JFW_Base_Defence_VTOL_Only_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -1985,11 +1867,6 @@ void JFW_Base_Defence_Animated_No_VTOL::Enemy_Seen(GameObject *obj,GameObject *e
 	}
 }
 
-void JFW_Base_Defence_Animated_No_VTOL::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_No_VTOL::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -2045,11 +1922,6 @@ void JFW_Base_Defence_Animated_VTOL_Only::Enemy_Seen(GameObject *obj,GameObject 
 			Commands->Action_Attack(obj,params);
 		}
 	}
-}
-
-void JFW_Base_Defence_Animated_VTOL_Only::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void JFW_Base_Defence_Animated_VTOL_Only::Timer_Expired(GameObject *obj,int number)
@@ -2116,11 +1988,6 @@ void JFW_Base_Defence_Animated_No_VTOL_Secondary::Enemy_Seen(GameObject *obj,Gam
 			}
 		}
 	}
-}
-
-void JFW_Base_Defence_Animated_No_VTOL_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void JFW_Base_Defence_Animated_No_VTOL_Secondary::Timer_Expired(GameObject *obj,int number)
@@ -2190,11 +2057,6 @@ void JFW_Base_Defence_Animated_VTOL_Only_Secondary::Enemy_Seen(GameObject *obj,G
 	}
 }
 
-void JFW_Base_Defence_Animated_VTOL_Only_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_VTOL_Only_Secondary::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -2249,11 +2111,6 @@ void JFW_Base_Defence_Animated_Sound::Enemy_Seen(GameObject *obj,GameObject *ene
 		params.AttackCheckBlocked = false;
 		Commands->Action_Attack(obj,params);
 	}
-}
-
-void JFW_Base_Defence_Animated_Sound::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void JFW_Base_Defence_Animated_Sound::Timer_Expired(GameObject *obj,int number)
@@ -2314,11 +2171,6 @@ void JFW_Base_Defence_Animated_Sound_No_Aircraft::Enemy_Seen(GameObject *obj,Gam
 	}
 }
 
-void JFW_Base_Defence_Animated_Sound_No_Aircraft::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_Sound_No_Aircraft::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -2375,11 +2227,6 @@ void JFW_Base_Defence_Animated_Sound_Aircraft_Only::Enemy_Seen(GameObject *obj,G
 			Commands->Action_Attack(obj,params);
 		}
 	}
-}
-
-void JFW_Base_Defence_Animated_Sound_Aircraft_Only::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void JFW_Base_Defence_Animated_Sound_Aircraft_Only::Timer_Expired(GameObject *obj,int number)
@@ -2444,11 +2291,6 @@ void JFW_Base_Defence_Animated_Sound_Secondary::Enemy_Seen(GameObject *obj,GameO
 			primary = true;
 		}
 	}
-}
-
-void JFW_Base_Defence_Animated_Sound_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void JFW_Base_Defence_Animated_Sound_Secondary::Timer_Expired(GameObject *obj,int number)
@@ -2519,11 +2361,6 @@ void JFW_Base_Defence_Animated_Sound_No_Aircraft_Secondary::Enemy_Seen(GameObjec
 	}
 }
 
-void JFW_Base_Defence_Animated_Sound_No_Aircraft_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_Sound_No_Aircraft_Secondary::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -2592,11 +2429,6 @@ void JFW_Base_Defence_Animated_Sound_Aircraft_Only_Secondary::Enemy_Seen(GameObj
 	}
 }
 
-void JFW_Base_Defence_Animated_Sound_Aircraft_Only_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_Sound_Aircraft_Only_Secondary::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -2656,11 +2488,6 @@ void JFW_Base_Defence_Animated_Sound_No_VTOL::Enemy_Seen(GameObject *obj,GameObj
 	}
 }
 
-void JFW_Base_Defence_Animated_Sound_No_VTOL::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_Sound_No_VTOL::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -2717,11 +2544,6 @@ void JFW_Base_Defence_Animated_Sound_VTOL_Only::Enemy_Seen(GameObject *obj,GameO
 			Commands->Action_Attack(obj,params);
 		}
 	}
-}
-
-void JFW_Base_Defence_Animated_Sound_VTOL_Only::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void JFW_Base_Defence_Animated_Sound_VTOL_Only::Timer_Expired(GameObject *obj,int number)
@@ -2789,11 +2611,6 @@ void JFW_Base_Defence_Animated_Sound_No_VTOL_Secondary::Enemy_Seen(GameObject *o
 			}
 		}
 	}
-}
-
-void JFW_Base_Defence_Animated_Sound_No_VTOL_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void JFW_Base_Defence_Animated_Sound_No_VTOL_Secondary::Timer_Expired(GameObject *obj,int number)
@@ -2864,11 +2681,6 @@ void JFW_Base_Defence_Animated_Sound_VTOL_Only_Secondary::Enemy_Seen(GameObject 
 	}
 }
 
-void JFW_Base_Defence_Animated_Sound_VTOL_Only_Secondary::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_Sound_VTOL_Only_Secondary::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -2901,14 +2713,14 @@ void JFW_Base_Defence_Swap::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -2954,14 +2766,6 @@ void JFW_Base_Defence_Swap::Enemy_Seen(GameObject *obj,GameObject *enemy)
 		attacktimer = Get_Float_Parameter("AttackTimer");
 		Stop_Timer2(obj,this,2);
 		Commands->Start_Timer(obj,this,attacktimer,2);
-	}
-}
-
-void JFW_Base_Defence_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -3030,14 +2834,14 @@ void JFW_Base_Defence_No_Aircraft_Swap::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -3085,14 +2889,6 @@ void JFW_Base_Defence_No_Aircraft_Swap::Enemy_Seen(GameObject *obj,GameObject *e
 			attacktimer = Get_Float_Parameter("AttackTimer");
 			Commands->Start_Timer(obj,this,attacktimer,2);
 		}
-	}
-}
-
-void JFW_Base_Defence_No_Aircraft_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -3161,14 +2957,14 @@ void JFW_Base_Defence_Aircraft_Only_Swap::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -3216,14 +3012,6 @@ void JFW_Base_Defence_Aircraft_Only_Swap::Enemy_Seen(GameObject *obj,GameObject 
 			attacktimer = Get_Float_Parameter("AttackTimer");
 			Commands->Start_Timer(obj,this,attacktimer,2);
 		}
-	}
-}
-
-void JFW_Base_Defence_Aircraft_Only_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -3316,11 +3104,6 @@ void JFW_Base_Defence_Animated_Swap::Enemy_Seen(GameObject *obj,GameObject *enem
 	}
 }
 
-void JFW_Base_Defence_Animated_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_Swap::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -3378,11 +3161,6 @@ void JFW_Base_Defence_Animated_No_Aircraft_Swap::Enemy_Seen(GameObject *obj,Game
 			Commands->Action_Attack(obj,params);
 		}
 	}
-}
-
-void JFW_Base_Defence_Animated_No_Aircraft_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void JFW_Base_Defence_Animated_No_Aircraft_Swap::Timer_Expired(GameObject *obj,int number)
@@ -3444,11 +3222,6 @@ void JFW_Base_Defence_Animated_Aircraft_Only_Swap::Enemy_Seen(GameObject *obj,Ga
 	}
 }
 
-void JFW_Base_Defence_Animated_Aircraft_Only_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_Aircraft_Only_Swap::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -3481,14 +3254,14 @@ void JFW_Base_Defence_No_VTOL_Swap::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -3537,14 +3310,6 @@ void JFW_Base_Defence_No_VTOL_Swap::Enemy_Seen(GameObject *obj,GameObject *enemy
 			Stop_Timer2(obj,this,2);
 			Commands->Start_Timer(obj,this,attacktimer,2);
 		}
-	}
-}
-
-void JFW_Base_Defence_No_VTOL_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -3613,14 +3378,14 @@ void JFW_Base_Defence_VTOL_Only_Swap::Created(GameObject *obj)
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	pos = Commands->Get_Position(obj);
-	pos1.X = pos.X - 10;
-	pos1.Y = pos.Y - 10;
+	pos1.X = pos.X - 5;
+	pos1.Y = pos.Y + 8.66025f;
 	pos1.Z = pos.Z + 2;
 	pos2.X = pos.X + 10;
 	pos2.Y = pos.Y;
 	pos2.Z = pos.Z + 2;
-	pos3.X = pos.X + 10;
-	pos3.Y = pos.Y - 10;
+	pos3.X = pos.X - 5;
+	pos3.Y = pos.Y - 8.66025f;
 	pos3.Z = pos.Z + 2;
 	object = Commands->Create_Object("Invisible_Object",pos1);
 	if (object)
@@ -3669,14 +3434,6 @@ void JFW_Base_Defence_VTOL_Only_Swap::Enemy_Seen(GameObject *obj,GameObject *ene
 			Stop_Timer2(obj,this,2);
 			Commands->Start_Timer(obj,this,attacktimer,2);
 		}
-	}
-}
-
-void JFW_Base_Defence_VTOL_Only_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 2)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -3772,11 +3529,6 @@ void JFW_Base_Defence_Animated_No_VTOL_Swap::Enemy_Seen(GameObject *obj,GameObje
 	}
 }
 
-void JFW_Base_Defence_Animated_No_VTOL_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_No_VTOL_Swap::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -3836,11 +3588,6 @@ void JFW_Base_Defence_Animated_VTOL_Only_Swap::Enemy_Seen(GameObject *obj,GameOb
 	}
 }
 
-void JFW_Base_Defence_Animated_VTOL_Only_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_VTOL_Only_Swap::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -3896,11 +3643,6 @@ void JFW_Base_Defence_Animated_Sound_Swap::Enemy_Seen(GameObject *obj,GameObject
 		params.AttackCheckBlocked = false;
 		Commands->Action_Attack(obj,params);
 	}
-}
-
-void JFW_Base_Defence_Animated_Sound_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void JFW_Base_Defence_Animated_Sound_Swap::Timer_Expired(GameObject *obj,int number)
@@ -3963,11 +3705,6 @@ void JFW_Base_Defence_Animated_Sound_No_Aircraft_Swap::Enemy_Seen(GameObject *ob
 	}
 }
 
-void JFW_Base_Defence_Animated_Sound_No_Aircraft_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_Sound_No_Aircraft_Swap::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -4026,11 +3763,6 @@ void JFW_Base_Defence_Animated_Sound_Aircraft_Only_Swap::Enemy_Seen(GameObject *
 			Commands->Action_Attack(obj,params);
 		}
 	}
-}
-
-void JFW_Base_Defence_Animated_Sound_Aircraft_Only_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void JFW_Base_Defence_Animated_Sound_Aircraft_Only_Swap::Timer_Expired(GameObject *obj,int number)
@@ -4093,11 +3825,6 @@ void JFW_Base_Defence_Animated_Sound_No_VTOL_Swap::Enemy_Seen(GameObject *obj,Ga
 	}
 }
 
-void JFW_Base_Defence_Animated_Sound_No_VTOL_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void JFW_Base_Defence_Animated_Sound_No_VTOL_Swap::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -4156,11 +3883,6 @@ void JFW_Base_Defence_Animated_Sound_VTOL_Only_Swap::Enemy_Seen(GameObject *obj,
 			Commands->Action_Attack(obj,params);
 		}
 	}
-}
-
-void JFW_Base_Defence_Animated_Sound_VTOL_Only_Swap::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void JFW_Base_Defence_Animated_Sound_VTOL_Only_Swap::Timer_Expired(GameObject *obj,int number)
@@ -4412,6 +4134,7 @@ void JFW_Base_Defence_Animated_Sound_VTOL_Only_Swap::Custom(GameObject *obj,int 
 
 ScriptRegistrant<JFW_User_Controllable_Base_Defence> JFW_User_Controllable_Base_Defence_Registrant("JFW_User_Controllable_Base_Defence","MinAttackDistance=0.0:float,MaxAttackDistance=300.0:float,AttackTimer=10.0:float");
 ScriptRegistrant<JFW_Base_Defence> JFW_Base_Defence_Registrant("JFW_Base_Defence","MinAttackDistance=0.0:float,MaxAttackDistance=300.0:float,AttackTimer=10.0:float");
+ScriptRegistrant<JFW_Base_Defence> M00_Base_Defense_Registrant("M00_Base_Defense","MinAttackDistance=0:int,MaxAttackDistance=300:int,AttackTimer=10:int");
 ScriptRegistrant<JFW_Base_Defence_No_Aircraft> JFW_Base_Defence_No_Aircraft_Registrant("JFW_Base_Defence_No_Aircraft","MinAttackDistance=0.0:float,MaxAttackDistance=300.0:float,AttackTimer=10.0:float,Preset1:string,Preset2:string,Preset3:string,Preset4:string,Preset5:string,Preset6:string,Preset7:string,Preset8:string");
 ScriptRegistrant<JFW_Base_Defence_Aircraft_Only> JFW_Base_Defence_Aircraft_Only_Registrant("JFW_Base_Defence_Aircraft_Only","MinAttackDistance=0.0:float,MaxAttackDistance=300.0:float,AttackTimer=10.0:float,Preset1:string,Preset2:string,Preset3:string,Preset4:string,Preset5:string,Preset6:string,Preset7:string,Preset8:string");
 ScriptRegistrant<JFW_Base_Defence_Secondary> JFW_Base_Defence_Secondary_Registrant("JFW_Base_Defence_Secondary","MinAttackDistance=0.0:float,MaxAttackDistance=300.0:float,AttackTimer=10.0:float");

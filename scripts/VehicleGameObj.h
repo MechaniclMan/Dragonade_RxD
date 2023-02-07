@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,6 +15,8 @@
 #ifndef TT__VEHICLEGAMEOBJ_H
 #define TT__VEHICLEGAMEOBJ_H
 
+
+
 #include "engine_vector.h"
 #include "SmartGameObj.h"
 #include "PhysClass.h"
@@ -23,7 +25,6 @@
 #ifndef TTLE_EXPORTS
 #include "UndergroundEffectClass.h"
 #endif
-
 class AudibleSoundClass;
 class VehicleGameObjDef;
 class PersistantSurfaceEmitterClass;
@@ -41,7 +42,7 @@ public:
 	virtual	~VehicleGameObj();
 	virtual	void	Init( void );
 	void	Init( const VehicleGameObjDef & definition );
-	SCRIPTS_API const VehicleGameObjDef &Get_Definition( void ) const ;
+	const VehicleGameObjDef SCRIPTS_API & Get_Definition( void ) const ;
 	virtual	bool	Save( ChunkSaveClass & csave );
 	virtual	bool	Load( ChunkLoadClass & cload );
 	virtual	void	On_Post_Load( void );
@@ -100,6 +101,7 @@ public:
 	void	Update_Damage_Meshes( void );
 	float	Get_Squish_Velocity( void) { return Get_Definition().SquishVelocity; }
 	void Script_Enable_Transitions( bool enable )	{	TransitionsEnabled = enable; Create_And_Destroy_Transitions(); }
+	bool Get_Transitions_Enabled ( void ) { return TransitionsEnabled; }
 	static void Set_Precision(void);
 	static bool	Toggle_Target_Steering( void );
 	static void	Set_Target_Steering( bool onoff );
@@ -128,7 +130,7 @@ public:
 	bool Get_Allow_Stealth_While_Empty() const { return AllowStealthWhileEmpty; };
 	void Damage_Meshes_Update() { DamageMeshesUpdate = true; DamageMeshesNetworkUpdate = true; Set_Object_Dirty_Bit(NetworkObjectClass::BIT_FREQUENT, true); }
 	void Set_Occupant(int seat, SoldierGameObj *occupant) {SeatOccupants[seat] = occupant;}
-	bool Is_Underground() {return Peek_Physical_Object()->Get_Collision_Group() == UNDERGROUND_COLLISION_GROUP;}
+	bool Is_Underground() { return Peek_Physical_Object()->Get_Collision_Group() == UNDERGROUND_COLLISION_GROUP; }
 	SCRIPTS_API void Set_Immovable(bool b);
 	bool Is_Immovable() {return Peek_Physical_Object()->Is_Immovable();}
 	void Set_Lock_Team(int team) {LockTeam = (char)team;Set_Object_Dirty_Bit(BIT_RARE,true);} //0 = nod, 1 = gdi, 2 = both
@@ -203,8 +205,8 @@ public:
 #endif
 protected:
 #ifndef TTLE_EXPORTS
-	static REF_DECL(bool,DefaultDriverIsGunner);
-	static REF_DECL(bool,CameraLockedToTurret);
+	static REF_DECL(bool, DefaultDriverIsGunner);
+	static REF_DECL(bool, CameraLockedToTurret);
 #endif
 	Sound3DClass			*Sound; //2416
 	int						EngineSoundState; //2420
@@ -256,7 +258,6 @@ public:
 	void		Aquire_Turret_Bones( void );
 	void		Release_Turret_Bones( void );
 	void        Reset_Sound_Effects( void );
-
 	void		Update_Turret( float weapon_turn, float weapon_tilt );
 protected:
 	void		Update_Sound_Effects( void );
@@ -265,6 +266,7 @@ protected:
 	virtual bool Is_Visible();
 public:
 	virtual int		Check_If_On_Surface(int surface_type);
+
 	void VehicleGameObj::Set_Fixed_Turret_Facing(bool fixed)
 	{
 		if(!LockedTurretFacing)

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -46,6 +46,7 @@
 #define CUSTOM_ROCKETEER_VEHICLEKILLED            (DP88_CUSTOM|MISC|0x03)             //!< Used by dp88_AR_Rocketeer to notify itself when the flight vehicle dies (via JFW_Death_Send_Custom)
 #define CUSTOM_VEHICLE_DEPLOY                     (DP88_CUSTOM|MISC|0x04)             //!< Used by deployable vehicle scripts to notify other scripts of a change in the deployment state, 0 = undeployed, 1 = deploying, 2 = deployed, 3 = undeploying
 #define CUSTOM_RADAR_JAM                          (DP88_CUSTOM|MISC|0x05)             //!< Used by new Radar Jammer scripts to switch radar off and on and also play jamming sounds, 0 = radar off, 1 = radar on
+#define CUSTOM_DEPLOY_STATE_CHANGED               (DP88_CUSTOM|MISC|0x07)             //!< Used by deployable scripts to notify other scripts of a change in the deployment state, 0 = undeployed, 1 = deployed
 
 #define TIMER_MISC_TICK                           (DP88_TIMER|MISC|0x01)              //!< Miscellaneous tick timer for generic use by scripts that implement on-tick events
 #define TIMER_RANDOMWEATHER                       (DP88_TIMER|MISC|0x02)              //!< Used by dp88_randomWeather to do a weather update
@@ -136,6 +137,7 @@
 //#define CUSTOM_TURRETAI_ANIMATIONCOMPLETE         (DP88_CUSTOM|AI|0x02)               //!< Sent from dp88_AI_ChargeTurret_Animation to dp88_AI_ChargeTurret
 #define CUSTOM_AI_DISABLEAI                       (DP88_CUSTOM|AI|0x03)               //!< Custom message that can be sent to a turret AI to disable it
 #define CUSTOM_AI_ENABLEAI                        (DP88_CUSTOM|AI|0x04)               //!< Custom message that can be sent to a turret AI to enable it
+#define CUSTOM_AI_RESET_ACTIONS                   (DP88_CUSTOM|AI|0x05)               //!< Custom message that can be sent to an AI to reset its current actions
 
 #define TIMER_AI_THINK                            (DP88_TIMER|AI|0x01)                //!< Fires every second to process AI actions such as checking target status
 #define TIMER_AI_CHARGE_PRERELOAD_COMPLETE        (DP88_TIMER|AI|0x02)                //!< Used by dp88_AI_ChargedTurret to indicate when pre-reloading is complete
@@ -170,6 +172,10 @@ Unsorted customs and timers
 #define CUSTOM_PRISMTOWER_REQUEST_CHARGING			1144060001
 #define CUSTOM_PRISMTOWER_STOP_CHARGING				1144060002
 
+
+// Custom for changing bot count on a map
+#define CUSTOM_AI_CHANGE_BOTCOUNT					1144062001
+#define CUSTOM_AI_CHANGE_BOTCOUNTTEAM				1144062002
 
 #define TIMER_CLEG_PHASEDEATH					10055222
 #define TIMER_CLEG_CHECKDROPOBJ					10055223

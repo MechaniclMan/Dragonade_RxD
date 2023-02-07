@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@
 
 #include "scripts.h"
 #include "jfwws.h"
+#include "engine_tt.h"
 
 void JFW_Building_Explode_No_Damage::Killed(GameObject *obj,GameObject *killer)
 {
@@ -236,7 +237,10 @@ void JFW_Play_Sound::Custom(GameObject *obj,int type,int param,GameObject *sende
 	if ((Get_Int_Parameter("Frequency_Min") != -1) && (type == CUSTOM_EVENT_SOUND_ENDED))
 	{
 		float random = Commands->Get_Random(Get_Float_Parameter("Frequency_Min"),Get_Float_Parameter("Frequency_Max"));
-		Commands->Start_Timer(obj,this,random,0);
+		if(!Has_Timer(obj,this,0))
+		{
+			Commands->Start_Timer(obj,this,random,0);
+		}
 	}
 }
 
@@ -714,6 +718,7 @@ ScriptRegistrant<JFW_Disable_Physical_Collision> JFW_Disable_Physical_Collision_
 ScriptRegistrant<JFW_Enable_Physical_Collision> JFW_Enable_Physical_Collision_Registrant("JFW_Enable_Physical_Collision","");
 ScriptRegistrant<JFW_DestroyedStateObject> JFW_DestroyedStateObject_Registrant("JFW_DestroyedStateObject","OriginalModelFacing:float,DestroyedModelPreset:string");
 ScriptRegistrant<JFW_Play_Sound> JFW_Play_Sound_Registrant("JFW_Play_Sound","Sound_Preset:string,Is_3D=1:int,Offset:vector3,Offset_Randomness:vector3,Frequency_Min=-1:float,Frequency_Max:float");
+ScriptRegistrant<JFW_Play_Sound> M00_Play_Sound_Registrant("M00_Play_Sound","Sound_Preset:string,Is_3D=1:int,Offset:vector3,Offset_Randomness:vector3,Frequency_Min=-1:float,Frequency_Max:float");
 ScriptRegistrant<JFW_Engine_Sound> JFW_Engine_Sound_Registrant("JFW_Engine_Sound","Preset:string,Bone:string");
 ScriptRegistrant<JFW_Mobius_Script> JFW_Mobius_Script_Registrant("JFW_Mobius_Script","");
 ScriptRegistrant<JFW_Mobius_Script> Dr_Mobius_Script_Registrant("Dr_Mobius_Script","");

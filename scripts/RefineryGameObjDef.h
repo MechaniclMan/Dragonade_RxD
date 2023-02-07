@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -22,6 +22,8 @@ public:
 	~RefineryGameObjDef (void);
 	uint32								Get_Class_ID (void) const;
 	PersistClass *						Create (void) const;
+	float								Get_Funds_Gathered() const { return FundsGathered; }
+	float								Get_Funds_Distributed_Per_Sec() const { return FundsDistributedPerSec; }
 	bool									Save (ChunkSaveClass &csave);
 	bool									Load (ChunkLoadClass &cload);
 	const PersistFactoryClass &	Get_Factory (void) const;

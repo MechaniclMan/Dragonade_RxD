@@ -265,3 +265,18 @@ class DB_Set_PT_Slot : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj,int number);
 };
+
+class DB_Spawn_When_Killed : public ScriptImpClass {
+	void Killed (GameObject *obj,GameObject *killer);
+};
+
+class DB_Replace_When_Repaired : public ScriptImpClass {
+	void Damaged (GameObject *obj,GameObject *damager,float amount);
+};
+
+class DB_Force_Fire : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Start_Attack(GameObject *obj);
+	void Timer_Expired(GameObject *obj, int number);
+	void Detach(GameObject *obj);
+};

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -13,8 +13,24 @@
 
 #include "LoopedAnimationController.h"
 #include "ObserverImpClass.h"
+#include "ReferencerClass.h"
+
+class ActionParamsStruct;
+
+class Pathfind_Help_Implementer
+{
+public:
+	virtual ~Pathfind_Help_Implementer() {};
+	virtual bool Should_Ignore_Blocked_Checking(GameObject *obj) = 0;
+	virtual void Prepare_Getting_Around(GameObject *obj) = 0;
+	virtual void Stop_Getting_Around(GameObject *obj) = 0;
+	virtual void On_Unable_To_Get_Unstuck(GameObject *obj) = 0;
+	// Modify action params during getting unstuck to include target shooting, if any exist
+	virtual ActionParamsStruct Get_Param_Attack_Modifications(ActionParamsStruct params) = 0;
+};
 
 // Forward declaration
+class VehicleGameObj;
 class dp88_AI_Objective;
 class dp88_AI_ChargedTurret_AnimationObserver;
 
@@ -72,10 +88,15 @@ public:
   int secondary_minRange, secondary_maxRange;
 
   // Current target state
-  int targetID;
+  //int targetID;
+  ReferencerClass m_target;
+  bool hasTarget;
   int targetLastSeen;
   float targetPriority;
   bool m_bTargetPrimaryFire;
+
+  // Brain speed
+  float thinkTime;
 
   // Other settings
   bool m_bAiEnabled;
@@ -85,6 +106,16 @@ public:
   bool debug;
   FILE* debugFile;
 
+  // Target types
+  enum TargetType {
+	  SOLDIER = 0,
+	  LIGHT_VEHICLE,
+	  HEAVY_VEHICLE,
+	  FLYING,
+	  BUILDING,
+	  REPAIRABLE,
+	  UNKNOWN
+  };
 
 
 
@@ -126,6 +157,9 @@ public:
   /* Utility functions for both priority calculations and AI scripts to utilise */
   virtual bool IsVehicleEmpty( VehicleGameObj* vobj );
   virtual bool IsVehicleAIEnabled( VehicleGameObj* vobj );
+
+  // "Global" decider about what a unit type is
+  static TargetType GetTargetType(GameObject* obj);
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -138,7 +172,51 @@ public:
 * my custom AI scripts should treat this as a heavy vehicle. Any vehicle without this script will be
 * considered to be a light vehicle.
 */
-class dp88_AI_heavyVehicleMarker : public ScriptImpClass{};
+class dp88_AI_heavyVehicleMarker : public ScriptImpClass
+{
+	void Created(GameObject* obj);
+};
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief danpaul88's Custom AI Building Marker
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* This is a dummy script with no functionality which can be attached to an object to indicate all of
+* my custom AI scripts should treat this as a building.
+*/
+class dp88_AI_Marker_Building : public ScriptImpClass {};
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief danpaul88's Custom AI Heavy Vehicle Marker
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* This is a dummy script with no functionality which can be attached to an object to indicate all of
+* my custom AI scripts should treat this as a heavy vehicle. Any vehicle without this script will be
+* considered to be a light vehicle.
+*/
+class dp88_AI_Marker_HeavyVehicle : public ScriptImpClass {};
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief danpaul88's Custom AI Repair Target Marker
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* This is a dummy script with no functionality which can be attached to an object to indicate all of
+* my custom AI scripts should treat this as a repair target.
+*/
+class dp88_AI_Marker_Repairable : public ScriptImpClass
+{
+public:
+    void Created(GameObject* obj);
+    float Get_Distance_From_Pathfind();
+protected:
+    float pathfindDistance;
+};
 
 // -------------------------------------------------------------------------------------------------
 
@@ -154,12 +232,19 @@ class dp88_AI_Unit : public dp88_customAI
 public:
   // Game Events
   void Created(GameObject *obj);
+  void Detach(GameObject *obj);
   void Timer_Expired(GameObject *obj, int number);
   void Action_Complete(GameObject *obj, int action_id, ActionCompleteReason reason);
 
   // Custom AI initialisation script overloads
   virtual void Init(GameObject *obj);
   virtual void loadSettings(GameObject *obj, bool loadSecondaryFireSettings, bool loadBuildingTargetSettings);
+
+  virtual void Force_Clear_Current_Objective();
+  dp88_AI_Objective* Get_Current_Objective() { return m_pCurrentObjective; }
+
+  // used in combination with Force_Clear_Current_Objective() to invalidate references to objectives when they are deleted (prevents use-after-free bugs)
+  static DynamicVectorClass<dp88_AI_Unit*> ListOfAIUnits;
 
 protected:
   static const int ACTION_ID_MOVE_TO_OBJECTIVE  = 7850001;
@@ -169,7 +254,7 @@ protected:
   void ResetAllActions(GameObject* obj);
 
   // Go to the location of the current objective
-  virtual void GoToObjective(GameObject *obj);
+  virtual void GoToObjective(GameObject *obj, float speed = 1.0f);
 
   // Attack the specified target
   virtual void AttackTarget(GameObject *obj, GameObject *target);
@@ -746,9 +831,10 @@ public:
 
   GameObject* GetGameObject();
 
-  unsigned char GetType()   { return m_type; }
+  unsigned int GetType()    { return m_type; }
   int GetTeam()             { return m_team; }
   int GetRange()            { return m_range; }
+  const char* GetDebugTag() { return m_debugTag; }
 
   /*! Get the priority of this objective for the specified AI unit */
   float GetPriority(GameObject* obj, float distance_modifier);
@@ -757,16 +843,26 @@ public:
   * Finds the most suitable objective of a given type for the specified unit, based on the distance
   * to the objective and their distance modifier
   */
-  static dp88_AI_Objective* GetBestObjective ( GameObject* obj, unsigned char objective_type, float distance_modifier );
+  static dp88_AI_Objective* GetBestObjective ( GameObject* obj, unsigned int objective_type, float distance_modifier, DynamicVectorClass<int> ignoredObjectives );
+
+  /*!
+  * Counts the existing objectives of a given type for the specified team
+  */
+  static int CountObjectives( int team, unsigned int objective_type );
+
+  /*!
+  * Counts the existing valid objectives of a given type for the specified unit
+  */
+  static int CountUnitObjectives( int team, unsigned int objective_type, GameObject* obj, float distance_modifier );
 
   /*! Checks if the specified objective is still valid */
   static bool IsValidObjective ( dp88_AI_Objective* pObjective );
 
   /*! \name Objective types */
   /*! @{ */
-  const static unsigned char TYPE_OFFENSIVE = 1;
-  const static unsigned char TYPE_DEFENSIVE = 2;
-  const static unsigned char TYPE_ENGINEERING = 3;
+  const static unsigned int TYPE_OFFENSIVE = 1;
+  const static unsigned int TYPE_DEFENSIVE = 2;
+  const static unsigned int TYPE_ENGINEERING = 3;
   /*! @} */
 
 protected:
@@ -783,14 +879,15 @@ protected:
   /*! Get the unit type of the specified unit */
   unsigned char GetUnitType(GameObject* obj);
 
-  int m_objID;;
+  //int m_objID;;
 
   /*! \name Cached Script Parameters */
   /*! @{ */
-  unsigned char m_type;
+  unsigned int m_type;
   int m_priority[UNITTYPE_MAX + 1];
   int m_range;
   int m_team;
+  const char* m_debugTag;
   /*! @} */
 
   static DynamicVectorClass<dp88_AI_Objective *> Objectives;

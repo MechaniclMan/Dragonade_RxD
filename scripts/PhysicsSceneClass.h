@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -393,10 +393,6 @@ protected:
 	static bool AllowCollisionFlags[NUM_COLLISION_FLAGS];
 	int DynamicPolyBudget;
 	int StaticPolyBudget;
-#ifdef TT_EXPORTS
-	float mapStaticPolyBudget;
-	float mapDynamicPolyBudget;
-#endif
 	RefMultiListClass<PhysClass> ObjList;
 	RefMultiListClass<PhysClass> StaticObjList;
 	RefMultiListClass<PhysClass> StaticLightList;
@@ -417,5 +413,9 @@ private:
 #endif
 	friend class WW3D;
 	friend class VisOptimizationContextClass;
+#ifdef TT_EXPORTS
+	float mapStaticPolyBudget;
+	float mapDynamicPolyBudget;
+#endif
 }; // 792, WIN: 700
 #endif

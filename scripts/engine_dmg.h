@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,7 +15,9 @@ void SCRIPTS_API Damage_All_Buildings_By_Team(int Team,float Damage,const char *
 void SCRIPTS_API Repair_All_Buildings_By_Team(int Team,int ConstructionYardID,float Health); //repairs all buildings for the team except the passed in ConstructionYardID,0 = Nod,1 = GDI
 void SCRIPTS_API Repair_All_Static_Vehicles_By_Team(int Team,int type); //sends a custom to all vechicles of the team with the DecorationPhys physics type (i.e. all base defense vechicles etc),0 = Nod,1 = GDI,Message is the message to send. Use with JFW_Repair_On_Custom on the vechicles you want repaired to do the actual repairing
 void SCRIPTS_API Set_Max_Health(GameObject *obj,float health); //set the max health of obj
+void SCRIPTS_API Set_Max_Health_Without_Healing(GameObject *obj,float health); //set the max health of obj without setting the actual health to maximum
 void SCRIPTS_API Set_Max_Shield_Strength(GameObject *obj,float shieldstrength); //set the max shield strength of obj
+void SCRIPTS_API Set_Max_Shield_Strength_Without_Healing(GameObject *obj,float shieldstrength); //set the max shield strength of obj without setting the actual health to maximum
 const char SCRIPTS_API *Get_Shield_Type(GameObject *obj); //gets the shield type of obj
 const char SCRIPTS_API *Get_Skin(GameObject *obj); //gets the skin type of obj
 void SCRIPTS_API Set_Skin(GameObject *obj,const char *Skintype); //sets the skin type of obj

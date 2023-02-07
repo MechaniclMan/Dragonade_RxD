@@ -168,7 +168,7 @@ public:
 	}
 
 protected:
-	virtual bool Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay);
+	virtual bool Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay,SoldierGameObj *Owner);
 	virtual void Timer_Expired(int Number,unsigned int Data);
 
 	virtual ~DAVehicleSpawnManagerClass() {

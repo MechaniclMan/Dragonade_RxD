@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -14,6 +14,7 @@
 #include "scripts.h"
 #include "engine.h"
 #include "dp88_ar.h"
+#include "ms.h"
 #include "Definition.h"
 #include "PurchaseSettingsDefClass.h"
 #include "SoldierGameObj.h"
@@ -1031,6 +1032,7 @@ void dp88_Ore_Miner::Custom ( GameObject *obj, int type, int param, GameObject *
 
     // Grant money to team and reset ore load level
     Commands->Give_Money ( obj, (float)m_oreValue, true );
+	MS_AccessHelper::Give_Bot_Credits(Get_Object_Type(obj), (float)m_oreValue);
     m_oreMined = 0;
     m_oreValue = 0;
 
@@ -1453,7 +1455,7 @@ bool dp88_AR_Chrono_Miner::Start_Chronoshift( GameObject *obj )
 
       // OK, got a candidate zone, can we chronoshift here?
       Vector3 zonePos = Commands->Get_Position(zone);
-      if ( Commands->Get_Distance(zonePos,refineryPos) > maxDist || !CanChronoshiftToLocation(obj, zonePos) )
+      if (Vector3::Distance_Squared(zonePos, refineryPos) > maxDist * maxDist || !CanChronoshiftToLocation(obj, zonePos) )
         continue;
 
       // Is this zone in use for another chronoshift operation? If so then we cannot use it
@@ -3276,7 +3278,7 @@ void dp88_AR_Prism_Tower::Custom ( GameObject *obj, int type, int param, GameObj
 {
   // If we recieve a stop charging message from the tower we are currently
   // charging then we should stop all actions
-  if ( type == CUSTOM_PRISMTOWER_STOP_CHARGING && isAssistingTower && Commands->Get_ID(sender) == targetID )
+  if ( type == CUSTOM_PRISMTOWER_STOP_CHARGING && isAssistingTower && sender == m_target )
     StopAssisting(obj);
 
 
@@ -3286,12 +3288,12 @@ void dp88_AR_Prism_Tower::Custom ( GameObject *obj, int type, int param, GameObj
   else if ( type == CUSTOM_PRISMTOWER_REQUEST_CHARGING )
   {
     // Are we idle? If so then there's no reason not to simply start charging immediatly
-    if ( targetID == 0 )
+    if ( !m_target )
       StartAssisting(obj, sender, (float)param);
 
     // Is this request from the tower we are currently charging? If so then update the last seen
     // time and priority and forward the assistance request to any other adjacent towers
-    else if ( isAssistingTower && targetID == Commands->Get_ID(sender) )
+    else if ( isAssistingTower && m_target == sender )
     {
       targetLastSeen = (int)time(NULL);
       targetPriority = (float)param;
@@ -3319,7 +3321,7 @@ void dp88_AR_Prism_Tower::Timer_Expired ( GameObject *obj, int number )
     *   Can this screw up the timings between charging towers and the attacking tower? Need to think
     *   this through sometime and possibly do some experimentation...
     */
-    if ( targetID )
+    if ( m_target )
       SendAssistanceRequests(obj);
 
     /* Refill a single unit of charge if depleted */
@@ -3327,7 +3329,7 @@ void dp88_AR_Prism_Tower::Timer_Expired ( GameObject *obj, int number )
       Set_Current_Clip_Bullets(obj,1);
 
     /* If current bullets > 1 and no enemy seen recently then additional charge is lost */
-    if ( Get_Current_Bullets(obj) > 1 && targetID == 0 )
+    if ( Get_Current_Bullets(obj) > 1 && !m_target )
       Set_Current_Bullets(obj,1);
   }
 
@@ -3342,7 +3344,7 @@ float dp88_AR_Prism_Tower::getPriority( GameObject *obj, GameObject *target )
 {
   // If the target is the tower we are currently charging then return
   // the priority of that charging sequence
-  if ( Commands->Get_ID(target) == targetID && isAssistingTower )
+  if ( m_target == target && isAssistingTower )
     return targetPriority;
 
   // Otherwise run the normal priority calculation
@@ -3354,7 +3356,7 @@ float dp88_AR_Prism_Tower::getPriority( GameObject *obj, GameObject *target )
 bool dp88_AR_Prism_Tower::checkTeam( GameObject *obj, GameObject *target )
 {
   // Return true for the tower we are charging, even though it is on the same team as us
-  if ( Commands->Get_ID(target) == targetID && isAssistingTower )
+  if ( m_target == target && isAssistingTower )
     return true;
 
   // Otherwise run the normal check team function
@@ -3408,7 +3410,7 @@ void dp88_AR_Prism_Tower::stopAttacking ( GameObject* obj )
 void dp88_AR_Prism_Tower::StartAssisting(GameObject* obj, GameObject* tower, float priority)
 {
   // Set our new target ID and priority
-  targetID = Commands->Get_ID(tower);
+  m_target = tower;
   targetPriority = priority;
   targetLastSeen = (int)time(NULL);
   isAssistingTower = true;
@@ -3427,7 +3429,7 @@ void dp88_AR_Prism_Tower::StopAssisting(GameObject* obj)
 {
   if ( isAssistingTower )
   {
-    targetID = NULL;
+    m_target = nullptr;
     targetPriority = 0;
     isAssistingTower = false;
     Commands->Action_Reset(obj, 101.0f);
@@ -3454,7 +3456,7 @@ void dp88_AR_Prism_Tower::SendAssistanceRequests(GameObject* obj)
   // Send out assistance requests to all adjacent towers except the one we are charging, if any
   for ( int i = 0; i < adjacentTowerCount; ++i )
   {
-    if ( adjacentTowers[i] != targetID && Commands->Find_Object(adjacentTowers[i]) != obj)
+    if ( adjacentTowers[i] != m_target->Get_ID() && Commands->Find_Object(adjacentTowers[i]) != obj)
       Commands->Send_Custom_Event(obj, Commands->Find_Object(adjacentTowers[i]), CUSTOM_PRISMTOWER_REQUEST_CHARGING, (int)targetPriority, 0.0f );
   }
 }

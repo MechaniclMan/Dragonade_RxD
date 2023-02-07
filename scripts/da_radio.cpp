@@ -21,6 +21,7 @@
 #include "GameObjManager.h"
 #include "BuildingGameObj.h"
 #include "VehicleGameObj.h"
+#include "SCAnnouncement.h"
 
 void DAExtraRadioCommandsGameFeatureClass::Init() {
 	DAPlayerDataManagerClass<DAExtraRadioCommandsPlayerDataClass>::Init();
@@ -146,7 +147,8 @@ void DAExtraRadioCommandsGameFeatureClass::Radio5_Key_Hook(cPlayer *Player) {
 						if (Vehicle->Get_Occupant(i)) {
 							DA::Team_Player_Message(ID,"Focus fire on %ls (%s)!",Get_Wide_Player_Name(Vehicle->Get_Occupant(i)),DATranslationManager::Translate(LastDamaged));
 							Check_Stealth_ICON(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
-							if (!Is_Stealth_Enabled(LastDamaged)) {
+							//if (!Is_Stealth_Enabled(LastDamaged)) {
+							if (!LastDamaged->As_VehicleGameObj()->Is_Stealth_Enabled()) {
 								Check_Stealth_ICON(Get_Player_ID(Vehicle->Get_Occupant(i)),"o_em_apc.w3d",Player->Get_Player_Type());
 							}
 							Create_2D_WAV_Sound_Team("m00rado_dsgn0053i1gbmg_snd.wav",Player->Get_Player_Type());
@@ -189,14 +191,21 @@ void DAExtraRadioCommandsGameFeatureClass::Radio6_Key_Hook(cPlayer *Player) {
 		if (LastDamaged && Get_Object_Type(LastDamaged) != Player->Get_Player_Type()) {
 			Create_2D_WAV_Sound_Team("m00rado_dsgn0059i1gbmg_snd.wav",Player->Get_Player_Type());
 			if (!LastDamaged || (!LastDamaged->As_SoldierGameObj() && !LastDamaged->As_VehicleGameObj())) {
-				Send_Client_Announcement(-1,Player->Get_Id(),8544,ANNOUNCE_TEAM,0,true,true);
+				SCAnnouncement* RadioEvent = Send_Client_Announcement(0, Player->Get_Id(), 8544, ANNOUNCE_TEAM, 0, false, false);
+				for (SLNode<cPlayer>* z = Get_Player_List()->Head(); z; z = z->Next()) {
+					cPlayer* p = z->Data();
+					if (Player->Is_Active() && p->Get_Player_Type() == Player->Get_Player_Type()) {
+						RadioEvent->Set_Object_Dirty_Bits(Player->Get_Id(), NetworkObjectClass::BIT_CREATION);
+					}
+				}
+				
 				Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 			}
 			else {
 				DA::Team_Player_Message(Player,"Enemy %s spotted!",DATranslationManager::Translate(LastDamaged));
 				if (LastDamaged->As_VehicleGameObj()) {
 					Check_Stealth_ICON(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
-					if (!Is_Stealth_Enabled(LastDamaged)) {
+					if (!LastDamaged->As_VehicleGameObj()->Is_Stealth_Enabled()) {
 						Check_Stealth_ICON(Get_Player_ID(Get_Vehicle_Occupant(LastDamaged,0)),"o_em_chevron.w3d",Player->Get_Player_Type());
 					}
 				}
@@ -335,7 +344,7 @@ void DAExtraRadioCommandsGameFeatureClass::Radio12_Key_Hook(cPlayer *Player) {
 		else {
 			StringClass Translation = DATranslationManager::Translate(Vehicle);
 			DA::Team_Player_Message(Player, "Requesting more %ss for %s rush.", Translation, a_or_an_Prepend(Translation));
-			Set_Emot_Icon(Player->Get_Id(), "o_em_apc.w3d", Player->Get_Player_Type());
+			Set_Emot_Icon2(Player->Get_Id(), "o_em_apc.w3d", Player->Get_Player_Type());
 		}
 	}
 }

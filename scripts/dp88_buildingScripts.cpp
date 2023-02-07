@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,6 +15,7 @@
 #include "engine.h"
 #include "dp88_custom_timer_defines.h"
 #include "dp88_buildingScripts.h"
+#include "ms.h"
 #include "definition.h"
 #include "BaseControllerClass.h"
 #include "WarFactoryGameObj.h"
@@ -1078,6 +1079,8 @@ void dp88_buildingScripts_functionMoneyTrickle::Timer_Expired ( GameObject* obj,
 		int team = Get_Object_Type(obj);
 		if ( team == 0 || team == 1 )
 		{
+			MS_AccessHelper::Give_Bot_Credits(team, Get_Float_Parameter("creditsPerSec"));
+
 			// NB: Calling Give_Money with the building controller as a parameter doesn't seem
 			// to give anyone any money, so get the first player on the team and use them as
 			// the target for Give_Money (true as third param to give to whole team)
@@ -1102,6 +1105,8 @@ void dp88_buildingScripts_functionMoneyGrant::OnBuildingCaptured(GameObject *obj
 {
 	if (team == 0 || team == 1)
 	{
+		MS_AccessHelper::Give_Bot_Credits(team, m_credits);
+
 		GameObject* pFirstPlayer = Find_First_Player(team);
 		if(pFirstPlayer)
 		{

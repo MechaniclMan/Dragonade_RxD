@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -86,8 +86,8 @@ public:
 	static bool I_Am_Only_Client() { return IAmClient && !IAmServer; }
 	static bool I_Am_Only_Server() { return IAmServer && !IAmClient; }
 	static bool I_Am_Client_Server() { return IAmClient && IAmServer;}
-	static void Set_Friendly_Fire_Permitted( bool yes ) { FriendlyFirePermitted = yes; }
-	static bool Is_Friendly_Fire_Permitted( void ) { return FriendlyFirePermitted; }
+	SCRIPTS_API static void Set_Friendly_Fire_Permitted( bool yes ) { FriendlyFirePermitted = yes; }
+	SCRIPTS_API static bool Is_Friendly_Fire_Permitted( void ) { return FriendlyFirePermitted; }
 	static void Set_Beacon_Placement_Ends_Game( bool yes ){ BeaconPlacementEndsGame = yes; }
 	static bool Does_Beacon_Placement_Ends_Game( void )	{ return BeaconPlacementEndsGame; }
 	static void Set_My_Id( int id ) { MyId = id; }

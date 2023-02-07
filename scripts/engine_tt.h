@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -19,6 +19,8 @@
 #include "HashTemplateClass.h"
 #include "SList.h"
 #include "cPlayer.h"
+#include "PurchaseSettingsDefClass.h"
+#include "ScriptedDialogClass.h"
 class ConnectionAcceptanceFilter;
 class WideStringClass;
 class cScTextObj;
@@ -148,6 +150,9 @@ typedef void (*cee) (const char *Explosion, Vector3 &Pos, GameObject *Creator);
 typedef void (*rwpa) (DynamicVectorClass<int> &WaypathIDs);
 typedef void (*rwpo) (int WaypathID, DynamicVectorClass<int> &WaypointIDs);
 typedef void (*gwp) (int WaypathID, int WaypointID, Vector3 &Pos);
+typedef bool (*trc) (const Vector3 &pos1, const Vector3 &pos2, const bool checkDynamicObjects, Vector3 *contactPoint, GameObject *compareObj);
+typedef bool (*iib) (const AABoxClass &box, const Vector3 &pos);
+typedef bool (*cgst) (Vector3 position);
 typedef void (*cl) (const AmmoDefinitionClass *ammodef,Vector3 &start,Vector3 &end);
 typedef void (*gc) (float &cloudcover, float &gloominess);
 typedef void (*gli) (float &intensity, float &startdistance, float &enddistance, float &heading, float &distribution);
@@ -185,6 +190,55 @@ typedef uint32(*gpd) (const Vector3& start, const Vector3& dest, PathfindDistanc
 typedef uint32 (*gpda) (SmartGameObj* pathObj, const Vector3 &dest, PathfindDistanceCallback callback, void *data);
 typedef bool(*gpdb) (SmartGameObj* pathObj, const Vector3& dest, float& distanceResult, PathfindDistanceResult& pathfindResult);
 typedef bool (*cgpd) (uint32 id);
+typedef void (*gmsl) (sint32 team, SoldierGameObj* soldier, Matrix3D &location);
+typedef void (*esbn) (const char *name, bool enable);
+typedef bool (*ipg) ();
+typedef bool (*gcps) (const Vector3 &center, float maxDistance, Vector3 *returnPosition);
+typedef bool (*gcpss) (const Vector3 &center, float maxDistance, Vector3 *returnPosition, float minSectorSize);
+typedef int (*grcs) (int index);
+typedef int (*sei) (SoldierGameObj *obj, int emoticonId);
+typedef bool (*kmd) ();
+typedef bool (*ise) ();
+typedef bool (*iee) ();
+typedef bool (*cbg) (int team);
+typedef bool (*cba) (int team);
+typedef bool (*cbn) (int team);
+typedef bool (*isb) (SoldierGameObj *obj);
+typedef bool (*ioep) (BeaconGameObj *obj);
+typedef void (*fcpp) (BuildingGameObj *building, Vector3 &pos, Vector3 *polyPos);
+typedef void (*sdd) (int text_id, SoldierGameObj* speaker, int* sound_id);
+typedef void (*sddp) (GameObject* player, int text_id, SoldierGameObj* speaker, int* sound_id);
+typedef void (*sddt) (int text_id, SoldierGameObj* speaker, int* sound_id, int team);
+typedef void (*elp) (GameObject* player, bool onoff, float seconds);
+typedef int (*cst) (const char* soundname, const Vector3& position, GameObject* obj2, int team);
+typedef int (*c2dst) (const char* soundname, int team);
+typedef int (*c2dwst) (const char* soundname, int team);
+typedef int (*c2dwstd) (const char* soundname, int team);
+typedef int (*c2dwstc) (const char* soundname, int team);
+typedef int (*c3dwsbt) (const char* soundname, GameObject* obj, const char* bonename, int team);
+typedef int (*c3dsbt) (const char* soundname, GameObject* obj, const char* bonename, int team);
+typedef int (*_Stop_Sound_Player) (GameObject* player, int sound_id, bool destroy_sound);
+typedef int (*_Stop_Sound_Team) (int sound_id, bool destroy_sound, int team);
+typedef int (*ssa) (GameObject *obj,const char *animation,bool looping,const char *subobject,float startFrame,float endFrame,bool blended);
+typedef void (*sts) (float scale);
+typedef int (*ssap) (GameObject *player,GameObject *obj,const char *animation,bool looping,const char *subobject,float startFrame,float endFrame,bool blended);
+typedef int (*wfa) (const char *_FileName, const char *_Text);
+typedef int (*adh) (DialogHook h);
+typedef void (*rdh) (int pos);
+typedef ScriptedMenuDialogClass* (*cmd) (int target);
+typedef ScriptedPopupDialogClass* (*cpd) (int target);
+typedef ScriptedDialogClass* (*idlg) (int id);
+typedef void (*dlg) (ScriptedDialogClass* dialog);
+typedef void (*dhwg) (GameObject* obj, int weapon, int rounds);
+typedef const char* (*gru) ();
+typedef void (*sru) (const char* url);
+typedef void (*tss) (int playerID);
+typedef bool (*iips) (Vector3 point, float maxDistance);
+typedef void (*sgm) (GameObject* obj, float multiplier);
+typedef bool (*iga) ();
+typedef void (*sga) (bool allowed);
+typedef void (*pcc) (const char* text, Vector4 argb_color);
+typedef void (*pccp) (GameObject* player, const char* text, Vector4 argb_color);
 SCRIPTS_API extern gpl Get_Player_List;
 SCRIPTS_API extern gcmi Get_Current_Map_Index;
 SCRIPTS_API extern gm Get_Map;
@@ -329,6 +383,9 @@ SCRIPTS_API extern cee Create_Explosion_Extended;
 SCRIPTS_API extern rwpa Retrieve_Waypaths;
 SCRIPTS_API extern rwpo Retrieve_Waypoints;
 SCRIPTS_API extern gwp Get_Waypoint_Position;
+SCRIPTS_API extern trc Test_Raycast_Collision;
+SCRIPTS_API extern iib Is_Inside_AABox;
+SCRIPTS_API extern cgst Can_Generic_Soldier_Teleport;
 SCRIPTS_API extern cl Create_Lightning;
 SCRIPTS_API extern gc Get_Clouds;
 SCRIPTS_API extern gli Get_Lightning;
@@ -371,6 +428,60 @@ SCRIPTS_API extern gpd Get_Pathfind_Distance; // Deprecated, use Get_Pathfind_Di
 SCRIPTS_API extern gpda Get_Pathfind_Distance_Async; // Returns > 0 when succusful. pathObj must be a vehicle or a soldier
 SCRIPTS_API extern cgpd Cancel_Get_Pathfind_Distance; // Cancels a pathfind distance request. Use the result from Get_Pathfind_Distance_Async/Get_Pathfind_Distance to cancel
 SCRIPTS_API extern gpdb Get_Pathfind_Distance_Blocking; // Returns > 0 when succesful. Solves distances immediately. pathObj must be a vehicle or a soldier
+SCRIPTS_API extern gmsl Get_Multiplayer_Spawn_Location;
+SCRIPTS_API extern esbn Enable_Spawners_By_Name;
+SCRIPTS_API extern ipg Is_Pathfind_Generated;
+SCRIPTS_API extern gcps Get_Closest_Pathfind_Spot;
+SCRIPTS_API extern gcpss Get_Closest_Pathfind_Spot_Size;
+SCRIPTS_API extern grcs Get_Radio_Command_String;
+SCRIPTS_API extern sei Set_Emot_Icon;
+SCRIPTS_API extern kmd Kill_Messages_Disabled;
+SCRIPTS_API extern ise Is_Sidebar_Enabled;
+SCRIPTS_API extern iee Is_Extras_Enabled;
+SCRIPTS_API extern cbg Can_Build_Ground;
+SCRIPTS_API extern cba Can_Build_Air;
+SCRIPTS_API extern cbn Can_Build_Naval;
+SCRIPTS_API extern isb Is_Soldier_Busy;
+SCRIPTS_API extern ioep Is_On_Enemy_Pedestal;
+SCRIPTS_API extern fcpp Find_Closest_Poly_Position;
+SCRIPTS_API extern sdd Say_Dynamic_Dialogue;
+SCRIPTS_API extern sddp Say_Dynamic_Dialogue_Player;
+SCRIPTS_API extern sddt Say_Dynamic_Dialogue_Team;
+SCRIPTS_API extern elp Enable_Letterbox_Player;
+SCRIPTS_API extern cst Create_Sound_Team;
+SCRIPTS_API extern c2dst Create_2D_Sound_Team;
+SCRIPTS_API extern c2dwst Create_2D_WAV_Sound_Team;
+SCRIPTS_API extern c2dwstd Create_2D_WAV_Sound_Team_Dialog;
+SCRIPTS_API extern c2dwstc Create_2D_WAV_Sound_Team_Cinematic;
+SCRIPTS_API extern c3dwsbt Create_3D_WAV_Sound_At_Bone_Team;
+SCRIPTS_API extern c3dsbt Create_3D_Sound_At_Bone_Team;
+SCRIPTS_API extern _Stop_Sound_Player Stop_Sound_Player;
+SCRIPTS_API extern _Stop_Sound_Team Stop_Sound_Team;
+SCRIPTS_API extern ssa Set_Subobject_Animation;
+SCRIPTS_API extern sts Set_Time_Scale;
+SCRIPTS_API extern ssap Set_Subobject_Animation_Player;
+SCRIPTS_API extern wfa Write_File_Async;
+SCRIPTS_API extern adh AddDialogHook;
+SCRIPTS_API extern rdh RemoveDialogHook;
+SCRIPTS_API extern cmd Create_Menu_Dialog;
+SCRIPTS_API extern cpd Create_Popup_Dialog;
+SCRIPTS_API extern idlg Find_Dialog;
+SCRIPTS_API extern dlg Show_Dialog;
+SCRIPTS_API extern dlg Hide_Dialog;
+SCRIPTS_API extern dlg Delete_Dialog;
+SCRIPTS_API extern dhwg Display_HUD_Weapon_Grant_Player;
+SCRIPTS_API extern dhwg Display_HUD_Ammo_Grant_Player;
+SCRIPTS_API extern gru Get_Repository_URL;
+SCRIPTS_API extern sru Set_Repository_URL;
+SCRIPTS_API extern gru Get_Screenshot_URL;
+SCRIPTS_API extern sru Set_Screenshot_URL;
+SCRIPTS_API extern tss Take_Screenshot;
+SCRIPTS_API extern iips Is_In_Pathfind_Sector;
+SCRIPTS_API extern sgm Set_Gravity_Multiplier;
+SCRIPTS_API extern iga Is_Gameplay_Allowed;
+SCRIPTS_API extern sga Set_Gameplay_Allowed;
+SCRIPTS_API extern pcc Print_Client_Console;
+SCRIPTS_API extern pccp Print_Client_Console_Player;
 
 class SCRIPTS_API JFW_Key_Hook_Base : public ScriptImpClass {
 public:
@@ -474,19 +585,17 @@ public:
 SCRIPTS_API void Kill_All_Buildings_By_Team(int Team); //kill all buildings of the specified team,ending the game with the other team winning,0 = Nod,1 = GDI
 SCRIPTS_API void Set_Occupants_Fade(GameObject *obj,float red,float green,float blue,float opacity); //sets the screen fade of all the occupants of a vehicle
 SCRIPTS_API void Enable_Team_Radar(int Team,bool Enable); //enable radar for a given team
-SCRIPTS_API void Create_Sound_Team(const char *soundname,const Vector3 & position,GameObject *obj,int team); //play a 3D sound for a team
-SCRIPTS_API void Create_2D_Sound_Team(const char *soundname,int team); //play a 2D sound for a team
-SCRIPTS_API void Create_2D_WAV_Sound_Team(const char *soundname,int team); //play a 2D WAV sound for a team
-SCRIPTS_API void Create_2D_WAV_Sound_Team_Dialog(const char *soundname,int team); //play a 2D WAV Dialogue sound for a team
-SCRIPTS_API void Create_2D_WAV_Sound_Team_Cinematic(const char *soundname,int team); //play a 2D WAV Cinematic sound for a team
-SCRIPTS_API void Create_3D_WAV_Sound_At_Bone_Team(const char *soundname,GameObject *obj,const char *bonename,int team); //play a 3D WAV sound at a bone for a team
-SCRIPTS_API void Create_3D_Sound_At_Bone_Team(const char *soundname,GameObject *obj,const char *bonename,int team); //play a 3D sound at a bone for a team
 SCRIPTS_API void Send_Message_Team(int team,unsigned int red,unsigned int green,unsigned int blue,const char *msg); //send a message to a team
 SCRIPTS_API void Send_Message_With_Obj_Color(GameObject *obj,const char *Msg); //send a messages in a given objects color
 SCRIPTS_API void Send_Message_With_Team_Color(int Team,const char *Msg); //Send a message in a given teams color
 SCRIPTS_API void Ranged_Gap_Effect(Gap_ListNode* FirstNode); //apply gap effect to all units of a team within a range
 SCRIPTS_API void Ranged_Stealth_On_Team(Gap_ListNode* FirstNode); //Apply stealth to all units in the range of this on the relavent team
 SCRIPTS_API bool Can_Team_Build_Vehicle(int Team); //Can this team build vehicles
+SCRIPTS_API DynamicVectorClass<int> Get_Enlisted_Purchase_Items(int team);//Get all defined IDs of enlisted characters
+SCRIPTS_API DynamicVectorClass<int> Get_Purchase_Items(int team, int defType);//Get all defined IDs in the given purchase list
+SCRIPTS_API bool Is_Infantry_Purchaseable(const char *preset,int team); //is this infantry preset purchaseable? (i.e. it would appear on the sidebar and not be hidden or greyed out. Does not do the cost check but does check unit limits)
+SCRIPTS_API bool Is_Vehicle_Purchaseable(const char *preset,int team); //is this vehicle preset purchaseable? (i.e. it would appear on the sidebar and not be hidden or greyed out. Does not do the cost check but does check unit limits)
+SCRIPTS_API bool Is_Preset_Purchasable_In_List(int id, int team, PurchaseSettingsDefClass::TYPE def); //DA
 
 SCRIPTS_API void SendShaderParam(const char* parameter, const char* value);
 SCRIPTS_API void SendShaderParam(const char* parameter, int value);

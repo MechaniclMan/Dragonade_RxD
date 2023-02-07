@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -12,6 +12,7 @@
 #ifndef SCRIPTS_INCLUDE__ENGINE_SCRIPT_H
 #define SCRIPTS_INCLUDE__ENGINE_SCRIPT_H
 #include "scripts.h"
+#include "engine_string.h"
 #include "SList.h"
 
 SCRIPTS_API void Remove_Script(GameObject *obj,const char *script); //removes all copies of <script> from an object
@@ -52,6 +53,7 @@ SCRIPTS_API void Find_All_Objects_With_Script(const char *script, SList<GameObje
 *   The position to calculate distance from
 */
 SCRIPTS_API void Find_All_Objects_With_Script_By_Distance(const char *script, SList<GameObject>& objects, Vector3 position);
+SCRIPTS_API void Find_All_Vehicles_By_Distance(SList<GameObject>& objects, Vector3 position);
 
 SCRIPTS_API void Send_Custom_Event_To_Objects_With_Script( GameObject *sender, const char *script, int message, int param, float delay ); // Script to send a custom to all objects with a specific script
 SCRIPTS_API void Send_Custom_Event_To_Objects_With_Script_Ranged( GameObject *sender, const char *script, int message, int param, float delay, float range ); // Script to send a custom to all objects with a specific script in a specified range
@@ -113,5 +115,55 @@ SCRIPTS_API void Attach_Script_V ( GameObject* pObj, const char* script, const c
 */
 SCRIPTS_API void Attach_Script_Once_V ( GameObject* pObj, const char* script, const char* params, ... );
 
+class ScriptParameter : public NoEqualsClass<ScriptParameter>
+{
+public:
+	StringClass name;
+	StringClass value;
+	int type;
+};
+
+typedef enum
+{
+	PARAM_TYPE_INT = 0,
+	PARAM_TYPE_FLOAT,
+	PARAM_TYPE_STRING,
+	PARAM_TYPE_BOOL,
+	PARAM_TYPE_ID,
+	PARAM_TYPE_VECTOR3,
+	PARAM_TYPE_ENUM,
+	PARAM_TYPE_EMITTER,
+	PARAM_TYPE_WEAPON,
+	PARAM_TYPE_AMMO,
+	PARAM_TYPE_EXPLOSION,
+	PARAM_TYPE_ANIMATION,
+	PARAM_TYPE_GANG,
+	PARAM_TYPE_FILE,
+	PARAM_TYPE_SOUND,
+	PARAM_TYPE_COLOR,
+	PARAM_TYPE_COUNT
+} PARAM_TYPES;
+
+const char * const PARAM_TYPE_STRINGS[PARAM_TYPE_COUNT] =
+{
+	"int",
+	"float",
+	"string",
+	"bool",
+	"ID",
+	"vector3",
+	"enum",
+	"emitter",
+	"weapon",
+	"ammo",
+	"explosion",
+	"animation",
+	"gang",
+	"file",
+	"sound",
+	"color",
+};
+
+SCRIPTS_API void Get_Script_Parameters(const char *script, DynamicVectorClass<ScriptParameter> &parameters);
 
 #endif

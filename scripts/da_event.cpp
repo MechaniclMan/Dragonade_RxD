@@ -160,7 +160,7 @@ void DAEventManager::Think() {
 			Timers.Delete(i);
 			i--;
 		}
-		else if (GetTickCount()-Timers[i]->StartTime >= Timers[i]->Duration) {
+		else if ((GetTickCount()-Timers[i]->StartTime)*TimeScale >= Timers[i]->Duration) {
 			Timers[i]->Base->Timer_Expired(Timers[i]->Number,Timers[i]->Data);
 			if (Timers[i]->Repeat) {
 				Timers[i]->StartTime = GetTickCount();
@@ -535,31 +535,34 @@ void DAEventManager::Clear_Weapons_Event(WeaponBagClass *Bag) {
 }
 
 void DAEventManager::Beacon_Set_State_Event(BeaconGameObj *Beacon) {
-	if (Beacon->Get_State() == 2) { //Deployed
-		for (int i = 0;i < Events[DAEvent::BEACONDEPLOY].Count();i++) {
-			Events[DAEvent::BEACONDEPLOY][i]->Base->Beacon_Deploy_Event(Beacon);
-		}
-	}
-	else if (Beacon->Get_State() == 3) { //Disarmed
-		if (Beacon->Get_Defense_Object()->Get_Health()) { //If the beacon has no health then it was disarmed by damage and the normal killed event will trigger.
-			for (int i = 0;i < ObjectEvents[DAObjectEvent::KILLDEALT].Count();i++) { //This is for when it gets disarmed by a command or the planter leaving the game.
-				if (ObjectEvents[DAObjectEvent::KILLDEALT][i]->Check_Object_Type(0)) {
-					ObjectEvents[DAObjectEvent::KILLDEALT][i]->Base->Kill_Event(Beacon,0,0,0,0,DADamageType::NORMAL);
-				}
-			}
-			for (int i = 0;i < ObjectEvents[DAObjectEvent::KILLRECEIVED].Count();i++) {
-				if (ObjectEvents[DAObjectEvent::KILLRECEIVED][i]->Check_Object_Type(Beacon)) {
-					ObjectEvents[DAObjectEvent::KILLRECEIVED][i]->Base->Kill_Event(Beacon,0,0,0,0,DADamageType::NORMAL);
-				}
+	if(Is_Player(Beacon->Get_Owner()))
+	{
+		if (Beacon->Get_State() == 2) { //Deployed
+			for (int i = 0;i < Events[DAEvent::BEACONDEPLOY].Count();i++) {
+				Events[DAEvent::BEACONDEPLOY][i]->Base->Beacon_Deploy_Event(Beacon);
 			}
 		}
-	}
-	else if (Beacon->Get_State() == 4) { //Detonated
-		for (int i = 0;i < Events[DAEvent::BEACONDETONATE].Count();i++) {
-			Events[DAEvent::BEACONDETONATE][i]->Base->Beacon_Detonate_Event(Beacon);
+		else if (Beacon->Get_State() == 3) { //Disarmed
+			if (Beacon->Get_Defense_Object()->Get_Health()) { //If the beacon has no health then it was disarmed by damage and the normal killed event will trigger.
+				for (int i = 0;i < ObjectEvents[DAObjectEvent::KILLDEALT].Count();i++) { //This is for when it gets disarmed by a command or the planter leaving the game.
+					if (ObjectEvents[DAObjectEvent::KILLDEALT][i]->Check_Object_Type(0)) {
+						ObjectEvents[DAObjectEvent::KILLDEALT][i]->Base->Kill_Event(Beacon,0,0,0,0,DADamageType::NORMAL);
+					}
+				}
+				for (int i = 0;i < ObjectEvents[DAObjectEvent::KILLRECEIVED].Count();i++) {
+					if (ObjectEvents[DAObjectEvent::KILLRECEIVED][i]->Check_Object_Type(Beacon)) {
+						ObjectEvents[DAObjectEvent::KILLRECEIVED][i]->Base->Kill_Event(Beacon,0,0,0,0,DADamageType::NORMAL);
+					}
+				}
+			}
 		}
+		else if (Beacon->Get_State() == 4) { //Detonated
+			for (int i = 0;i < Events[DAEvent::BEACONDETONATE].Count();i++) {
+				Events[DAEvent::BEACONDETONATE][i]->Base->Beacon_Detonate_Event(Beacon);
+			}
+		}
+		Update_Network_Object(Beacon);
 	}
-	Update_Network_Object(Beacon);
 }
 
 bool DAEventManager::C4_Detonate_Request_Event(C4GameObj *C4) {
@@ -624,11 +627,26 @@ bool DAEventManager::Request_Vehicle_Event(VehicleFactoryGameObj *Factory,unsign
 		return false;
 	}
 	for (int i = 0;i < Events[DAEvent::REQUESTVEHICLE].Count();i++) {
-		if (!Events[DAEvent::REQUESTVEHICLE][i]->Base->Request_Vehicle_Event(Factory,VehicleDef,Owner?Owner->Get_Player():0,Delay)) {
+		if (!Events[DAEvent::REQUESTVEHICLE][i]->Base->Request_Vehicle_Event(Factory,VehicleDef,Owner?Owner->Get_Player():0,Delay,Owner)) {
 			return false;
 		}
 	}
 	return true;
+}
+
+void DAEventManager::Dialog_Event(int PlayerID, int DialogID, int ControlID, DialogMessageType MessageType) {
+	cPlayer *Player = Find_Player(PlayerID);
+	if (Player) {
+		ScriptedDialogClass *Dialog = Find_Dialog(DialogID);
+		if (Dialog) {
+			ScriptedControlClass* Control = Dialog->Find_Control(ControlID);
+			if (Control) {
+				for (int i = 0; i < Events[DAEvent::DIALOG].Count(); i++) {
+					Events[DAEvent::DIALOG][i]->Base->Dialog_Event(Player, MessageType, Dialog, Control);
+				}
+			}
+		}
+	}
 }
 
 
@@ -831,7 +849,7 @@ void DAEventManager::DAEventObserverClass::Destroyed(GameObject *obj) {
 	if (Vehicle) {
 		int Seats = Vehicle->Get_Definition().Get_Seat_Count();
 		for (int j = 0;j < Seats;j++) {
-			if (Vehicle->Get_Occupant(j)) {
+			if (Vehicle->Get_Occupant(j) && Commands->Is_A_Star(Vehicle->Get_Occupant(j))) {
 				for (int i = 0;i < Events[DAEvent::VEHICLEEXIT].Count();i++) {
 					Events[DAEvent::VEHICLEEXIT][i]->Base->Vehicle_Exit_Event(Vehicle,Vehicle->Get_Occupant(j)->Get_Player(),j);
 				}
@@ -887,6 +905,7 @@ void DAEventManager::Init() {
 	AddRadioHook(Radio_Event);
 	AddStockDamageHook(Stock_Client_Damage_Request_Event);
 	AddTtDamageHook(TT_Client_Damage_Request_Event);
+	AddDialogHook(Dialog_Event);
 
 	static ObjectCreateHookStruct ObjectHook;
 	ObjectHook.hook = Object_Created_Event;

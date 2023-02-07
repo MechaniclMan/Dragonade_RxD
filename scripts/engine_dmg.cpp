@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -161,6 +161,20 @@ void SCRIPTS_API Set_Max_Health(GameObject *obj,float health)
 	Commands->Set_Health(obj,health);
 }
 
+void SCRIPTS_API Set_Max_Health_Without_Healing(GameObject *obj,float health)
+{
+	if (!obj)
+	{
+		return;
+	}
+	DamageableGameObj *o = obj->As_DamageableGameObj();
+	if (!o)
+	{
+		return;
+	}
+	o->Get_Defense_Object()->Set_Health_Max(health);
+}
+
 void SCRIPTS_API Set_Max_Shield_Strength(GameObject *obj,float shieldstrength)
 {
 	if (!obj)
@@ -174,6 +188,20 @@ void SCRIPTS_API Set_Max_Shield_Strength(GameObject *obj,float shieldstrength)
 	}
 	o->Get_Defense_Object()->Set_Shield_Strength_Max(shieldstrength);
 	Commands->Set_Shield_Strength(obj,shieldstrength);
+}
+
+void SCRIPTS_API Set_Max_Shield_Strength_Without_Healing(GameObject *obj,float shieldstrength)
+{
+	if (!obj)
+	{
+		return;
+	}
+	DamageableGameObj *o = obj->As_DamageableGameObj();
+	if (!o)
+	{
+		return;
+	}
+	o->Get_Defense_Object()->Set_Shield_Strength_Max(shieldstrength);
 }
 
 const char SCRIPTS_API *Get_Shield_Type(GameObject *obj)
@@ -226,6 +254,8 @@ void SCRIPTS_API Damage_All_Vehicles_Area(float Damage,const char *Warhead,const
 	{
 		return;
 	}
+	Vector3 TestPosition = Position;
+	TestPosition.Z = 0;
 	SLNode<VehicleGameObj> *x = GameObjManager::VehicleGameObjList.Head();
 	while (x)
 	{
@@ -233,10 +263,9 @@ void SCRIPTS_API Damage_All_Vehicles_Area(float Damage,const char *Warhead,const
 		if (obj) 
 		{
 			Vector3 ObjPosition = Commands->Get_Position(obj);
-			Vector3 TestPosition = Position;
+
 			ObjPosition.Z = 0;
-			TestPosition.Z = 0;
-			if ((Commands->Get_Distance(ObjPosition,TestPosition) <= Distance) && (Commands->Get_ID(obj) != Commands->Get_ID(Host)))
+			if ((Vector3::Distance_Squared(ObjPosition, TestPosition) <= Distance * Distance) && (Commands->Get_ID(obj) != Commands->Get_ID(Host)))
 			{
 				Commands->Apply_Damage(obj,Damage,Warhead,Damager);
 			}
@@ -251,6 +280,8 @@ void SCRIPTS_API Damage_All_Objects_Area(float Damage,const char *Warhead,const 
 	{
 		return;
 	}
+	Vector3 TestPosition = Position;
+	TestPosition.Z = 0;
 	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
 	while (x) 
 	{
@@ -263,10 +294,8 @@ void SCRIPTS_API Damage_All_Objects_Area(float Damage,const char *Warhead,const 
 		if (o2)
 		{
 			Vector3 ObjPosition = Commands->Get_Position(o2);
-			Vector3 TestPosition = Position;
 			ObjPosition.Z = 0;
-			TestPosition.Z = 0;
-			if ((Commands->Get_Distance(ObjPosition,TestPosition) <= Distance) && (Commands->Get_ID(o2) != Commands->Get_ID(Host)))
+			if ((Vector3::Distance_Squared(ObjPosition, TestPosition) <= Distance * Distance) && (Commands->Get_ID(o2) != Commands->Get_ID(Host)))
 			{
 				Commands->Apply_Damage(o2,Damage,Warhead,Damager);
 			}
@@ -289,7 +318,7 @@ void SCRIPTS_API Damage_All_Objects_Area_By_Team(float Damage,const char *Warhea
 				{
 					Vector3 ObjPosition = Commands->Get_Position(o);
 					Vector3 TestPosition = Position;
-					if (Commands->Get_Distance(ObjPosition,TestPosition) <= Distance)
+					if (Vector3::Distance_Squared(ObjPosition, TestPosition) <= Distance * Distance)
 					{
 						Commands->Apply_Damage(o,Damage,Warhead,Damager);
 					}
@@ -316,9 +345,7 @@ void SCRIPTS_API Ranged_Damage_To_Buildings(float Damage,const char *Warhead,Vec
 					Vector3 pos1 = Commands->Get_Position(o);
 					Vector3 pos2 = Location;
 
-					float Distance = Commands->Get_Distance(pos1,pos2);
-
-					if (Distance <= DamageRadius)
+					if (Vector3::Distance_Squared(pos1, pos2) <= DamageRadius * DamageRadius)
 					{
 						Commands->Apply_Damage(o,Damage,Warhead,Damager);
 					}
@@ -377,9 +404,7 @@ void SCRIPTS_API Ranged_Percentage_Damage_To_Buildings(float Percentage,const ch
 					Vector3 pos1 = Commands->Get_Position(o);
 					Vector3 pos2 = Location;
 
-					float Distance = Commands->Get_Distance(pos1,pos2);
-
-					if (Distance <= DamageRadius)
+					if (Vector3::Distance_Squared(pos1, pos2) <= DamageRadius * DamageRadius)
 					{
 						float Max_Health = Commands->Get_Max_Health(o);
 						float Damage = Max_Health*Percentage;
@@ -409,8 +434,7 @@ void SCRIPTS_API Ranged_Damage_To_Buildings_Team(int Team,float Damage,const cha
 					{
 						Vector3 pos1 = Commands->Get_Position(o);
 						Vector3 pos2 = Location;
-						float Distance = Commands->Get_Distance(pos1,pos2);
-						if (Distance <= DamageRadius)
+						if (Vector3::Distance_Squared(pos1, pos2) <= DamageRadius * DamageRadius)
 						{
 							Commands->Apply_Damage(o,Damage,Warhead,Damager);
 						}
@@ -472,8 +496,7 @@ void SCRIPTS_API Ranged_Percentage_Damage_To_Buildings_Team(int Team,float Perce
 					{
 						Vector3 pos1 = Commands->Get_Position(o);
 						Vector3 pos2 = Location;
-						float Distance = Commands->Get_Distance(pos1,pos2);
-						if (Distance <= DamageRadius)
+						if (Vector3::Distance_Squared(pos1, pos2) <= DamageRadius * DamageRadius)
 						{
 							float Max_Health = Commands->Get_Max_Health(o);
 							float Damage = Max_Health*Percentage;
@@ -517,8 +540,8 @@ void SCRIPTS_API Ranged_Percentage_Damage_To_Vehicles(float Percentage,const cha
 				{
 					Vector3 pos1 = Commands->Get_Position(o);
 					Vector3 pos2 = Location;
-					float Distance = Commands->Get_Distance(pos1,pos2);
-					if (Distance <= DamageRadius)
+					float Distance = Vector3::Distance_Squared(pos1, pos2);
+					if (Distance <= DamageRadius * DamageRadius)
 					{
 						float Max_Health = Commands->Get_Max_Health(o);
 						float Max_Shield = Commands->Get_Max_Shield_Strength(o);
@@ -576,8 +599,8 @@ void SCRIPTS_API Repair_All_Buildings_By_Team_Radius(int Team,int ConstructionYa
 				{
 					Vector3 pos1 = Commands->Get_Position(o);
 					Vector3 pos2 = Location;
-					float Distance = Commands->Get_Distance(pos1,pos2);
-					if (Distance <= Radius)
+					float Distance = Vector3::Distance_Squared(pos1, pos2);
+					if (Distance <= Radius * Radius)
 					{
 						Commands->Set_Health(o,(amount+Health));
 					}
@@ -719,8 +742,8 @@ void SCRIPTS_API Ranged_Variable_Percent_Vehicle_Damage(float EnemyPercentage, f
 				{
 					Vector3 pos1 = Commands->Get_Position(o);
 					Vector3 pos2 = Location;
-					float Distance = Commands->Get_Distance(pos1,pos2);
-					if (Distance <= DamageRadius)
+					float Distance = Vector3::Distance_Squared(pos1, pos2);
+					if (Distance <= DamageRadius * DamageRadius)
 					{
 						float Max_Health = Commands->Get_Max_Health(o);
 						float Max_Shield = Commands->Get_Max_Shield_Strength(o);
@@ -729,7 +752,7 @@ void SCRIPTS_API Ranged_Variable_Percent_Vehicle_Damage(float EnemyPercentage, f
 							float Damage = (Max_Health + Max_Shield) * FriendPercentage;
 							if ((Get_Vehicle_Mode(o) != VEHICLE_TYPE_TURRET))
 							{
-								if (ForceFriendly || The_Game()->Is_Friendly_Fire_Permitted())
+								if(ForceFriendly || The_Game()->Is_Friendly_Fire_Permitted())
 								{
 									Commands->Apply_Damage(o,Damage,Warhead,0);
 								}
@@ -739,7 +762,7 @@ void SCRIPTS_API Ranged_Variable_Percent_Vehicle_Damage(float EnemyPercentage, f
 								}
 							}
 						}
-						else if (Get_Vehicle_Mode(o) != VEHICLE_TYPE_TURRET)
+						else if(Get_Vehicle_Mode(o) != VEHICLE_TYPE_TURRET)
 						{
 							float Damage = (Max_Health + Max_Shield) * EnemyPercentage;
 							Commands->Apply_Damage(o,Damage,Warhead,Damager);
@@ -767,8 +790,8 @@ void SCRIPTS_API Ranged_Variable_Percent_Vehicle_Damage(float EnemyPercentage, f
 					{
 						Vector3 pos1 = Commands->Get_Position(o);
 						Vector3 pos2 = Location;
-						float Distance = Commands->Get_Distance(pos1, pos2);
-						if (Distance <= DamageRadius)
+						float Distance = Vector3::Distance_Squared(pos1, pos2);
+						if (Distance <= DamageRadius * DamageRadius)
 						{
 							float Max_Health = Commands->Get_Max_Health(o);
 							float Max_Shield = Commands->Get_Max_Shield_Strength(o);

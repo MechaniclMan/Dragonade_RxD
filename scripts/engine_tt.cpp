@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -40,6 +40,7 @@
 #include "TeamPurchaseSettingsDefClass.h"
 #include "PurchaseSettingsDefClass.h"
 #include "PowerUpGameObjDef.h"
+#include "ScriptedControls.h"
 class WideStringClass;
 
 
@@ -186,6 +187,9 @@ SCRIPTS_API cee Create_Explosion_Extended;
 SCRIPTS_API rwpa Retrieve_Waypaths;
 SCRIPTS_API rwpo Retrieve_Waypoints;
 SCRIPTS_API gwp Get_Waypoint_Position;
+SCRIPTS_API trc Test_Raycast_Collision;
+SCRIPTS_API iib Is_Inside_AABox;
+SCRIPTS_API cgst Can_Generic_Soldier_Teleport;
 SCRIPTS_API cl Create_Lightning;
 SCRIPTS_API gc Get_Clouds;
 SCRIPTS_API gli Get_Lightning;
@@ -228,6 +232,60 @@ SCRIPTS_API gpd Get_Pathfind_Distance;
 SCRIPTS_API gpda Get_Pathfind_Distance_Async;
 SCRIPTS_API cgpd Cancel_Get_Pathfind_Distance;
 SCRIPTS_API gpdb Get_Pathfind_Distance_Blocking;
+SCRIPTS_API gmsl Get_Multiplayer_Spawn_Location;
+SCRIPTS_API esbn Enable_Spawners_By_Name;
+SCRIPTS_API ipg Is_Pathfind_Generated;
+SCRIPTS_API gcps Get_Closest_Pathfind_Spot;
+SCRIPTS_API gcpss Get_Closest_Pathfind_Spot_Size;
+SCRIPTS_API grcs Get_Radio_Command_String;
+SCRIPTS_API sei Set_Emot_Icon;
+SCRIPTS_API kmd Kill_Messages_Disabled;
+SCRIPTS_API ise Is_Sidebar_Enabled;
+SCRIPTS_API iee Is_Extras_Enabled;
+SCRIPTS_API cbg Can_Build_Ground;
+SCRIPTS_API cba Can_Build_Air;
+SCRIPTS_API cbn Can_Build_Naval;
+SCRIPTS_API isb Is_Soldier_Busy;
+SCRIPTS_API ioep Is_On_Enemy_Pedestal;
+SCRIPTS_API fcpp Find_Closest_Poly_Position;
+SCRIPTS_API sdd Say_Dynamic_Dialogue;
+SCRIPTS_API sddp Say_Dynamic_Dialogue_Player;
+SCRIPTS_API sddt Say_Dynamic_Dialogue_Team;
+SCRIPTS_API elp Enable_Letterbox_Player;
+SCRIPTS_API cst Create_Sound_Team;
+SCRIPTS_API c2dst Create_2D_Sound_Team;
+SCRIPTS_API c2dwst Create_2D_WAV_Sound_Team;
+SCRIPTS_API c2dwstd Create_2D_WAV_Sound_Team_Dialog;
+SCRIPTS_API c2dwstc Create_2D_WAV_Sound_Team_Cinematic;
+SCRIPTS_API c3dwsbt Create_3D_WAV_Sound_At_Bone_Team;
+SCRIPTS_API c3dsbt Create_3D_Sound_At_Bone_Team;
+SCRIPTS_API _Stop_Sound_Player Stop_Sound_Player;
+SCRIPTS_API _Stop_Sound_Team Stop_Sound_Team;
+SCRIPTS_API ssa Set_Subobject_Animation;
+SCRIPTS_API sts Set_Time_Scale;
+SCRIPTS_API ssap Set_Subobject_Animation_Player;
+SCRIPTS_API wfa Write_File_Async;
+SCRIPTS_API adh AddDialogHook;
+SCRIPTS_API rdh RemoveDialogHook;
+SCRIPTS_API cmd Create_Menu_Dialog;
+SCRIPTS_API cpd Create_Popup_Dialog;
+SCRIPTS_API idlg Find_Dialog;
+SCRIPTS_API dlg Show_Dialog;
+SCRIPTS_API dlg Hide_Dialog;
+SCRIPTS_API dlg Delete_Dialog;
+SCRIPTS_API dhwg Display_HUD_Weapon_Grant_Player;
+SCRIPTS_API dhwg Display_HUD_Ammo_Grant_Player;
+SCRIPTS_API gru Get_Repository_URL;
+SCRIPTS_API sru Set_Repository_URL;
+SCRIPTS_API gru Get_Screenshot_URL;
+SCRIPTS_API sru Set_Screenshot_URL;
+SCRIPTS_API tss Take_Screenshot;
+SCRIPTS_API iips Is_In_Pathfind_Sector;
+SCRIPTS_API sgm Set_Gravity_Multiplier;
+SCRIPTS_API iga Is_Gameplay_Allowed;
+SCRIPTS_API sga Set_Gameplay_Allowed;
+SCRIPTS_API pcc Print_Client_Console;
+SCRIPTS_API pccp Print_Client_Console_Player;
 
 SCRIPTS_API bool Can_Team_Build_Vehicle(int Team)
 {
@@ -241,6 +299,144 @@ SCRIPTS_API bool Can_Team_Build_Vehicle(int Team)
 		return Is_Available_For_Purchase(factory);
 	}
 	return true;
+}
+
+SCRIPTS_API DynamicVectorClass<int> Get_Enlisted_Purchase_Items(int team)
+{
+	DynamicVectorClass<int> list;
+	TeamPurchaseSettingsDefClass *t = TeamPurchaseSettingsDefClass::Get_Definition((TeamPurchaseSettingsDefClass::TEAM)PTTEAM(team));
+	for (int i = 0; i < 4; i++)
+	{
+		if (t->Get_Enlisted_Definition(i) != 0)
+			list.Add(t->Get_Enlisted_Definition(i));
+	}
+	return list;
+}
+
+SCRIPTS_API DynamicVectorClass<int> Get_Purchase_Items(int team, int defType)
+{
+	DynamicVectorClass<int> list;
+	PurchaseSettingsDefClass *purchaseSettings = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)defType, (PurchaseSettingsDefClass::TEAM)PTTEAM(team));
+	if (purchaseSettings)
+	{
+		for (int i = 0; i < 10; i++)
+		{
+			if (purchaseSettings->Get_Definition(i) != 0)
+				list.Add(purchaseSettings->Get_Definition(i));
+		}
+	}
+	return list;
+}
+
+SCRIPTS_API bool Is_Preset_Purchasable_In_List(int id, int team, PurchaseSettingsDefClass::TYPE def)
+{
+	PurchaseSettingsDefClass *purchaseSettings = PurchaseSettingsDefClass::Find_Definition(def, (PurchaseSettingsDefClass::TEAM)PTTEAM(team));
+	if (purchaseSettings && !purchaseSettings->Get_Page_Hidden() && !purchaseSettings->Get_Page_Busy() && !purchaseSettings->Get_Page_Disabled())
+	{
+		for (int i = 0; i < 10; i++)
+		{
+			if ((purchaseSettings->Get_Definition(i) == id) ||
+				(purchaseSettings->Get_Alt_Definition(i, 0) == id) || (purchaseSettings->Get_Alt_Definition(i, 1) == id) || (purchaseSettings->Get_Alt_Definition(i, 2) == id))
+			{
+				// No unit limit in 4.x?
+				/*if (int unitlimit = purchaseSettings->Get_Unit_Limit(i))
+				{
+					int count = Count_Objects_Of_Preset(2, purchaseSettings->Get_Definition(i));
+					count += Count_Objects_Of_Preset(2, purchaseSettings->Get_Alt_Definition(i, 0));
+					count += Count_Objects_Of_Preset(2, purchaseSettings->Get_Alt_Definition(i, 1));
+					count += Count_Objects_Of_Preset(2, purchaseSettings->Get_Alt_Definition(i, 2));
+					if (unitlimit <= count)
+					{
+						return false;
+					}
+				}*/
+				return !purchaseSettings->Get_Disabled(i) && !purchaseSettings->Get_Busy(i) && !purchaseSettings->Get_Hidden(i);
+			}
+		}
+	}
+	return false;
+}
+
+SCRIPTS_API bool Is_Infantry_Purchaseable(const char *preset,int team)
+{
+	int id = Get_Definition_ID(preset);
+	if (!id)
+	{
+		return false;
+	}
+
+	TeamPurchaseSettingsDefClass *t = TeamPurchaseSettingsDefClass::Get_Definition((TeamPurchaseSettingsDefClass::TEAM)PTTEAM(team));
+	
+	for (int i = 0; i < 4; i++)
+	{
+		if (t->Get_Enlisted_Definition(i) == id)
+		{
+			// No unit limit in 4.x?
+			/*int unitlimit = t->Get_Unit_Limit(i);
+			if (unitlimit)
+			{
+				if (unitlimit <= Count_Objects_Of_Preset(2, t->Get_Enlisted_Definition(i)))
+				{
+					return false;
+				}
+			}*/
+			return !t->Get_Disabled(i) && !t->Get_Busy(i) && !t->Get_Hidden(i);
+		}
+	}
+
+	BaseControllerClass *baseController = BaseControllerClass::Find_Base(team); // This does not require a PurchaseSettingsDefClass team
+
+	if (!baseController || baseController->Can_Generate_Soldiers())
+	{
+		if (Is_Preset_Purchasable_In_List(id, team, PurchaseSettingsDefClass::TYPE_CLASSES))
+			return true;
+
+		if (Is_Preset_Purchasable_In_List(id, team, PurchaseSettingsDefClass::TYPE_SECRET_CLASSES))
+			return true;
+	}
+
+	return false;
+}
+
+SCRIPTS_API bool Is_Vehicle_Purchaseable(const char *preset,int team)
+{
+	int id = Get_Definition_ID(preset);
+	if (!id)
+	{
+		return false;
+	}
+
+	BaseControllerClass *baseController = BaseControllerClass::Find_Base(team); // This does not require a PurchaseSettingsDefClass team
+	
+	if (!baseController || (baseController->Can_Generate_Vehicles() && Can_Build_Ground(team)))
+	{
+		if (Is_Preset_Purchasable_In_List(id, team, PurchaseSettingsDefClass::TYPE_VEHICLES) && !(Get_Vehicle_Definition_Mode(preset) == VEHICLE_TYPE_FLYING && !Is_Map_Flying()))
+			return true;
+
+		if (Is_Preset_Purchasable_In_List(id, team, PurchaseSettingsDefClass::TYPE_SECRET_VEHICLES))
+			return true;
+	}
+
+	if (!baseController || Can_Build_Air(team))
+	{
+		if (Is_Preset_Purchasable_In_List(id, team, PurchaseSettingsDefClass::TYPE_AIR))
+			return true;
+
+		// Air vehicles can be present on the ground vehicle lists!
+		if (Is_Preset_Purchasable_In_List(id, team, PurchaseSettingsDefClass::TYPE_VEHICLES) && !(Get_Vehicle_Definition_Mode(preset) == VEHICLE_TYPE_FLYING && !Is_Map_Flying()))
+			return true;
+
+		if (Is_Preset_Purchasable_In_List(id, team, PurchaseSettingsDefClass::TYPE_SECRET_VEHICLES))
+			return true;
+	}
+
+	if (!baseController || Can_Build_Naval(team))
+	{
+		if (Is_Preset_Purchasable_In_List(id, team, PurchaseSettingsDefClass::TYPE_NAVAL))
+			return true;
+	}
+
+	return false;
 }
 
 SCRIPTS_API void Send_Message_With_Team_Color(int Team,const char *Msg)
@@ -345,137 +541,6 @@ SCRIPTS_API void Enable_Team_Radar(int Team,bool Enable)
 	}
 }
 
-SCRIPTS_API void Create_Sound_Team(const char *soundname,const Vector3 & position,GameObject *obj,int team)
-{
-	if (!obj)
-	{
-		return;
-	}
-	SLNode<SoldierGameObj> *x = GameObjManager::StarGameObjList.Head();
-	while (x)
-	{
-		GameObject *o = x->Data();
-		if (o)
-		{
-			if ((Get_Object_Type(o) == team) || (team == 2))
-			{
-				Create_Sound_Player(o,soundname,position,obj);
-			}
-		}
-		x = x->Next();
-	}
-}
-
-SCRIPTS_API void Create_2D_Sound_Team(const char *soundname,int team)
-{
-	SLNode<SoldierGameObj> *x = GameObjManager::StarGameObjList.Head();
-	while (x)
-	{
-		GameObject *o = x->Data();
-		if (o)
-		{
-			if ((Get_Object_Type(o) == team) || (team == 2))
-			{
-				Create_2D_Sound_Player(o,soundname);
-			}
-		}
-		x = x->Next();
-	}
-}
-
-SCRIPTS_API void Create_2D_WAV_Sound_Team(const char *soundname,int team)
-{
-	SLNode<SoldierGameObj> *x = GameObjManager::StarGameObjList.Head();
-	while (x)
-	{
-		GameObject *o = x->Data();
-		if (o)
-		{
-			if ((Get_Object_Type(o) == team) || (team == 2))
-			{
-				Create_2D_WAV_Sound_Player(o,soundname);
-			}
-		}
-		x = x->Next();
-	}
-}
-
-SCRIPTS_API void Create_2D_WAV_Sound_Team_Dialog(const char *soundname,int team)
-{
-	SLNode<SoldierGameObj> *x = GameObjManager::StarGameObjList.Head();
-	while (x)
-	{
-		GameObject *o = x->Data();
-		if (o)
-		{
-			if ((Get_Object_Type(o) == team) || (team == 2))
-			{
-				Create_2D_Wave_Sound_Dialog_Player(o,soundname);
-			}
-		}
-		x = x->Next();
-	}
-}
-
-SCRIPTS_API void Create_2D_WAV_Sound_Team_Cinematic(const char *soundname,int team)
-{
-	SLNode<SoldierGameObj> *x = GameObjManager::StarGameObjList.Head();
-	while (x)
-	{
-		GameObject *o = x->Data();
-		if (o)
-		{
-			if ((Get_Object_Type(o) == team) || (team == 2))
-			{
-				Create_2D_Wave_Sound_Cinematic_Player(o,soundname);
-			}
-		}
-		x = x->Next();
-	}
-}
-
-SCRIPTS_API void Create_3D_WAV_Sound_At_Bone_Team(const char *soundname,GameObject *obj,const char *bonename,int team)
-{
-	if (!obj)
-	{
-		return;
-	}
-	SLNode<SoldierGameObj> *x = GameObjManager::StarGameObjList.Head();
-	while (x)
-	{
-		GameObject *o = x->Data();
-		if (o)
-		{
-			if ((Get_Object_Type(o) == team) || (team == 2))
-			{
-				Create_3D_WAV_Sound_At_Bone_Player(o,soundname,obj,bonename);
-			}
-		}
-		x = x->Next();
-	}
-}
-
-SCRIPTS_API void Create_3D_Sound_At_Bone_Team(const char *soundname,GameObject *obj,const char *bonename,int team)
-{
-	if (!obj)
-	{
-		return;
-	}
-	SLNode<SoldierGameObj> *x = GameObjManager::StarGameObjList.Head();
-	while (x)
-	{
-		GameObject *o = x->Data();
-		if (o)
-		{
-			if ((Get_Object_Type(o) == team) || (team == 2))
-			{
-				Create_3D_Sound_At_Bone_Player(o,soundname,obj,bonename);
-			}
-		}
-		x = x->Next();
-	}
-}
-
 SCRIPTS_API void Ranged_Stealth_On_Team(Gap_ListNode* FirstNode)
 {
 	SLNode<VehicleGameObj> *x = GameObjManager::VehicleGameObjList.Head();
@@ -494,7 +559,7 @@ SCRIPTS_API void Ranged_Stealth_On_Team(Gap_ListNode* FirstNode)
 					test = o->Get_Lock_Team();
 				}
 				const VehicleGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed() && !Is_Script_Attached(o, "Stealth_Powerup") && !Is_Script_Attached(o, "Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
 				{
 					while (current)
 					{
@@ -528,7 +593,7 @@ SCRIPTS_API void Ranged_Stealth_On_Team(Gap_ListNode* FirstNode)
 			if (o)
 			{
 				const VehicleGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary")  && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed() && !Is_Script_Attached(o, "Stealth_Powerup") && !Is_Script_Attached(o, "Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
 				{
 					Commands->Enable_Stealth(o, false);
 				}
@@ -549,7 +614,7 @@ SCRIPTS_API void Ranged_Stealth_On_Team(Gap_ListNode* FirstNode)
 				Gap_ListNode *current = FirstNode;
 				int test = Commands->Get_Player_Type(o);
 				const SoldierGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed() && !Is_Script_Attached(o, "Stealth_Powerup") && !Is_Script_Attached(o, "Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
 				{
 					while (current)
 					{
@@ -583,7 +648,7 @@ SCRIPTS_API void Ranged_Stealth_On_Team(Gap_ListNode* FirstNode)
 			if (o)
 			{
 				const SoldierGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary")  && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed() && !Is_Script_Attached(o, "Stealth_Powerup") && !Is_Script_Attached(o, "Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
 				{
 					Commands->Enable_Stealth(o, false);
 				}
@@ -607,7 +672,7 @@ SCRIPTS_API void Ranged_Gap_Effect(Gap_ListNode* FirstNode)
 				Gap_ListNode *current = FirstNode;
 				int test = Commands->Get_Player_Type(o);
 				const VehicleGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && d->Get_Type() != VEHICLE_TYPE_SUB && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed() && d->Get_Type() != VEHICLE_TYPE_SUB && !Is_Script_Attached(o, "Stealth_Powerup") && !Is_Script_Attached(o, "Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
 				{
 					while (current)
 					{
@@ -641,7 +706,7 @@ SCRIPTS_API void Ranged_Gap_Effect(Gap_ListNode* FirstNode)
 			if (o)
 			{
 				const VehicleGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed() && !Is_Script_Attached(o, "Stealth_Powerup") && !Is_Script_Attached(o, "Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
 				{
 					Commands->Enable_Stealth(o, false);
 				}
@@ -663,7 +728,7 @@ SCRIPTS_API void Ranged_Gap_Effect(Gap_ListNode* FirstNode)
 				Gap_ListNode *current = FirstNode;
 				int test = Commands->Get_Player_Type(o);
 				const SoldierGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed() && !Is_Script_Attached(o, "Stealth_Powerup") && !Is_Script_Attached(o, "Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
 				{
 					while (current)
 					{
@@ -712,7 +777,7 @@ SCRIPTS_API void Ranged_Gap_Effect(Gap_ListNode* FirstNode)
 			if (o)
 			{
 				const SoldierGameObjDef *d = &o->Get_Definition();
-				if (!d->Is_Stealthed() && !Is_Script_Attached(o,"Stealth_Powerup") && !Is_Script_Attached(o,"Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
+				if (!d->Is_Stealthed() && !Is_Script_Attached(o, "Stealth_Powerup") && !Is_Script_Attached(o, "Stealth_Stationary") && !o->Peek_Model()->Is_Hidden())
 				{
 					Commands->Enable_Stealth(o, false);
 					if (Commands->Is_A_Star(o))

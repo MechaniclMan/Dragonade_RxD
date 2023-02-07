@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -18,6 +18,8 @@ public:
 	ArmedGameObjDef( void );
 	virtual bool								Save( ChunkSaveClass &csave );
 	virtual bool								Load( ChunkLoadClass &cload );
+	int											Get_Weapon_Def_ID() const { return WeaponDefID; }
+	int											Get_Secondary_Weapon_Def_ID() const { return SecondaryWeaponDefID; }
 #ifdef DDBEDIT
 	virtual void                        Dump (FileClass &file);
 #endif

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -14,6 +14,10 @@
 #include "scripts.h"
 #include "engine.h"
 #include "da.h"
+#include "DefaultConnectionAcceptanceFilter.h"
+#ifdef SSGM
+#include "gmgame.h"
+#endif
 
 #define SCRIPTSAPI __declspec(dllexport)
 typedef void (*srdf) (void (*function)(ScriptClass*));
@@ -117,7 +121,13 @@ BOOL SCRIPTSAPI __stdcall DllMain(HINSTANCE hinstDLL,
 			}
 			break;
 		case DLL_PROCESS_DETACH:
-			DestroyExpVehFacClass();
+			if ((!Exe) || (Exe == 1))
+			{
+				removeConnectionAcceptanceFilter(&defaultConnectionAcceptanceFilter);
+			}
+#ifdef SSGM
+			SSGMGameManager::Shutdown();
+#endif			DestroyExpVehFacClass();
 			FreeLibrary(wwscripts);
 			DA::Shutdown();
 			break;
@@ -266,8 +276,6 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Send_Client_Announcement = (sca)Address(tt,"Send_Client_Announcement");
 	Send_Player_Kill_Message = (spkm)Address(tt, "Send_Player_Kill_Message");
 	Send_Purchase_Response = (spr)Address(tt, "Send_Purchase_Response");
-	GetTTVersion = (gttv)Address(tt,"GetTTVersion");
-	GetTTRevision = (gttr)Address(tt,"GetTTRevision");
 	AddShaderNotify = (asn)Address(tt,"AddShaderNotify");
 	RemoveShaderNotify = (rsn)Address(tt,"RemoveShaderNotify");
 	Do_Objectives_Dlg = (dod)Address(tt,"Do_Objectives_Dlg");
@@ -327,6 +335,9 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Retrieve_Waypaths = (rwpa)Address(tt,"Retrieve_Waypaths");
 	Retrieve_Waypoints = (rwpo)Address(tt,"Retrieve_Waypoints");
 	Get_Waypoint_Position = (gwp)Address(tt,"Get_Waypoint_Position");
+	Test_Raycast_Collision = (trc)Address(tt,"Test_Raycast_Collision");
+	Is_Inside_AABox = (iib)Address(tt,"Is_Inside_AABox");
+	Can_Generic_Soldier_Teleport = (cgst)Address(tt,"Can_Generic_Soldier_Teleport");
 	Create_Lightning = (cl)Address(tt,"Create_Lightning");
 	Set_Global_Stealth_Disable = (smie)Address(tt,"Set_Global_Stealth_Disable");
 	Get_Clouds = (gc) Address(tt, "Get_Clouds");
@@ -347,6 +358,7 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Set_Object_Visibility_For_Player = (sovfp)Address(tt,"Set_Object_Visibility_For_Player");
 	Set_Object_Visibility = (sov)Address(tt,"Set_Object_Visibility");
 	Lock_Soldier_Collision_Group = (lscg)Address(tt,"Lock_Soldier_Collision_Group");
+	Unlock_Soldier_Collision_Group = (ulscg)Address(tt,"Unlock_Soldier_Collision_Group");
 	Unlock_Soldier_Collision_Group = (ulscg)Address(tt,"Unlock_Soldier_Collision_Group");
 	Is_Engine_Enabled = (iea)Address(tt,"Is_Engine_Enabled");
 	Stop_Timer = (ss)Address(tt,"Stop_Timer");
@@ -370,9 +382,68 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Cancel_Get_Pathfind_Distance = (cgpd)Address(tt,"Cancel_Get_Pathfind_Distance");
 	Get_Pathfind_Distance_Async = (gpda)Address(tt, "Get_Pathfind_Distance_Async");
 	Get_Pathfind_Distance_Blocking = (gpdb)Address(tt, "Get_Pathfind_Distance_Blocking");
+	Get_Multiplayer_Spawn_Location = (gmsl)Address(tt, "Get_Multiplayer_Spawn_Location");
+	Enable_Spawners_By_Name = (esbn)Address(tt, "Enable_Spawners_By_Name");
+	Is_Pathfind_Generated = (ipg)Address(tt, "Is_Pathfind_Generated");
+	Get_Closest_Pathfind_Spot = (gcps)Address(tt, "Get_Closest_Pathfind_Spot");
+	Get_Closest_Pathfind_Spot_Size = (gcpss)Address(tt, "Get_Closest_Pathfind_Spot_Size");
+	Get_Radio_Command_String = (grcs)Address(tt, "Get_Radio_Command_String");
+	Set_Emot_Icon = (sei)Address(tt, "Set_Emot_Icon");
+	Kill_Messages_Disabled = (kmd)Address(tt, "Kill_Messages_Disabled");
+	Is_Sidebar_Enabled = (ise)Address(tt, "Is_Sidebar_Enabled");
+	Is_Extras_Enabled = (iee)Address(tt, "Is_Extras_Enabled");
+	Can_Build_Ground = (cbg)Address(tt, "Can_Build_Ground");
+	Can_Build_Air = (cba)Address(tt, "Can_Build_Air");
+	Can_Build_Naval = (cbn)Address(tt, "Can_Build_Naval");
+	Is_Soldier_Busy = (isb)Address(tt, "Is_Soldier_Busy");
+	Is_On_Enemy_Pedestal = (ioep)Address(tt, "Is_On_Enemy_Pedestal");
+	Find_Closest_Poly_Position = (fcpp)Address(tt, "Find_Closest_Poly_Position");
+	Say_Dynamic_Dialogue = (sdd)Address(tt, "Say_Dynamic_Dialogue");
+	Say_Dynamic_Dialogue_Player = (sddp)Address(tt, "Say_Dynamic_Dialogue_Player");
+	Say_Dynamic_Dialogue_Team = (sddt)Address(tt, "Say_Dynamic_Dialogue_Team");
+	Enable_Letterbox_Player = (elp)Address(tt, "Enable_Letterbox_Player");
+	Create_Sound_Team = (cst)Address(tt, "Create_Sound_Team");
+	Create_2D_Sound_Team = (c2dst)Address(tt, "Create_2D_Sound_Team");
+	Create_2D_WAV_Sound_Team = (c2dwst)Address(tt, "Create_2D_WAV_Sound_Team");
+	Create_2D_WAV_Sound_Team_Dialog = (c2dwstd)Address(tt, "Create_2D_WAV_Sound_Team_Dialog");
+	Create_2D_WAV_Sound_Team_Cinematic = (c2dwstc)Address(tt, "Create_2D_WAV_Sound_Team_Cinematic");
+	Create_3D_WAV_Sound_At_Bone_Team = (c3dwsbt)Address(tt, "Create_3D_WAV_Sound_At_Bone_Team");
+	Create_3D_Sound_At_Bone_Team = (c3dsbt)Address(tt, "Create_3D_Sound_At_Bone_Team");
+	Stop_Sound_Player = (_Stop_Sound_Player)Address(tt, "Stop_Sound_Player");
+	Stop_Sound_Team = (_Stop_Sound_Team)Address(tt, "Stop_Sound_Team");
+	Set_Subobject_Animation = (ssa)Address(tt,"Set_Subobject_Animation");
+	Set_Time_Scale = (sts)Address(tt,"Set_Time_Scale");
+	Set_Subobject_Animation_Player = (ssap)Address(tt,"Set_Subobject_Animation_Player");
+	Write_File_Async = (wfa)Address(tt, "Write_File_Async");
+	AddDialogHook = (adh)Address(tt, "AddDialogHook");
+	RemoveDialogHook = (rdh)Address(tt, "RemoveDialogHook");
+	Create_Menu_Dialog = (cmd)Address(tt, "Create_Menu_Dialog");
+	Create_Popup_Dialog = (cpd)Address(tt, "Create_Popup_Dialog");
+	Find_Dialog = (idlg)Address(tt, "Find_Dialog");
+	Show_Dialog = (dlg)Address(tt, "Show_Dialog");
+	Hide_Dialog = (dlg)Address(tt, "Hide_Dialog");
+	Delete_Dialog = (dlg)Address(tt, "Delete_Dialog");
+	Display_HUD_Weapon_Grant_Player = (dhwg)Address(tt, "Display_HUD_Weapon_Grant_Player");
+	Display_HUD_Ammo_Grant_Player = (dhwg)Address(tt, "Display_HUD_Ammo_Grant_Player");
+	Get_Repository_URL = (gru)Address(tt, "Get_Repository_URL");
+	Set_Repository_URL = (sru)Address(tt, "Set_Repository_URL");
+	Get_Screenshot_URL = (gru)Address(tt, "Get_Screenshot_URL");
+	Set_Screenshot_URL = (sru)Address(tt, "Set_Screenshot_URL");
+	Take_Screenshot = (tss)Address(tt, "Take_Screenshot");
+	Is_In_Pathfind_Sector = (iips)Address(tt, "Is_In_Pathfind_Sector");
+	Set_Gravity_Multiplier = (sgm)Address(tt, "Set_Gravity_Multiplier");
+	Is_Gameplay_Allowed = (iga)Address(tt, "Is_Gameplay_Allowed");
+	Set_Gameplay_Allowed = (sga)Address(tt, "Set_Gameplay_Allowed");
+	Print_Client_Console = (pcc)Address(tt, "Print_Client_Console");
+	Print_Client_Console_Player = (pccp)Address(tt, "Print_Client_Console_Player");
+
 
 	DA::Init();
 
+	//Write_Renlog(SetScriptCommands)
+	addConnectionAcceptanceFilter(&defaultConnectionAcceptanceFilter);
+	//Write_GameLog()
+	
 	return (SetScriptCommands) (commands);
 }
 

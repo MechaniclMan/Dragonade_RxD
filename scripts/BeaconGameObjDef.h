@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -26,6 +26,7 @@ public:
 	PersistClass* Create() const;
 	int Is_Nuke() const {return IsNuke;}
 	bool Requires_Silo() const {return RequiresSilo;}
+	int Get_Explosion_Obj_Def() const {return ExplosionObjDef;}
 #ifdef DDBEDIT
 	virtual void                        Dump (FileClass &file);
 #endif

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -18,6 +18,9 @@
 #include "audiocallback.h"
 #include "Persist.h"
 #include "Matrix3D.h"
+#if !defined(W3DVIEWER) && !defined(TTLE_EXPORTS)
+#include "HashTemplateClass.h"
+#endif
 class SoundSceneClass;
 class SoundCullObjClass;
 class Sound3DClass;
@@ -28,6 +31,7 @@ class AudibleSoundClass;
 class RenderObjClass;
 const uint32	SOUND_OBJ_DEFAULT_ID	= 0;
 const uint32	SOUND_OBJ_START_ID	= 1000000000;
+
 class SoundSceneObjClass : public MultiListObjectClass, public PersistClass, public RefCountClass
 {
 public:
@@ -87,9 +91,23 @@ protected:
 	int								m_AttachedBone; // 0030  0048
 	uint32							m_UserData; // 0034  004C
 	RefCountClass *				m_UserObj; // 0038  0050
+
 	static uint32 m_NextAvailableID;
 	static DynamicVectorClass<SoundSceneObjClass *>	m_GlobalSoundList;
 	static CriticalSectionClass m_IDListMutex;
+
+	// Added by TT
+#if !defined(W3DVIEWER) && !defined(TTLE_EXPORTS)
+public:
+	static void Associate_Server_ID(SoundSceneObjClass* sound_obj, uint32 server_id);
+
+protected:
+	static HashTemplateClass<uint32, SoundSceneObjClass*> m_ServerGlobalSoundList;
+	static HashTemplateClass<uint32, uint32> m_ReversedServerGlobalSoundList;
+	static CriticalSectionClass m_ServerIDListMutex;
+
+	static bool Find_Server_Sound_Object(uint32 server_id_to_find, SoundSceneObjClass*& sound_obj);
+#endif
 }; // 003C  0054
 
 #endif

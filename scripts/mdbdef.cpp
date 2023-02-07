@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2015 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -110,11 +110,6 @@ void MDB_Base_Defense_Popup_No_VTOL::Animation_Complete(GameObject *obj,const ch
 	{
 		State = 1;
 	}
-}
-
-void MDB_Base_Defense_Popup_No_VTOL::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
 }
 
 void MDB_Base_Defense_Popup_No_VTOL::Timer_Expired(GameObject *obj,int number)
@@ -289,11 +284,6 @@ void MDB_Base_Defense_Popup_VTOL_Only::Animation_Complete(GameObject *obj,const 
 	}
 }
 
-void MDB_Base_Defense_Popup_VTOL_Only::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void MDB_Base_Defense_Popup_VTOL_Only::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -429,11 +419,6 @@ void MDB_Base_Defense_Popup::Animation_Complete(GameObject *obj,const char *anim
 	}
 }
 
-void MDB_Base_Defense_Popup::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	Commands->Action_Reset(obj,100);
-}
-
 void MDB_Base_Defense_Popup::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -485,17 +470,17 @@ void MDB_Base_Defense::Created(GameObject *obj)
 	Commands->Enable_Enemy_Seen(obj,true);
 	Vector3 pos = Commands->Get_Position(obj);
 	V[0].X = pos.X - 10;
-	V[0].Y = pos.Y - 10;
+	V[0].Y = pos.Y;
 	V[0].Z = pos.Z + 2;
 	V[1].X = pos.X + 10;
 	V[1].Y = pos.Y;
 	V[1].Z = pos.Z + 2;
-	V[2].X = pos.X + 10;
+	V[2].X = pos.X;
 	V[2].Y = pos.Y - 10;
 	V[2].Z = pos.Z + 2;
 	V[3].X = pos.X;
 	V[3].Y = pos.Y + 10;
-	V[3].Z = pos.Z + 4;
+	V[3].Z = pos.Z + 2;
 	ActionParamsStruct var;
 	var.Set_Basic(this,1,2);
 	var.Set_Attack(V[Commands->Get_Random_Int(0,4)],0.0,0.0,true);
@@ -525,16 +510,8 @@ void MDB_Base_Defense::Enemy_Seen(GameObject *obj,GameObject *enemy)
 		params.AttackCheckBlocked = true;
 	}
 	LastSeen = Commands->Get_ID(enemy);
-	Commands->Start_Timer(obj,this,5.0f,3);
+	Commands->Start_Timer(obj,this,1.0f,2);
 	Commands->Action_Attack(obj,params);
-}
-
-void MDB_Base_Defense::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 1)
-	{
-		Commands->Action_Reset(obj,100);
-	}
 }
 
 void MDB_Base_Defense::Timer_Expired(GameObject *obj,int number)
@@ -544,6 +521,7 @@ void MDB_Base_Defense::Timer_Expired(GameObject *obj,int number)
 		ActionParamsStruct var;
 		var.Set_Basic(this,1,2);
 		var.Set_Attack(V[Commands->Get_Random_Int(0,4)],0.0,0.0,true);
+		Commands->Action_Attack(obj,var);
 		Commands->Start_Timer(obj,this,Commands->Get_Random(5.0f,15.0f),1);
 	}
 	else if (number == 2)
@@ -581,17 +559,17 @@ void MDB_Base_Defense_No_VTOL::Created(GameObject *obj)
 	Commands->Enable_Enemy_Seen(obj,true);
 	Vector3 pos = Commands->Get_Position(obj);
 	V[0].X = pos.X - 10;
-	V[0].Y = pos.Y - 10;
+	V[0].Y = pos.Y;
 	V[0].Z = pos.Z + 2;
 	V[1].X = pos.X + 10;
 	V[1].Y = pos.Y;
 	V[1].Z = pos.Z + 2;
-	V[2].X = pos.X + 10;
+	V[2].X = pos.X;
 	V[2].Y = pos.Y - 10;
 	V[2].Z = pos.Z + 2;
 	V[3].X = pos.X;
 	V[3].Y = pos.Y + 10;
-	V[3].Z = pos.Z + 4;
+	V[3].Z = pos.Z + 2;
 	ActionParamsStruct var;
 	var.Set_Basic(this,1,2);
 	var.Set_Attack(V[Commands->Get_Random_Int(0,4)],0.0,0.0,true);
@@ -623,16 +601,8 @@ void MDB_Base_Defense_No_VTOL::Enemy_Seen(GameObject *obj,GameObject *enemy)
 			params.AttackCheckBlocked = true;
 		}
 		LastSeen = Commands->Get_ID(enemy);
-		Commands->Start_Timer(obj,this,5.0f,3);
+		Commands->Start_Timer(obj,this,1.0f,2);
 		Commands->Action_Attack(obj,params);
-	}
-}
-
-void MDB_Base_Defense_No_VTOL::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 1)
-	{
-		Commands->Action_Reset(obj,100);
 	}
 }
 
@@ -643,6 +613,7 @@ void MDB_Base_Defense_No_VTOL::Timer_Expired(GameObject *obj,int number)
 		ActionParamsStruct var;
 		var.Set_Basic(this,1,2);
 		var.Set_Attack(V[Commands->Get_Random_Int(0,4)],0.0,0.0,true);
+		Commands->Action_Attack(obj,var);
 		Commands->Start_Timer(obj,this,Commands->Get_Random(5.0f,15.0f),1);
 	}
 	else if (number == 2)
@@ -680,17 +651,17 @@ void MDB_Base_Defense_VTOL_Only::Created(GameObject *obj)
 	Commands->Enable_Enemy_Seen(obj,true);
 	Vector3 pos = Commands->Get_Position(obj);
 	V[0].X = pos.X - 10;
-	V[0].Y = pos.Y - 10;
-	V[0].Z = pos.Z + 2;
+	V[0].Y = pos.Y;
+	V[0].Z = pos.Z + 5;
 	V[1].X = pos.X + 10;
 	V[1].Y = pos.Y;
-	V[1].Z = pos.Z + 2;
-	V[2].X = pos.X + 10;
+	V[1].Z = pos.Z + 5;
+	V[2].X = pos.X;
 	V[2].Y = pos.Y - 10;
-	V[2].Z = pos.Z + 2;
+	V[2].Z = pos.Z + 5;
 	V[3].X = pos.X;
 	V[3].Y = pos.Y + 10;
-	V[3].Z = pos.Z + 4;
+	V[3].Z = pos.Z + 5;
 	ActionParamsStruct var;
 	var.Set_Basic(this,1,2);
 	var.Set_Attack(V[Commands->Get_Random_Int(0,4)],0.0,0.0,true);
@@ -717,14 +688,6 @@ void MDB_Base_Defense_VTOL_Only::Enemy_Seen(GameObject *obj,GameObject *enemy)
 	}
 }
 
-void MDB_Base_Defense_VTOL_Only::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason)
-{
-	if (action_id == 1)
-	{
-		Commands->Action_Reset(obj,100);
-	}
-}
-
 void MDB_Base_Defense_VTOL_Only::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
@@ -732,6 +695,7 @@ void MDB_Base_Defense_VTOL_Only::Timer_Expired(GameObject *obj,int number)
 		ActionParamsStruct var;
 		var.Set_Basic(this,1,2);
 		var.Set_Attack(V[Commands->Get_Random_Int(0,4)],0.0,0.0,true);
+		Commands->Action_Attack(obj,var);
 		Commands->Start_Timer(obj,this,Commands->Get_Random(5.0f,15.0f),1);
 	}
 	else if (number == 2)

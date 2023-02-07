@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -14,7 +14,9 @@
 #include "BuildingGameObjDef.h"
 using namespace BuildingConstants;
 unsigned int SCRIPTS_API Get_Team_Cost(const char *preset,unsigned int team); //Get the cost of a preset for a given team. Returns zero if the preset is not found in any of the purchase terminal data or if it is one of the free units.
+unsigned int SCRIPTS_API Get_Team_Cost(int def_id,unsigned int team); //Get the cost of a preset for a given team. Returns zero if the preset is not found in any of the purchase terminal data or if it is one of the free units.
 unsigned int SCRIPTS_API Get_Cost(const char *preset); //Get the cost of a preset. Returns zero if the preset is not found in any of the purchase terminal data or if it is one of the free units.
+unsigned int SCRIPTS_API Get_Cost(int def_id); //Get the cost of a preset. Returns zero if the preset is not found in any of the purchase terminal data or if it is one of the free units.
 void SCRIPTS_API Disable_Preset_By_Name(unsigned int Team,const char *Name, bool enable); //Disable a preset by name
 void SCRIPTS_API Hide_Preset_By_Name(unsigned int Team,const char *Name, bool enable); //Hides a preset by name
 void SCRIPTS_API Busy_Preset_By_Name(unsigned int Team,const char *Name, bool enable); //Marks a preset as busy by name

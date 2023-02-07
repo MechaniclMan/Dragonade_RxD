@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -429,7 +429,34 @@ StringClass &INIClass::Get_String(StringClass& string, const char* section, cons
 	}
 	return string;
 }
-INISection *INIClass::Find_Section(const char* section) const
+
+StringClass &INIClass::Get_String_Advanced(StringClass& string, const char* section, const char* entry, const char *defaultvalue, bool updateIfNotFound) const
+{
+	const char *value = defaultvalue;
+	if (!section || !entry)
+	{
+		string = "";
+	}
+	INIEntry *Entry = Find_Entry(section,entry);
+	if (Entry)
+	{
+		value = Entry->Value;
+	}
+	else if (!updateIfNotFound)
+	{
+		return string;
+	}
+
+	if (value)
+	{
+		string = value;
+	}
+	else
+	{
+		string = "";
+	}
+	return string;
+}INISection *INIClass::Find_Section(const char* section) const
 {
 	if (section)
 	{
@@ -560,6 +587,26 @@ int INIClass::Get_String(char const *section,char const *entry,char const *defau
 			value = Entry->Value;
 		}
 	}
+	if (!value)
+	{
+		result[0] = 0;
+		return 0;
+	}
+	strncpy(result, value, size);
+	result[size - 1] = 0;
+	strtrim(result);
+	return (int)strlen(result);
+}
+int INIClass::Get_String_Advanced(char const *section,char const *entry,char const *defaultvalue,char *result,int size,bool updateIfNotFound) const
+{
+	if (!result || size <= 1 || !section || !entry)
+		return 0;
+	INIEntry *Entry = Find_Entry(section,entry);
+	const char *value = defaultvalue;
+	if (Entry && Entry->Value)
+		value = Entry->Value;
+	if ((!Entry || !Entry->Value) && !updateIfNotFound) 
+		return 0;
 	if (!value)
 	{
 		result[0] = 0;

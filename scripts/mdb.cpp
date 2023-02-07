@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -292,7 +292,7 @@ void MDB_Unit_Limit::ReEnable()
 	}
 }
 
-void MDB_Unit_Limit::Destroyed(GameObject *obj)
+void MDB_Unit_Limit::Killed(GameObject *obj,GameObject *killer)
 {
 	ReEnable();
 }

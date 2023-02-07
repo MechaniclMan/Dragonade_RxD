@@ -24,6 +24,7 @@
 #include "WeaponBagClass.h"
 #include "WeaponClass.h"
 #include "GameObjManager.h"
+#include "WeaponManager.h"
 
 void DALootPlayerDataClass::Add_Weapon(WeaponClass *Weapon) {
 	if (Locker.ID(Weapon->Get_Definition()) == -1) {

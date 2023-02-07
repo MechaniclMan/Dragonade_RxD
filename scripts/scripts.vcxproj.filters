@@ -553,6 +553,27 @@
     <ClCompile Include="DefaultConnectionAcceptanceFilter.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="ms.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="ms_ai.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectLibraryManager.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="DefaultConnectionAcceptanceFilter.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="unstoppable.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="engine_dialog.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="DefaultConnectionAcceptanceFilter.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABoxClass.h">
@@ -1625,6 +1646,34 @@
     </ClInclude>
     <ClInclude Include="DefaultConnectionAcceptanceFilter.h">
       <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="VehicleFactoryGameObjDummy.h">
+      <Filter>DA Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectLibraryManager.h" />
+    <ClInclude Include="unstoppable.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="engine_dialog.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="ScriptedControlClass.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="ScriptedControls.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="ScriptedDialogClass.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="ODESystemClass.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="RigidBodyClass.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicsConstants.h">
+      <Filter>Scripts</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

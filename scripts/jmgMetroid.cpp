@@ -44,6 +44,12 @@ void MetroidGame::WinMap()
 	NumberOfDeactivatedTerminals = 0;
 	BossID = 0;
 	BossMode = 0;
+	if (!winMusicId)
+	{
+		GameObject *winMusic = Commands->Create_Object("Daves Arrow",Vector3(353.3f,-406.2f,2.17f));
+		Commands->Set_Model(winMusic,"s_victory");
+		winMusicId = Commands->Get_ID(winMusic);
+	}
 	for (int x = 0;x < 3;x++)
 	{
 		GameObject *Terminal = Commands->Find_Object(MineTerminalID[x]);
@@ -189,7 +195,7 @@ JMG_Metroid_Game_Control::JMG_Metroid_Game_Control()
 void JMG_Metroid_Game_Control::Created(GameObject *obj)
 {
 	JMG_Metroid_Game_Control::gameRemainingTime = 0;
-	MetroidObjectiveSystemControl.Add_Objective(1,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12781,"",12781,Commands->Get_Position(Commands->Find_Object(100126)),"null");
+	MetroidObjectiveSystemControl.Add_Objective(1,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12781,"",12781,Commands->Get_Position(Commands->Find_Object(100126)));
 	MetroidRoomObjectives.Add_Objective(1,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,0,"",0,Commands->Get_Position(Commands->Find_Object(100126)));
 	JMG_Metroid_Game_Control::currentBriefingId = 12766;
 	for (int x = 1;x < 128;x++)
@@ -279,7 +285,9 @@ void JMG_Metroid_Game_Control::Timer_Expired(GameObject *obj,int number)
 		if (The_Game()->Is_Game_Over())
 		{
 			SavePlayerPerkData();
+			SaveMetroidHighScores();
 			Commands->Destroy_Object(obj);
+			return;
 		}
 		if (MetroidPSSControl.PlayerSettings[0]->IsInTeleport)
 			MetroidPSSControl.PlayerSettings[0]->IsInTeleport--;
@@ -1077,8 +1085,11 @@ void JMG_Metroid_Mine_Tower_Control::Custom(GameObject *obj,int message,int para
 	{
 		for (int x = 0;x < 3;x++)
 		{
-			MetroidObjectiveSystemControl.Add_Objective(30+x,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12810+x,"",12810+x,Commands->Get_Position(Commands->Find_Object(LockDownButtonIDs[x])));
-			JmgUtility::SetHUDHelpText(12810,Vector3(0,1,0));
+			if (MetroidObjectiveSystemControl.Get_Objective_Status(30+x) == NewObjectiveSystem::NotDefined)
+			{
+				MetroidObjectiveSystemControl.Add_Objective(30+x,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12810+x,"",12810+x,Commands->Get_Position(Commands->Find_Object(LockDownButtonIDs[x])));
+				JmgUtility::SetHUDHelpText(12810,Vector3(0,1,0));
+			}
 		}
 	}
 	if (message == 403025)
@@ -1148,8 +1159,11 @@ void JMG_Metroid_Mine_Tower_Control::Custom(GameObject *obj,int message,int para
 	}
 	if (message == 123425)
 	{
-		MetroidObjectiveSystemControl.Add_Objective(33,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12813,"",12813,Commands->Get_Position(Commands->Find_Object(406329)));
-		JmgUtility::SetHUDHelpText(12813,Vector3(0,1,0));
+		if (MetroidObjectiveSystemControl.Get_Objective_Status(32) == NewObjectiveSystem::NotDefined)
+		{
+			MetroidObjectiveSystemControl.Add_Objective(33,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12813,"",12813,Commands->Get_Position(Commands->Find_Object(406329)));
+			JmgUtility::SetHUDHelpText(12813,Vector3(0,1,0));
+		}
 		MetroidGameControl.MainElevatorDown = true;
 	}
 	if (message == 406919)
@@ -1677,7 +1691,7 @@ void JMG_Metroid_Boss_Grinder_Kill_Zone::Entered(GameObject *obj,GameObject *ent
 	{// Crates or player equipment
 		GameObject *Boss = Commands->Find_Object(MetroidGameControl.BossID);
 		if (Boss)
-			Commands->Apply_Damage(Boss,-(10.0f+Get_Player_Count()),"None",enter);
+			Commands->Apply_Damage(Boss,-(5.0f+Get_Player_Count()),"None",enter);
 		Commands->Apply_Damage(enter,9999.9f,"Blamokiller",0);
 		return;
 	}
@@ -1858,15 +1872,21 @@ void JMG_Metroid_Mine_Tower_Elevator::Custom(GameObject *obj,int message,int par
 	}
 	if (message == 406919)
 	{
-		MetroidObjectiveSystemControl.Add_Objective(29,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12813,"",12813,Commands->Get_Position(Commands->Find_Object(LockDownButtonID)));
+		if (MetroidObjectiveSystemControl.Get_Objective_Status(29) == NewObjectiveSystem::NotDefined)
+		{
+			MetroidObjectiveSystemControl.Add_Objective(29,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12813,"",12813,Commands->Get_Position(Commands->Find_Object(LockDownButtonID)));
 			JmgUtility::SetHUDHelpText(12813,Vector3(0,1,0));
+		}
 	}
 	if (message == 406920)
 	{
 		for (int x = 0;x < 3;x++)
 		{
-			MetroidObjectiveSystemControl.Add_Objective(34+x,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12814+x,"",12814+x,Commands->Get_Position(Commands->Find_Object(MetroidGameControl.MineTerminalID[x])));
-			JmgUtility::SetHUDHelpText(12814+x,Vector3(0,1,0));
+			if (MetroidObjectiveSystemControl.Get_Objective_Status(34+x) == NewObjectiveSystem::NotDefined)
+			{
+				MetroidObjectiveSystemControl.Add_Objective(34+x,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12814+x,"",12814+x,Commands->Get_Position(Commands->Find_Object(MetroidGameControl.MineTerminalID[x])));
+				JmgUtility::SetHUDHelpText(12814+x,Vector3(0,1,0));
+			}
 		}
 	}
 }
@@ -2369,7 +2389,7 @@ void JMG_Metroid_Support_Generator_Powerup::Timer_Expired(GameObject *obj,int nu
 		Commands->Set_Model(obj,"jGenerator");
 		GameObject *aBeacon = Commands->Find_Object(Get_Int_Parameter("BeaconID"));
 		if (aBeacon)
-			Commands->Apply_Damage(aBeacon,9999.9f,"BlamoKiller",0);
+			Commands->Destroy_Object(aBeacon);
 		MetroidScoreControl.MetroidPlayerHighScoreNodes[PlayerID]->PlacedRechargers++;
 		Commands->Start_Timer(obj,this,0.1f,1);
 		Commands->Start_Timer(obj,this,2.5f,2);
@@ -3072,7 +3092,7 @@ void JMG_Metroid_Defense_Gun_Powerup::Timer_Expired(GameObject *obj,int number)
 			DefenseModeSystemControl.DefensePlayerDataNodes[PlayerID].DefGunID = Commands->Get_ID(obj);
 			GameObject *aBeacon = Commands->Find_Object(Get_Int_Parameter("BeaconID"));
 			if (aBeacon)
-				Commands->Apply_Damage(aBeacon,9999.9f,"BlamoKiller",0);
+				Commands->Destroy_Object(aBeacon);
 			Commands->Attach_Script(obj,"JMG_Metroid_Camera_Behavior","90.0,0,1,0.0,0,Beep,0.5");
 			MetroidScoreControl.MetroidPlayerHighScoreNodes[PlayerID]->PlacedTurrets++;
 			return;
@@ -3090,7 +3110,7 @@ void JMG_Metroid_Defense_Gun_Powerup::Destroyed(GameObject *obj)
 {
 	GameObject *aBeacon = Commands->Find_Object(Get_Int_Parameter("BeaconID"));
 	if (aBeacon)
-		Commands->Apply_Damage(aBeacon,9999.9f,"BlamoKiller",0);
+		Commands->Destroy_Object(aBeacon);
 	DefenseModeSystemControl.DefensePlayerDataNodes[PlayerID].DefGunID = 0;
 	MetroidEquipmentSystemControl -= obj;
 }
@@ -3147,10 +3167,10 @@ void JMG_Metroid_Defense_Telepad_Powerup::Timer_Expired(GameObject *obj,int numb
 			DefenseModeSystemControl.AddTelepad(obj,PlayerID);
 			DefenseModeSystemControl.DefensePlayerDataNodes[PlayerID].TelepadID = Commands->Get_ID(obj);
 			Commands->Set_Animation(obj,"DefModeTelepad.DefModeTelepad",false,0,1,1,false);
-			GameObject *aBeacon = Commands->Find_Object(Get_Int_Parameter("BeaconID"));
 			MetroidScoreControl.MetroidPlayerHighScoreNodes[PlayerID]->PlacedTeleports++;
+			GameObject *aBeacon = Commands->Find_Object(Get_Int_Parameter("BeaconID"));
 			if (aBeacon)
-				Commands->Apply_Damage(aBeacon,9999.9f,"BlamoKiller",0);
+				Commands->Destroy_Object(aBeacon);
 			Commands->Start_Timer(obj,this,1.0f,1);
 			return;
 		}
@@ -3167,7 +3187,7 @@ void JMG_Metroid_Defense_Telepad_Powerup::Destroyed(GameObject *obj)
 {
 	GameObject *aBeacon = Commands->Find_Object(Get_Int_Parameter("BeaconID"));
 	if (aBeacon)
-		Commands->Apply_Damage(aBeacon,9999.9f,"BlamoKiller",0);
+		Commands->Destroy_Object(aBeacon);
 	else
 	{
 		DefenseModeSystemControl.RemoveTelepad(obj);
@@ -3179,7 +3199,7 @@ void JMG_Metroid_Defense_Telepad_Zone::Entered(GameObject *obj,GameObject *enter
 {
 	if (!enter->As_SoldierGameObj() || MetroidPSSControl.PlayerSettings[JmgUtility::JMG_Get_Player_ID(enter)]->IsInTeleport)
 		return;
-	DefenseModeSystem::TelepadNode *Node = DefenseModeSystemControl.FindNextTelepad(Get_Int_Parameter("PlayerID"));
+	DefenseModeSystem::TelepadNode *Node = DefenseModeSystemControl.FindNextTelepad(Get_Int_Parameter("PadID"));
 	if (!Node)
 		return;
 	Vector3 TargetPos = Node->Pos;
@@ -3883,7 +3903,8 @@ void JMG_Metroid_Banshee_Strike_Craft::Created(GameObject *obj)
 	Commands->Set_Position(obj,Vector3(-1295.915f,-959.524f,2.195f));
 	GameObject *Banshee = Commands->Create_Object("Alien_Strike_Craft",Vector3(0.0f,0.0f,0.0f));
 	Commands->Attach_To_Object_Bone(Banshee,obj,"Banshee");
-	Commands->Attach_Script(Banshee,"JMG_Metroid_Base_Defense","0.0,200.0,3");
+	Commands->Attach_Script(Banshee,"M00_Base_Defense","0.0,300.0,3");
+	Commands->Attach_Script(Banshee,"JMG_Utility_Timer_Trigger_Enemy_Seen","0.1");
 	BansheeID = Commands->Get_ID(Banshee);
 	Animation_Complete(obj,"");
 }
@@ -4701,6 +4722,11 @@ void JMG_Metroid_Mine_Computer_Console_Script_Special::Timer_Expired(GameObject 
 			MetroidGameControl.MineTerminalReset[TerminalNumber]--;
 			if (!MetroidGameControl.MineTerminalReset[TerminalNumber])
 			{
+				if (MetroidObjectiveSystemControl.Get_Objective_Status(34+TerminalNumber) == NewObjectiveSystem::Accomplished)
+				{
+					MetroidObjectiveSystemControl.Remove_Objective(34+TerminalNumber);
+					MetroidObjectiveSystemControl.Add_Objective(34+TerminalNumber,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12814+TerminalNumber,"",12814+TerminalNumber,Commands->Get_Position(Commands->Find_Object(MetroidGameControl.MineTerminalID[TerminalNumber])));
+				}
 				Commands->Enable_HUD_Pokable_Indicator(obj,true);
 				MetroidGameControl.NumberOfDeactivatedTerminals--;
 				MetroidGameControl.MineTerminalDeactivated[TerminalNumber] = false;
@@ -4856,6 +4882,8 @@ void JMG_Metroid_Objective_Update_On_Custom::Custom(GameObject *obj,int message,
 }
 void JMG_AI_Artillery_Targeting_Fire_At_Custom::Created(GameObject *obj)
 {
+	if (obj->As_SoldierGameObj())
+		obj->As_SoldierGameObj()->Set_Override_Muzzle_Direction(true);
 	const char *weap = Get_Current_Weapon(obj);
 	if (!weap)
 		return;
@@ -4875,7 +4903,7 @@ void JMG_AI_Artillery_Targeting_Fire_At_Custom::Custom(GameObject *obj,int messa
 			seen = sender;
 		if (Get_Vehicle_Driver(seen))
 			seen = Get_Vehicle_Driver(seen);
-		Vector3 myPos = Commands->Get_Position(obj),enemyPos = Commands->Get_Position(seen);
+		Vector3 myPos = obj->As_SoldierGameObj() ? Commands->Get_Bone_Position(obj,"gunbone") : Commands->Get_Bone_Position(obj,"MuzzleA0"),enemyPos = Commands->Get_Position(seen);
 		float targetDist = JmgUtility::SimpleDistance(myPos,enemyPos),targetFlatDistance = JmgUtility::SimpleFlatDistance(myPos,enemyPos),minDistanceSquared = Get_Float_Parameter("MinDistance")*Get_Float_Parameter("MinDistance");
 		if (targetDist < minDistanceSquared)
 			return;
@@ -4884,17 +4912,17 @@ void JMG_AI_Artillery_Targeting_Fire_At_Custom::Custom(GameObject *obj,int messa
 			useHighAngle = false;
 		else if (Get_Int_Parameter("UseLowAngleWhenAboveMinDistance") && targetFlatDistance <= minDistanceSquared)
 			useHighAngle = false;
-		else if (Get_Float_Parameter("UseLowAngleTargetAboveHeight") && Commands->Get_Position(obj).Z+Get_Float_Parameter("UseLowAngleTargetAboveHeight") < Commands->Get_Position(seen).Z)
+		else if (Get_Float_Parameter("UseLowAngleTargetAboveHeight") && myPos.Z+Get_Float_Parameter("UseLowAngleTargetAboveHeight") < Commands->Get_Position(seen).Z)
 			useHighAngle = false;
 		double height = enemyPos.Z-myPos.Z,angle;
 		myPos.Z = enemyPos.Z = 0.0f;
 		if (!CalculateAngle(&angle,Commands->Get_Distance(enemyPos,myPos),height,useHighAngle))
 			return;
 		float TempRotation = atan2(enemyPos.Y-myPos.Y,enemyPos.X-myPos.X);
-		Vector3 pos = Commands->Get_Bone_Position(obj,"barrel");
-		pos.X += (float)cos(TempRotation);
-		pos.Y += (float)sin(TempRotation);
-		pos.Z += (float)tan(angle*PI/180);
+		Vector3 pos = obj->As_SoldierGameObj() ? Commands->Get_Bone_Position(obj,"gunbone") : Commands->Get_Bone_Position(obj,"MuzzleA0");
+		pos.X += (float)cos(TempRotation)*10.0f;
+		pos.Y += (float)sin(TempRotation)*10.0f;
+		pos.Z += (float)tan(angle*PI/180)*10.0f;
 		ActionParamsStruct params;
 		params.Set_Attack(pos,100000.0f,0,1);
 		params.AttackForceFire = false;
@@ -5371,7 +5399,7 @@ ScriptRegistrant<JMG_Metroid_Defense_Gun_Beacon> JMG_Metroid_Defense_Gun_Beacon_
 ScriptRegistrant<JMG_Metroid_Defense_Gun_Powerup> JMG_Metroid_Defense_Gun_Powerup_Registrant("JMG_Metroid_Defense_Gun_Powerup","BeaconID:int,PlayerID:int");
 ScriptRegistrant<JMG_Metroid_Defense_Telepad_Beacon> JMG_Metroid_Defense_Telepad_Beacon_Registrant("JMG_Metroid_Defense_Telepad_Beacon","");
 ScriptRegistrant<JMG_Metroid_Defense_Telepad_Powerup> JMG_Metroid_Defense_Telepad_Powerup_Registrant("JMG_Metroid_Defense_Telepad_Powerup","BeaconID:int,PlayerID:int");
-ScriptRegistrant<JMG_Metroid_Defense_Telepad_Zone> JMG_Metroid_Defense_Telepad_Zone_Registrant("JMG_Metroid_Defense_Telepad_Zone","PlayerID:int");
+ScriptRegistrant<JMG_Metroid_Defense_Telepad_Zone> JMG_Metroid_Defense_Telepad_Zone_Registrant("JMG_Metroid_Defense_Telepad_Zone","PlayerID:int,PadID:int");
 ScriptRegistrant<JMG_Metroid_Preplaced_Player_Telepad> JMG_Metroid_Preplaced_Player_Telepad_Registrant("JMG_Metroid_Preplaced_Player_Telepad","");
 ScriptRegistrant<JMG_Metroid_Player_Turret_Damage> JMG_Metroid_Player_Turret_Damage_Registrant("JMG_Metroid_Player_Turret_Damage","");
 ScriptRegistrant<JMG_Metroid_Screen_Fade_Red_On_Damage> JMG_Metroid_Screen_Fade_Red_On_Damage_Registrant("JMG_Metroid_Screen_Fade_Red_On_Damage","");

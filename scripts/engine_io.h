@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -137,7 +137,9 @@ public:
 	float Get_Float(char const *section,char const *entry,float defaultvalue) const;
 	bool Get_Bool(char const *section,char const *entry,bool defaultvalue) const;
 	int Get_String(char const *section,char const *entry,char const *defaultvalue,char *result,int size) const;
+	int Get_String_Advanced(char const *section,char const *entry,char const *defaultvalue,char *result,int size,bool writeIfNotFound) const;
 	StringClass &Get_String(StringClass &str, const char* section, const char* entry, const char* default = 0) const;
+	StringClass& Get_String_Advanced(StringClass& string, const char* section, const char* entry, const char* defaultvalue, bool updateIfNotFound) const;
 	WideStringClass &Get_Wide_String(WideStringClass &,char  const*,char  const*,wchar_t  const*) const;
 	bool Put_Wide_String(const char* section, const char* entry, const wchar_t* string);
 	bool Put_String(const char* section, const char* entry, const char* string);

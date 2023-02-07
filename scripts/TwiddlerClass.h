@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -19,6 +19,7 @@ public:
 	virtual DefinitionClass *Twiddle() const;
 	PersistClass *Create() const;
 	const PersistFactoryClass &Get_Factory() const;
+	const DynamicVectorClass<int>& Get_Definition_List() { return m_DefinitionList; }
 	bool Save(ChunkSaveClass &csave);
 	bool Load(ChunkLoadClass &cload);
 	bool Save_Variables(ChunkSaveClass &csave);

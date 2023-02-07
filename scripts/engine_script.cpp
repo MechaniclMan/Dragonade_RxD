@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -11,6 +11,7 @@
 */
 #include "general.h"
 #include "scripts.h"
+#include "engine_script.h"
 #include "engine_vector.h"
 #include "ScriptableGameObj.h"
 #include "slist.h"
@@ -418,7 +419,7 @@ SCRIPTS_API GameObject *Find_Object_With_Script(const char *script)
 
 SCRIPTS_API GameObject *Find_Closest_Object_With_Script(const char *script, Vector3 pos)
 {
-	float closestdist = 0.0f;
+	float closestdist = FLT_MAX;
 	GameObject *closest = NULL;
 	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
 	while (x)
@@ -433,8 +434,8 @@ SCRIPTS_API GameObject *Find_Closest_Object_With_Script(const char *script, Vect
 		{
 			if (Is_Script_Attached(o2, script))
 			{
-				float dist = Commands->Get_Distance(Commands->Get_Position(o2),pos);
-				if (closest == NULL || dist < closestdist)
+				float dist = Vector3::Distance_Squared(Commands->Get_Position(o2), pos);
+				if (dist < closestdist)
 				{
 					closestdist = dist;
 					closest = o2;
@@ -514,6 +515,50 @@ SCRIPTS_API void Find_All_Objects_With_Script_By_Distance(const char *script, SL
     delete d->Data();
 }
 
+SCRIPTS_API void Find_All_Vehicles_By_Distance(SList<GameObject>& objects, Vector3 position)
+{
+  objects.Remove_All();
+
+  // Internal list of distances, in the same order as GameObjects in objects
+  SList<float> distances;
+
+  for ( SLNode<BaseGameObj>* objNode = GameObjManager::GameObjList.Head(); objNode != NULL; objNode = objNode->Next() )
+  {
+    ScriptableGameObj* obj = (objNode->Data()) ? objNode->Data()->As_ScriptableGameObj() : NULL;
+	if ( obj && obj->As_VehicleGameObj() )
+    {
+      // SList cannot contain non-pointer types... stupid thing!
+      float* distance = new float;
+      *distance = Commands->Get_Distance(Commands->Get_Position(obj), position);
+
+      SLNode<float>* d = distances.Head();
+      for ( SLNode<GameObject>* o = objects.Head();
+        d != NULL;
+        d = d->Next(), o = o->Next() )
+      {
+        if ( *distance < *d->Data() )
+        {
+          objects.insertBefore(obj, *o);
+          distances.insertBefore(distance, *d);
+          distance = NULL;
+          break;
+        }
+      }
+
+      // OK, all existing objects are closer than this one so add it to the end of the list
+      if ( distance != NULL )
+      {
+        objects.Add_Tail(obj);
+        distances.Add_Tail(distance);
+      }
+    }
+  }
+
+  // Clean up memory since SList insists on having heap objects...
+  for ( SLNode<float>* d = distances.Head(); d != NULL; d = d->Next() )
+    delete d->Data();
+}
+
 SCRIPTS_API void Send_Custom_Event_To_Objects_With_Script( GameObject *sender, const char *script, int message, int param, float delay )
 {
 	if (!sender)
@@ -560,7 +605,7 @@ SCRIPTS_API void Send_Custom_Event_To_Objects_With_Script_Ranged( GameObject *se
 		{
 			if ( Is_Script_Attached( o2, script )
 				&& Commands->Get_ID ( sender ) != Commands->Get_ID ( o2 )
-				&& Commands->Get_Distance ( Commands->Get_Position ( sender ), Commands->Get_Position ( o2 ) ) <= range )
+				&& Vector3::Distance_Squared ( Commands->Get_Position ( sender ), Commands->Get_Position ( o2 ) ) <= range * range )
 			{
 				Commands->Send_Custom_Event(sender,o2,message,param,delay);
 			}
@@ -627,4 +672,48 @@ void SCRIPTS_API Attach_Script_Once_V ( GameObject* pObj, const char* script, co
   va_start ( vargs, params );
   Attach_Script_V(pObj,script,params,vargs);
   va_end(vargs);
+}
+
+int Get_Param_Type(const char *str)
+{
+	for (int i = 0; i < PARAM_TYPE_COUNT; i++)
+	{
+		if (!lstrcmpiA(str, PARAM_TYPE_STRINGS[i]))
+		{
+			return i;
+		}
+	}
+	return 0;
+}
+
+SCRIPTS_API void Get_Script_Parameters(const char *script, DynamicVectorClass<ScriptParameter> &parameters)
+{
+	parameters.Delete_All();
+	auto factory = ScriptRegistrar::GetScriptFactory(script);
+	if (!factory)
+	{
+		return;
+	}
+	char* working = newstr(factory->GetParamDescription());
+	char *param = strtok(working, ",");
+	while (param)
+	{
+		char *sname = param;
+		char *type = strchr(param, ':');
+		type[0] = '\0';
+		type++;
+		char *value = strrchr(param, '=');
+		if (value)
+		{
+			value[0] = '\0';
+			value++;
+		}
+		ScriptParameter p;
+		p.name = sname;
+		p.value = value;
+		p.type = Get_Param_Type(type);
+		parameters.Add(p);
+		param = strtok(nullptr, ",");
+	}
+	delete[] working;
 }

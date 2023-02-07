@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -107,6 +107,7 @@ public:
 #endif
 	SCRIPTS_API void											Find_Closest_Poly (const Vector3 &pos, float *distance2);
 	float Find_Closest_Poly(const Vector3 &pos) { float distance2; Find_Closest_Poly(pos,&distance2); return distance2; }
+	void Find_Closest_Poly(const Vector3& pos, float* distance2, Vector3* polyPos);
 	int											Building_In_Range(const Vector3 &point, float range);	//return 0 for no, 1 for yes and 2 for MCT in range
 	bool										Is_In_Range_Coarse(const Vector3& point, float range_sq);
 	bool Cast_Ray(RayCollisionTestClass& raytest);
@@ -150,7 +151,7 @@ protected:
 	void											Add_Aggregate(BuildingAggregateClass * aggregate);
 	void											Remove_Aggregate(BuildingAggregateClass * aggregate);
 	void											Add_Light(LightPhysClass * light);
-	void											Find_Closest_Poly_For_Model (RenderObjClass *model, const Vector3 &pos, float *distance2);
+	void											Find_Closest_Poly_For_Model (RenderObjClass *model, const Vector3 &pos, float *distance2, Vector3* polyPos = NULL);
 	//void											Update_State(bool force_update = false); //DA
 	void											Enable_Alternate_Materials(RefMultiListClass<StaticPhysClass> & models, bool onoff);
 	void											Enable_Alternate_Materials(RenderObjClass * model,bool onoff);

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -274,6 +274,31 @@ void JFW_Attach_Script_Custom::Custom(GameObject *obj,int type,int param,GameObj
 	}
 }
 
+void JFW_Attach_Script_Custom_Until_Custom::Custom(GameObject *obj, int type, int param, GameObject *sender)
+{
+	if (type == Get_Int_Parameter("AttachMessage"))
+	{
+		const char *script = Get_Parameter("Script");
+		const char *paramx = Get_Parameter("Params");
+		char *params = newstr(paramx);
+		char delim = Get_Parameter("Delim")[0];
+		size_t x = strlen(params);
+		for (size_t i = 0; i < x; i++)
+		{
+			if (params[i] == delim)
+			{
+				params[i] = ',';
+			}
+		}
+		Commands->Attach_Script(obj, script, params);
+		delete[] params;
+	}
+	else if (type == Get_Int_Parameter("RemoveMessage"))
+	{
+		Remove_Script(obj, Get_Parameter("Script"));
+	}
+}
+
 void JFW_Remove_All_Scripts_Custom::Custom(GameObject *obj,int type,int param,GameObject *sender)
 {
 	if (type == Get_Int_Parameter("Message"))
@@ -484,6 +509,7 @@ ScriptRegistrant<JFW_Attach_Script_Type_Custom> JFW_Attach_Script_Type_Custom_Re
 ScriptRegistrant<JFW_Remove_Script_Custom> JFW_Remove_Script_Custom_Registrant("JFW_Remove_Script_Custom","Script:string,Message:int");
 ScriptRegistrant<JFW_Remove_Script_Death> JFW_Remove_Script_Death_Registrant("JFW_Remove_Script_Death","Script:string");
 ScriptRegistrant<JFW_Attach_Script_Custom> JFW_Attach_Script_Custom_Registrant("JFW_Attach_Script_Custom","Script:string,Params:string,Delim:string,Message:int");
+ScriptRegistrant<JFW_Attach_Script_Custom_Until_Custom> JFW_Attach_Script_Custom_Until_Custom_Registrant("JFW_Attach_Script_Custom_Until_Custom","Script:string,Params:string,Delim:string,AttachMessage:int,RemoveMessage:int");
 ScriptRegistrant<JFW_Remove_All_Scripts_Custom> JFW_Remove_All_Scripts_Custom_Registrant("JFW_Remove_All_Scripts_Custom","Message:int");
 ScriptRegistrant<JFW_Attach_Script_Preset_Once_Custom> JFW_Attach_Script_Preset_Once_Custom_Registrant("JFW_Attach_Script_Preset_Once_Custom","Script:string,Params:string,Delim:string,Message:int,Preset:string,Player_Type:int");
 ScriptRegistrant<JFW_Attach_Script_Type_Once_Custom> JFW_Attach_Script_Type_Once_Custom_Registrant("JFW_Attach_Script_Type_Once_Custom","Script:string,Params:string,Delim:string,Message:int,Type:int,Player_Type:int");

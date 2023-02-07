@@ -70,7 +70,13 @@ Register_Crate(DADeathCrateClass,"Death",DACrateType::INFANTRY | DACrateType::VE
 
 class DAVeteranCrateClass : public DACrateClass {
 	virtual void Activate(cPlayer *Player) {
-		Commands->Send_Custom_Event(0,Player->Get_GameObj(),558223,0,0); //You can either setup your veteran system to receive this custom or just overwrite the crate and integrate it directly.
+		float amount = Get_Random_Float(1, 30);
+		Commands->Send_Custom_Event(0,Player->Get_GameObj(),558223,*(int*)&amount,0);
+		DA::Page_Player(Player, "You've been awarded %.2f veteran points by the Veteran Crate.", amount);
+	}
+
+	virtual bool Can_Activate(cPlayer* Player) {
+		return !!Player->Get_DA_Player()->Find_Observer("DAVeterancyPlayerDataObserverClass");
 	}
 };
 

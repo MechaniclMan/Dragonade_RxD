@@ -157,7 +157,7 @@ void DAGameSpyGameFeatureClass::Init() {
 	unsigned short MasterPort = htons(27900);
 
 	StringClass Masters;
-	DASettingsManager::Get_String(Masters,"GameSpyMasterServers","renlist.w3dhub.com|renmaster.cncnet.org|master-gsa.renlist.n00b.hk|renmaster-backup.cncirc.net");
+	DASettingsManager::Get_String(Masters,"GameSpyMasterServers","renlist.w3dhub.com|renmaster.cncnet.org|master-gsa.renlist.n00b.hk|renmaster-backup.cncirc.net|renmaster-backup2.cncirc.net");
 	DATokenParserClass Parser(Masters,'|');
 	while (char *Token = Parser.Get_String()) {
 		HostInfo = gethostbyname(Token);
@@ -231,7 +231,7 @@ void DAGameSpyGameFeatureClass::Level_Loaded_Event() {
 	ShowPlayerCount = DASettingsManager::Get_Bool("GameSpyShowPlayerCount",false);
 	Title = The_Game()->Get_Game_Title();
 	if (ShowPlayerCount) {
-		The_Game()->Get_Game_Title().Format(L"%s (%d/%d)",Title,The_Game()->Get_Current_Players(),The_Game()->Get_Max_Players());
+		//The_Game()->Get_Game_Title().Format(L"%s (%d/%d)",Title,The_Game()->Get_Current_Players(),The_Game()->Get_Max_Players());
 	}
 }
 
@@ -364,12 +364,14 @@ void DAGameSpyGameFeatureClass::Timer_Expired(int Number,unsigned int Data) {
 void DAGameSpyGameFeatureClass::Player_Join_Event(cPlayer *Player) {
 	if (ShowPlayerCount) {
 		The_Game()->Get_Game_Title().Format(L"%s (%d/%d)",Title,The_Game()->Get_Current_Players(),The_Game()->Get_Max_Players());
+		Update_Game_Options(-1); // Update game options as server title has changed.
 	}
 }
 
 void DAGameSpyGameFeatureClass::Player_Leave_Event(cPlayer *Player) {
 	if (ShowPlayerCount) {
 		The_Game()->Get_Game_Title().Format(L"%s (%d/%d)",Title,The_Game()->Get_Current_Players()-1,The_Game()->Get_Max_Players());
+		Update_Game_Options(-1); // Update game options as server title has changed.
 	}
 }
 

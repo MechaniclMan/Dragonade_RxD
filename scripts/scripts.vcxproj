@@ -25,7 +25,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -166,6 +166,7 @@
       <AdditionalLibraryDirectories>..\bin\debug</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <MinimumRequiredVersion>6.01</MinimumRequiredVersion>
     </Link>
     <PostBuildEvent>
       <Command>if defined RenPath (
@@ -272,6 +273,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="engine_common.cpp" />
     <ClCompile Include="engine_da.cpp" />
     <ClCompile Include="engine_def.cpp" />
+    <ClCompile Include="engine_dialog.cpp" />
     <ClCompile Include="engine_dmg.cpp" />
     <ClCompile Include="engine_game.cpp" />
     <ClCompile Include="engine_io.cpp" />
@@ -319,9 +321,12 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="mdb.cpp" />
     <ClCompile Include="mdbdef.cpp" />
     <ClCompile Include="mdbevf.cpp" />
+    <ClCompile Include="ms.cpp" />
+    <ClCompile Include="ms_ai.cpp" />
     <ClCompile Include="neo.cpp" />
     <ClCompile Include="nh.cpp" />
     <ClCompile Include="nhp.cpp" />
+    <ClCompile Include="ObjectLibraryManager.cpp" />
     <ClCompile Include="PersistFactoryClass.cpp" />
     <ClCompile Include="da_player.cpp" />
     <ClCompile Include="PointerRemapClass.cpp" />
@@ -338,6 +343,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="scriptregistrar.cpp" />
     <ClCompile Include="scripts.cpp" />
     <ClCompile Include="scud.cpp" />
+    <ClCompile Include="DefaultConnectionAcceptanceFilter.cpp" />
     <ClCompile Include="sh_blocker.cpp" />
     <ClCompile Include="sh_factory.cpp" />
     <ClCompile Include="sh_underground.cpp" />
@@ -348,6 +354,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="tda.cpp" />
     <ClCompile Include="tfx.cpp" />
     <ClCompile Include="ThreadClass.cpp" />
+    <ClCompile Include="unstoppable.cpp" />
     <ClCompile Include="WeaponManager.cpp" />
     <ClCompile Include="agtfix.cpp" />
     <ClCompile Include="cGameType.cpp" />
@@ -501,6 +508,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="engine_common.h" />
     <ClInclude Include="engine_da.h" />
     <ClInclude Include="engine_def.h" />
+    <ClInclude Include="engine_dialog.h" />
     <ClInclude Include="engine_dmg.h" />
     <ClInclude Include="engine_game.h" />
     <ClInclude Include="engine_io.h" />
@@ -567,7 +575,9 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="nh.h" />
     <ClInclude Include="nhp.h" />
     <ClInclude Include="obboxclass.h" />
+    <ClInclude Include="ObjectLibraryManager.h" />
     <ClInclude Include="ObserverImpClass.h" />
+    <ClInclude Include="ODESystemClass.h" />
     <ClInclude Include="OffenseObjectClass.h" />
     <ClInclude Include="Parameter.h" />
     <ClInclude Include="Persist.h" />
@@ -575,6 +585,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="PhysDefClass.h" />
     <ClInclude Include="PhysicalGameObj.h" />
     <ClInclude Include="PhysicalGameObjDef.h" />
+    <ClInclude Include="PhysicsConstants.h" />
     <ClInclude Include="PhysicsSceneClass.h" />
     <ClInclude Include="physinttest.h" />
     <ClInclude Include="PhysObserverClass.h" />
@@ -601,6 +612,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="RepairBayGameObj.h" />
     <ClInclude Include="RepairBayGameObjDef.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="RigidBodyClass.h" />
     <ClInclude Include="SamSiteGameObj.h" />
     <ClInclude Include="SamSiteGameObjDef.h" />
     <ClInclude Include="SaveLoadSubSystemClass.h" />
@@ -609,6 +621,9 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="SceneClass.h" />
     <ClInclude Include="ScriptableGameObj.h" />
     <ClInclude Include="ScriptableGameObjDef.h" />
+    <ClInclude Include="ScriptedControlClass.h" />
+    <ClInclude Include="ScriptedControls.h" />
+    <ClInclude Include="ScriptedDialogClass.h" />
     <ClInclude Include="scripts.h" />
     <ClInclude Include="ScriptZoneGameObj.h" />
     <ClInclude Include="ScriptZoneGameObjDef.h" />
@@ -644,7 +659,9 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="TransitionInstanceClass.h" />
     <ClInclude Include="Observee.h" />
     <ClInclude Include="TwiddlerClass.h" />
+    <ClInclude Include="unstoppable.h" />
     <ClInclude Include="Vector3i.h" />
+    <ClInclude Include="VehicleFactoryGameObjDummy.h" />
     <ClInclude Include="VisTableClass.h" />
     <ClInclude Include="VisTableMgrClass.h" />
     <ClInclude Include="w3d.h" />

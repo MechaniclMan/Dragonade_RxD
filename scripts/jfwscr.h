@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -61,6 +61,11 @@ class JFW_Remove_Script_Death : public ScriptImpClass {
 class JFW_Attach_Script_Custom : public ScriptImpClass
 {
   void Custom(GameObject *obj,int type,int param,GameObject *sender);
+};
+
+class JFW_Attach_Script_Custom_Until_Custom : public ScriptImpClass
+{
+  void Custom(GameObject *obj, int type, int param, GameObject *sender);
 };
 
 class JFW_Remove_All_Scripts_Custom : public ScriptImpClass {

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -34,6 +34,7 @@ void LineSegClass::Set(const LineSegClass& object, const Matrix3D& transform)
     Matrix3D::Transform_Vector(transform, object.P1, &P1);
     DP = P1 - P0;
     Matrix3D::Rotate_Vector(transform, object.Dir, &Dir);
+	Length = object.Length;
 }
 
 bool LineSegClass::Find_Intersection(const LineSegClass &other_line, Vector3 *p1, float *fraction1, Vector3 *p2, float *fraction2) const

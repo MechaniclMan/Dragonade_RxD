@@ -1,0 +1,3 @@
+Build b8810
+Built on 2022-11-19 23:09:45Z using commit b788408f57730c90e09e2abedeb04ad3ad0bdeea
+Distributed as ssgm-plugins-2022.11.19-b8810.zip.

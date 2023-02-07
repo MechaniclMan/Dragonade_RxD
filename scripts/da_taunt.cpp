@@ -22,7 +22,12 @@ inline bool Allow_Taunt(SoldierGameObj *Soldier) {
 	if (!Soldier) {
 		return false;
 	}
-	return !(Soldier->Is_Airborne() || Soldier->Get_Vehicle() || Soldier->Get_Defense_Object()->Get_Health() == 0.0f);
+
+	return !(Soldier->Is_Airborne() || 
+		Soldier->Get_Vehicle() || 
+		Soldier->Get_Defense_Object()->Get_Health() == 0.0f || 
+		!Soldier->Peek_Physical_Object()->As_HumanPhysClass() || 
+		!Get_Data_File(StringFormat("%s.w3d", Get_Model(Soldier)))->Is_Available());
 }
 
 void DATauntsGameFeatureClass::Init() {

@@ -94,6 +94,7 @@ AT2(0,0x006A5270);
 REF_DEF2(bool,CombatManager::FriendlyFirePermitted,0,0x008550E4);
 REF_DEF2(bool,CombatManager::BeaconPlacementEndsGame,0,0x008550E5);
 REF_DEF2(bool,BuildingGameObj::CanRepairBuildings,0,0x00810474);
+REF_DEF2(float, TimeScale, 0x00811E60, 0x00811038);
 
 RENEGADE_FUNCTION
 bool cGameData::Set_Max_Players(int)
@@ -280,7 +281,7 @@ bool Find_Active_Beacon()
 
 bool Close_To_Teams_Beacon(cPlayer* Player, float Distance)
 {
-	if ( Player )
+	if ( Player && Player->Is_Alive_And_Kicking() )
 	{
 		if ( Distance < 40.0f )
 			Distance = 40.0f;
@@ -1433,7 +1434,7 @@ void Check_Stealth_ICON(int ID,const char *Model,int Team)
 		}
 		if ( Player->Get_GameObj()->Is_Stealthed() )
 			return;
-		Set_Emot_Icon(ID,Model,Team);
+		Set_Emot_Icon2(ID,Model,Team);
 	}
 }
 
@@ -1499,7 +1500,7 @@ bool RxDMap()
 }
 
 
-void Set_Emot_Icon(int ID,const char *Model,int Team) {
+void Set_Emot_Icon2(int ID,const char *Model,int Team) {
 	WideStringClass Send;
 	Send.Format(L"j\n36\n%d\n%hs\n",ID,Model);
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
@@ -1508,7 +1509,6 @@ void Set_Emot_Icon(int ID,const char *Model,int Team) {
 		}
 	}
 }
-
 
 unsigned int Get_Ground_Vehicle_Count(int Team) {
 	GameObject *factory = Find_Vehicle_Factory(Team);

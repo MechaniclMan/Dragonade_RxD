@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -327,9 +327,11 @@ public:
 
 	TT_INLINE static float Distance(const Vector3 &p1, const Vector3 &p2)
 	{
-		Vector3	temp;
-		temp = p1 - p2;
-		return (temp.Length());
+		return (p1 - p2).Length();
+	}
+	TT_INLINE static float Distance_Squared(const Vector3 &p1, const Vector3 &p2)
+	{
+		return (p1 - p2).Length2();
 	}
 	TT_INLINE static void Lerp(const Vector3 &a, const Vector3 &b, float alpha,Vector3 *set_result)
 	{

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -32,7 +32,15 @@ uint32 SysTimeClass::Get()
       this->Reset();
    }
 
-   return timeGetTime() - this->uTimeInit;
+   unsigned int u = timeGetTime();
+   if (u <= uTimeInit)
+   {
+       return uTimeInitNeg + u;
+   }
+   else
+   {
+       return u - uTimeInit;
+   }
 }
 
 

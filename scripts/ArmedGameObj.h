@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -39,6 +39,10 @@ public:
 	virtual const Matrix3D &Get_Muzzle( int index = 0 );
 	void							Start_Recoil( int muzzle_index,float recoil_scale,float recoil_time );
 	float							Get_Weapon_Error( void )					{ return Get_Definition().WeaponError; }
+	float							Get_Weapon_Turn_Min(void)					{ return Get_Definition().WeaponTurnMin; }
+	float							Get_Weapon_Turn_Max(void)					{ return Get_Definition().WeaponTurnMax; }
+	float							Get_Weapon_Tilt_Min(void)					{ return Get_Definition().WeaponTiltMin; }
+	float							Get_Weapon_Tilt_Max(void)					{ return Get_Definition().WeaponTiltMax; }
 	Vector3						Get_Targeting_Pos( void )					{ return TargetingPos; }
 	virtual bool				Set_Targeting( const Vector3 & pos, bool do_tilt = true );
 	virtual	ArmedGameObj	*As_ArmedGameObj( void )					{ return this; }

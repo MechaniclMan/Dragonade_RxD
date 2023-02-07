@@ -492,13 +492,14 @@ public:
 		saveInProgress = true;
 		FILE *SaveScores;
 		FILE *SaveScores2;
-		char tempFileName[256],finalFileName[256],textFileName[256];
+		char tempFileName[256],finalFileName[256],textFileName[256],textTmpFileName[256];
 		_mkdir(metroidSavePath);
 		sprintf(finalFileName,"%sBetaMetroidPlayerRecords.Rp2",metroidSavePath);
 		sprintf(textFileName,"%sMetroidPlayerRecords.txt",metroidSavePath);
+		sprintf(textTmpFileName,"%sMetroidPlayerRecordsTmp.txt",metroidSavePath);
 		sprintf(tempFileName,"%sBetaMetroidPlayerRecords.tmp",metroidSavePath);
 		SaveScores = fopen(tempFileName,"w");
-		SaveScores2 = fopen(textFileName,"w");
+		SaveScores2 = fopen(textTmpFileName,"w");
 		MetroidHighScoresNode *Current = MetroidHighScoresNodeList;
 		while (Current)
 		{
@@ -519,6 +520,8 @@ public:
 		fclose(SaveScores2);
 		remove(finalFileName);
 		rename(tempFileName,finalFileName);
+		remove(textFileName);
+		rename(textTmpFileName,textFileName);
 		saveInProgress = false;
 	}
 	void LoadData()
@@ -2130,6 +2133,7 @@ public:
 	bool cityShieldLowered;
 	bool electrifiedWaterTurnedOff;
 	bool tunnelEntryLowered;
+	int winMusicId;
 	MetroidGame()
 	{
 		LastPlayerCount = 0;
@@ -2140,6 +2144,7 @@ public:
 		BossMode = 0;
 		BossDefeated = false;
 		BossDefeatedMusicID = 0;
+		winMusicId = 0;
 		for (int x = 0;x < 3;x++)
 		{
 			MineTerminalID[x] = 0;
@@ -2705,6 +2710,19 @@ public:
 		LastFired = 0;
 		MedicalPackNodeList = NULL;
 	}
+	int FindFirstID()
+	{
+		if (!MedicalPackNodeList)
+			return 0;
+		MedicalPackNode *Current = MedicalPackNodeList;
+		while (Current)
+		{
+			if (Current->ID)
+				return Current->ID;
+			Current = Current->next;
+		}
+		return 0;
+	}
 	void AddMedicalPack(GameObject *obj)
 	{
 		MedicalPackCount++;
@@ -2722,7 +2740,7 @@ public:
 		}
 		if (MedicalPackCount > 3)
 		{
-			GameObject *object = Commands->Find_Object(MedicalPackNodeList->ID);
+			GameObject *object = Commands->Find_Object(FindFirstID());
 			if (object)
 				Commands->Destroy_Object(object);
 		}
@@ -2736,13 +2754,7 @@ public:
 			if (Current->ID == ID)
 			{
 				MedicalPackCount--;
-				if (!Prev)
-					MedicalPackNodeList = MedicalPackNodeList->next;
-				else if (Current->next)
-					Prev->next = Current->next;
-				else
-					Prev->next = NULL;
-				delete Current;
+				Current->ID = 0;
 				return;
 			}
 			Prev = Current;
@@ -3671,7 +3683,7 @@ public:
 			OBBoxClass TheBox(Pos,Vector3(0.5f,0.5f,0.5f),rotation);
 			GameObject *theZone = Create_Zone("Script_Zone_All",TheBox);
 			char params[32];
-			sprintf(params,"%d",PlayerID);
+			sprintf(params,"%d,%d",PlayerID,ID);
 			Commands->Attach_Script(theZone,"JMG_Metroid_Defense_Telepad_Zone",params);
 			ZoneID = Commands->Get_ID(theZone);
 			playerDeathCount = 0;
@@ -3710,9 +3722,6 @@ public:
 				GameObject *OldPad = Commands->Find_Object(Current->ID);
 				if (OldPad)
 					Commands->Destroy_Object(OldPad);
-				Current->ID = Commands->Get_ID(TelePad);
-				Current->Pos = Commands->Get_Position(TelePad);
-				break;
 			}
 			if (!Current->next)
 			{
@@ -3721,17 +3730,14 @@ public:
 			}
 			Current = Current->next;
 		}
-		if (TelepadNodeList->next)
-		{
-			GameObject *Telepad = Commands->Find_Object(TelepadNodeList->ID);
-			if (Telepad)
-				Commands->Set_Animation(Telepad,"DefModeTelepad.DefModeTelepad",false,0,1,1,false);
-		}
+		GameObject *Telepad = Commands->Find_Object(TelepadNodeList->ID);
+		if (Telepad)
+			Commands->Set_Animation(Telepad,"DefModeTelepad.DefModeTelepad",false,0,1,1,false);
 	}
 	void RemoveTelepad(GameObject *telepad)
 	{
 		int ID = Commands->Get_ID(telepad);
-		TelepadNode *Current = TelepadNodeList,*Prev = NULL;
+		TelepadNode *Current = TelepadNodeList;
 		while (Current)
 		{
 			if (Current->ID == ID)
@@ -3739,53 +3745,65 @@ public:
 				GameObject *Zone = Commands->Find_Object(Current->ZoneID);
 				if (Zone)
 					Commands->Destroy_Object(Zone);
-				if (!Prev)
-					TelepadNodeList = Current->next;
-				else
-					Prev->next = Current->next;
-				delete Current;
-				if (TelepadNodeList && !TelepadNodeList->next)
-				{
-					GameObject *Telepad = Commands->Find_Object(TelepadNodeList->ID);
-					if (Telepad)
-						Commands->Set_Animation(Telepad,"DefModeTelepad.DefModeTelepad",false,0,0,0,false);
-				}
-				return;
+				Current->ID = 0; 
+				Current->PlayerID = 0;
+				Current->ZoneID = 0;
+				break;
 			}
-			Prev = Current;
 			Current = Current->next;
+		}
+		bool activeTeleporter = false;
+		Current = TelepadNodeList;
+		while (Current)
+		{
+			if (Current->ID && TelepadNodeList->ID != Current->ID)
+			{
+				activeTeleporter = true;
+				break;
+			}
+			Current = Current->next;
+		}
+		if (activeTeleporter)
+			return;
+		if (TelepadNodeList)
+		{
+			GameObject *Telepad = Commands->Find_Object(TelepadNodeList->ID);
+			if (Telepad)
+				Commands->Set_Animation(Telepad,"DefModeTelepad.DefModeTelepad",false,0,0,0,false);
 		}
 	}
 	void RemoveAllButSpecial()
 	{
-		TelepadNode *Current = TelepadNodeList,*die = NULL;
+		TelepadNode *Current = TelepadNodeList;
 		if (Current)
 			Current = Current->next;
 		while (Current)
 		{
-			die = Current;
-			Current = Current->next;
-			GameObject *Zone = Commands->Find_Object(die->ZoneID);
+			GameObject *Zone = Commands->Find_Object(Current->ZoneID);
 			if (Zone)
 				Commands->Destroy_Object(Zone);
-			delete die;
+			Current->ID = 0;
+			Current = Current->next;
 		}
 		GameObject *Telepad = Commands->Find_Object(TelepadNodeList->ID);
 		if (Telepad)
 			Commands->Set_Animation(Telepad,"DefModeTelepad.DefModeTelepad",false,0,0,0,false);
 	}
-	TelepadNode *FindNextTelepad(int TelepadPlayerID)
+	TelepadNode *FindNextTelepad(int TelepadID)
 	{
 		if (!TelepadNodeList || !TelepadNodeList->next)
 			return NULL;
+		bool goodToGo = false;
 		TelepadNode *Current = TelepadNodeList;
 		while (Current)
 		{
-			if (Current->PlayerID == TelepadPlayerID)
-				return Current->next ? Current->next : TelepadNodeList;
+			if (goodToGo && Current->ID)
+				return Current;
+			if (Current->ID == TelepadID)
+				goodToGo = true;
 			Current = Current->next;
 		}
-		return NULL;
+		return TelepadNodeList->ID == TelepadID ? NULL : TelepadNodeList;
 	}
 	TelepadNode *FindPlayerTelepad(int TelepadPlayerID)
 	{
@@ -3885,13 +3903,7 @@ private:
 		{
 			if (Current->ID == ID)
 			{
-				if (!Prev)
-					EquipmentNodeList = EquipmentNodeList->next;
-				else if (Current->next)
-					Prev->next = Current->next;
-				else
-					Prev->next = NULL;
-				delete Current;
+				Current->ID = 0;
 				break;
 			}
 			Prev = Current;
@@ -3945,6 +3957,11 @@ public:
 		EquipmentNode *Current = EquipmentNodeList,*Nearest = NULL;
 		while (Current)
 		{
+			if (!Current->ID)
+			{
+				Current = Current->next;
+				continue;
+			}
 			float Temp = JmgUtility::SimpleDistance(*Pos,Current->Pos);
 			if ((!Nearest || Temp < Dist) && Current->ID != *EquipmentID)
 			{
@@ -4226,6 +4243,19 @@ public:
 		UpgradePowerupCount = 0;
 		UpgradePowerupNodeList = NULL;
 	}
+	int GrabFirstID()
+	{
+		if (!UpgradePowerupNodeList)
+			return 0;
+		UpgradePowerupNode *Current = UpgradePowerupNodeList;
+		while (Current)
+		{
+			if (Current->ID)
+				return Current->ID;
+			Current = Current->next;
+		}
+		return 0;
+	}
 	void AddUpgradePowerup(GameObject *obj)
 	{
 		UpgradePowerupCount++;
@@ -4243,7 +4273,7 @@ public:
 		}
 		if (UpgradePowerupCount > 5)
 		{
-			GameObject *object = Commands->Find_Object(UpgradePowerupNodeList->ID);
+			GameObject *object = Commands->Find_Object(GrabFirstID());
 			if (object)
 				Commands->Destroy_Object(object);
 		}
@@ -4257,13 +4287,7 @@ public:
 			if (Current->ID == ID)
 			{
 				UpgradePowerupCount--;
-				if (!Prev)
-					UpgradePowerupNodeList = UpgradePowerupNodeList->next;
-				else if (Current->next)
-					Prev->next = Current->next;
-				else
-					Prev->next = NULL;
-				delete Current;
+				Current->ID = 0;
 				return;
 			}
 			Prev = Current;

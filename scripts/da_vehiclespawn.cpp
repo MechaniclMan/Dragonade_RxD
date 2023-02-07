@@ -122,7 +122,7 @@ void DAVehicleSpawnManagerClass::Init(const INIClass *INI) {
 	Register_Event(DAEvent::REQUESTVEHICLE);
 }
 
-bool DAVehicleSpawnManagerClass::Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay) {
+bool DAVehicleSpawnManagerClass::Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay,SoldierGameObj *Owner) {
 	Spawn_Vehicle(Factory->Get_Player_Type(),Vehicle,Player->Get_GameObj());
 	return false;
 }

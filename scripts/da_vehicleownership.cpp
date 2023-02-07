@@ -149,16 +149,16 @@ void DAVehicleOwnershipObserverClass::Vehicle_Enter(cPlayer *Player,int Seat) {
 	if (Seat == 0 && Get_Vehicle_Owner()) {
 		if (Get_Team() == Player->Get_Player_Type()) {
 			if (Get_Vehicle_Owner() != Player) {
-				DA::Page_Player(Player,"This vehicle belongs to %ls.",Get_Vehicle_Owner()->Get_Name());
-				DA::Page_Player(Get_Vehicle_Owner(),"%ls has entered your vehicle. You can remove them by using the \"!lock\" or \"!vkick\" command.",Player->Get_Name());
+				DA::Page_Player(Player, "This vehicle belongs to %ls.", Get_Vehicle_Owner()->Get_Name());
+				DA::Page_Player(Get_Vehicle_Owner(), "%ls has entered your vehicle. You can remove them by using the \"!lock\" or \"!vkick\" command.", Player->Get_Name());
 			}
 			else if (Is_Selling()) {
-				DA::Page_Player(Get_Vehicle_Owner(),"You have cancelled the sale of your vehicle.");
+				DA::Page_Player(Get_Vehicle_Owner(), "You have cancelled the sale of your vehicle.");
 				Unlock();
 			}
 		}
 		else {
-			DA::Page_Player(Get_Vehicle_Owner(),"The enemy has stolen your vehicle!");
+			DA::Page_Player(Get_Vehicle_Owner(), "The enemy has stolen your vehicle!");
 			Unbind();
 		}
 	}
@@ -278,12 +278,22 @@ DAVehicleOwnershipObserverClass *DAVehicleOwnershipGameFeatureClass::Bind_Vehicl
 		}
 	}
 	Unbind_Vehicle(Player); //Unbind the player's old vehicle if there is one.
+
+	if (!Is_Script_Attached(Vehicle, "MS_AI_Marker_Vehicle_Search_Ignore")) { //Make bot script ignore this vehicle.
+		StringClass scriptParams;
+		scriptParams.Format("%d", Get_Object_Type(Vehicle));
+		Commands->Attach_Script(Vehicle, "MS_AI_Marker_Vehicle_Search_Ignore", scriptParams.Peek_Buffer());
+	}
+
 	return new DAVehicleOwnershipObserverClass(Vehicle,Player);
 }
 
 bool DAVehicleOwnershipGameFeatureClass::Unbind_Vehicle(VehicleGameObj *Vehicle) {
 	DAVehicleOwnershipObserverClass *Data = Get_Vehicle_Data(Vehicle);
 	if (Data) {
+		if (Is_Script_Attached(Vehicle, "MS_AI_Marker_Vehicle_Search_Ignore")) { //Remove the bot ignore script
+			Find_Script_On_Object(Vehicle, "MS_AI_Marker_Vehicle_Search_Ignore")->Destroy_Script();
+		}
 		Data->Unbind();
 		return true;
 	}
@@ -293,6 +303,9 @@ bool DAVehicleOwnershipGameFeatureClass::Unbind_Vehicle(VehicleGameObj *Vehicle)
 bool DAVehicleOwnershipGameFeatureClass::Unbind_Vehicle(cPlayer *Player) {
 	DAVehicleOwnershipObserverClass *Data = Get_Vehicle_Data(Player);
 	if (Data) {
+		if (Is_Script_Attached(Data->Get_Vehicle(), "MS_AI_Marker_Vehicle_Search_Ignore")) { //Remove the bot ignore script
+			Find_Script_On_Object(Data->Get_Vehicle(), "MS_AI_Marker_Vehicle_Search_Ignore")->Destroy_Script();
+		}
 		Data->Unbind();
 		return true;
 	}

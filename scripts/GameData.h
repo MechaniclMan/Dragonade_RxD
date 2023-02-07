@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -221,6 +221,7 @@ public:
 	void Set_QuickMatch_Server(bool b) {IsQuickMatch = b;}
 	const WideStringClass &Get_Owner() const {return Owner;}
 	WideStringClass &Get_Game_Title() {return GameTitle;} //DA
+    //const WideStringClass &Get_Game_Title() const {return GameTitle;}
 	int Get_Version_Number() const {return ExeKey;}
 	bool Do_Exe_Versions_Match() {return ExeVersionsMatch;}
 	bool Do_String_Versions_Match() {return StringVersionsMatch;}

@@ -762,6 +762,12 @@ void DAPlayerClass::Change_Character(const SoldierGameObjDef *Soldier) {
 	Reset_Creation_Time();
 }
 
+void DAPlayerClass::Dialog_Message(DialogMessageType Type, ScriptedDialogClass* Dialog, ScriptedControlClass* Control) {
+	for (int i = 0; i < Observers.Count(); i++) {
+		Observers[i]->Dialog_Message(Type, Dialog, Control);
+	}
+}
+
 void DAPlayerClass::Created() {
 	for (int i = 0;i < Observers.Count();i++) {
 		Observers[i]->Created();
@@ -905,6 +911,7 @@ void DAPlayerManager::Init() {
 	Instance.Register_Event(DAEvent::C4DETONATE,INT_MAX);
 	Instance.Register_Event(DAEvent::CHANGECHARACTER,INT_MAX);
 	Instance.Register_Event(DAEvent::THINK,INT_MAX);
+	Instance.Register_Event(DAEvent::DIALOG,INT_MAX);
 	
 	Instance.Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::PLAYER,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::DESTROYED,DAObjectEvent::SOLDIER,INT_MAX);
@@ -1264,16 +1271,16 @@ bool DAPlayerManager::Suicide_Event(cPlayer *Player) { //Default suicide event.
 	return false;
 }
 
-bool DAPlayerManager::Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,cPlayer *Player,int &Seat) {
-	return Player->Get_DA_Player()->Vehicle_Entry_Request(Vehicle,Seat);
+bool DAPlayerManager::Vehicle_Entry_Request_Event(VehicleGameObj* Vehicle, cPlayer* Player, int& Seat) {
+	return Player->Get_DA_Player()->Vehicle_Entry_Request(Vehicle, Seat);
 }
 
-void DAPlayerManager::Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) {
-	Player->Get_DA_Player()->Vehicle_Enter(Vehicle,Seat);
+void DAPlayerManager::Vehicle_Enter_Event(VehicleGameObj* Vehicle, cPlayer* Player, int Seat) {
+	Player->Get_DA_Player()->Vehicle_Enter(Vehicle, Seat);
 }
 
-void DAPlayerManager::Vehicle_Exit_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) {
-	Player->Get_DA_Player()->Vehicle_Exit(Vehicle,Seat);
+void DAPlayerManager::Vehicle_Exit_Event(VehicleGameObj* Vehicle, cPlayer* Player, int Seat) {
+	Player->Get_DA_Player()->Vehicle_Exit(Vehicle, Seat);
 }
 
 bool DAPlayerManager::PowerUp_Grant_Request_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) {
@@ -1330,6 +1337,10 @@ void DAPlayerManager::Think() {
 	for (int i = 0;i < Players.Count();i++) {
 		Players[i]->Think();
 	}
+}
+
+void DAPlayerManager::Dialog_Event(cPlayer* Player, DialogMessageType Type, ScriptedDialogClass* Dialog, ScriptedControlClass* Control) {
+	Player->Get_DA_Player()->Dialog_Message(Type, Dialog, Control);
 }
 
 void DAPlayerManager::Custom_Event(GameObject *obj,int Type,int Param,GameObject *Sender) {

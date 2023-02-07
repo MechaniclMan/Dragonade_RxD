@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -162,6 +162,7 @@ private:
 	void					Update_Recoil(WeaponClass * weapon);
 	void					Begin_Jump( void );
 	void					Complete_Jump( void );
+	void					GetLegAndHoldStyle (int *leg_style,int *hold_style);
 };
 
 

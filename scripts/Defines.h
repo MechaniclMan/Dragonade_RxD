@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -30,6 +30,7 @@
 #pragma warning(disable:4251)
 
 #define WIN32_LEAN_AND_MEAN
+#define _WIN32_WINNT 0x0601
 #define _USE_MATH_DEFINES
 
 // breakpoint

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -399,12 +399,12 @@ inline StringClass::operator const char * (void) const
 
 inline bool StringClass::operator== (const char *rvalue) const
 {
-	return (Compare(rvalue) == 0);
+	return (Compare (rvalue) == 0);
 }
 
 inline bool StringClass::operator!= (const char *rvalue) const
 {
-	return (Compare(rvalue) != 0);
+	return (Compare (rvalue) != 0);
 }
 
 inline bool StringClass::operator < (const char *string) const
@@ -1104,6 +1104,45 @@ struct equals_istring: public std::binary_function<const char*, const char*, boo
     {
         return _stricmp(a, b.Peek_Buffer()) == 0;
     }
+};
+
+struct hash_string
+{
+	size_t operator()(const char* str) const
+	{
+		// djb2
+		unsigned long hash = 5381;
+		while (int c = *str++) hash = hash * 33 + c;
+		return hash;
+	}
+
+	size_t operator()(const StringClass& str) const
+	{
+		return (*this)(str.Peek_Buffer());
+	}
+};
+
+struct equals_string
+{
+	bool operator()(const char* a, const char* b) const
+	{
+		return strcmp(a, b) == 0;
+	}
+
+	size_t operator()(const StringClass& a, const StringClass& b) const
+	{
+		return strcmp(a.Peek_Buffer(), b.Peek_Buffer()) == 0;
+	}
+
+	size_t operator()(const StringClass& a, const char* b) const
+	{
+		return strcmp(a.Peek_Buffer(), b) == 0;
+	}
+
+	size_t operator()(const char* a, const StringClass& b) const
+	{
+		return strcmp(a, b.Peek_Buffer()) == 0;
+	}
 };
 
 SCRIPTS_API const wchar_t *CharToWideChar(const char *str); //convert a char to a wide char

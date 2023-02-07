@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -155,6 +155,7 @@ public:
 	//new
 	SCRIPTS_API float	Get_Targeting_Range(void);
 	bool				Tilt_Gun_While_Reloading(){return tiltGunWhileReloading && Definition->DoTiltWhileReloading;}
+	float				Get_Charge_Time();
 private:
 	void				Fire_C4( const AmmoDefinitionClass *ammo_def );
 	bool				Fire_Beacon( const AmmoDefinitionClass *ammo_def );

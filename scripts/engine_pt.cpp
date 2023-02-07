@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,10 +15,9 @@
 #include "engine_def.h"
 #include "engine_obj2.h"
 
-unsigned int SCRIPTS_API Get_Team_Cost(const char *preset,unsigned int team)
+unsigned int SCRIPTS_API Get_Team_Cost(int def_id,unsigned int team)
 {
-	int ID = Get_Definition_ID(preset);
-	if (TeamPurchaseSettingsDefClass::Get_Definition((TeamPurchaseSettingsDefClass::TEAM)PTTEAM(team))->Get_Beacon_Definition() == ID)
+	if (TeamPurchaseSettingsDefClass::Get_Definition((TeamPurchaseSettingsDefClass::TEAM)PTTEAM(team))->Get_Beacon_Definition() == def_id)
 	{
 		return TeamPurchaseSettingsDefClass::Get_Definition((TeamPurchaseSettingsDefClass::TEAM)PTTEAM(team))->Get_Beacon_Cost();
 	}
@@ -29,7 +28,7 @@ unsigned int SCRIPTS_API Get_Team_Cost(const char *preset,unsigned int team)
 		{
 			for (unsigned int j = 0;j < 10;j++)
 			{
-				if ((p->Get_Definition(j) == ID) || (p->Get_Alt_Definition(j,0) == ID) || (p->Get_Alt_Definition(j,1) == ID) || (p->Get_Alt_Definition(j,2) == ID))
+				if ((p->Get_Definition(j) == def_id) || (p->Get_Alt_Definition(j,0) == def_id) || (p->Get_Alt_Definition(j,1) == def_id) || (p->Get_Alt_Definition(j,2) == def_id))
 				{
 					return p->Get_Cost(j);
 				}
@@ -39,14 +38,32 @@ unsigned int SCRIPTS_API Get_Team_Cost(const char *preset,unsigned int team)
 	return 0;
 }
 
-unsigned int SCRIPTS_API Get_Cost(const char *preset)
+unsigned int SCRIPTS_API Get_Team_Cost(const char *preset,unsigned int team)
 {
-	unsigned int cost = Get_Team_Cost(preset,0);
+	return Get_Team_Cost(Get_Definition_ID(preset), team);
+}
+
+unsigned int SCRIPTS_API Get_Cost(int def_id)
+{
+	unsigned int cost = Get_Team_Cost(def_id,0);
 	if (!cost)
 	{
-		cost = Get_Team_Cost(preset,1);
+		cost = Get_Team_Cost(def_id,1);
+		if (!cost)
+		{
+			cost = Get_Team_Cost(def_id,2);
+			if (!cost)
+			{
+				cost = Get_Team_Cost(def_id,3);
+			}
+		}
 	}
 	return cost;
+}
+
+unsigned int SCRIPTS_API Get_Cost(const char *preset)
+{
+	return Get_Cost(Get_Definition_ID(preset));
 }
 
 void SCRIPTS_API Disable_Preset_By_Name(unsigned int Team,const char *Name, bool enable)

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -14,6 +14,7 @@
 #include "PowerUpGameObjDef.h"
 #include "PowerUpGameObj.h"
 #include "scripts.h"
+#include "engine.h"
 #include "BuildingGameObj.h"
 #include "GameObjManager.h"
 #include "wwmath.h"
@@ -64,8 +65,6 @@
 #include "Iterator.h"
 #include "BuildingAggregateClass.h"
 #include "BuildingAggregateDefClass.h"
-#include "engine_script.h"
-#include "engine_game.h"
 
 SCRIPTS_API bool BuildingAggregateClass::Is_MCT(void) 
 {
@@ -405,7 +404,7 @@ GameObject SCRIPTS_API *Find_Object_By_Preset(int Team,const char *Preset_Name)
 
 GameObject SCRIPTS_API *Find_Closest_Non_Building_Object_By_Team(int Team,Vector3 position)
 {
-	float closestdist = FLT_MAX;
+	float closestdist_sq = FLT_MAX;
 	GameObject *closest = 0;
 	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
 	while (x)
@@ -421,10 +420,10 @@ GameObject SCRIPTS_API *Find_Closest_Non_Building_Object_By_Team(int Team,Vector
 			if ((Get_Object_Type(o2) == Team) && !o2->As_BuildingGameObj())
 			{
 				Vector3 pos = Commands->Get_Position(o2);
-				float dist = Commands->Get_Distance(pos,position);
-				if (dist < closestdist)
+				float dist_sq = Vector3::Distance_Squared(pos, position);
+				if (dist_sq < closestdist_sq)
 				{
-					closestdist = dist;
+					closestdist_sq = dist_sq;
 					closest = o2;
 				}
 			}
@@ -436,7 +435,7 @@ GameObject SCRIPTS_API *Find_Closest_Non_Building_Object_By_Team(int Team,Vector
 
 GameObject SCRIPTS_API *Find_Closest_Preset_By_Team(int Team,const Vector3 &pos,const char *Preset)
 {
-	float closestdist = 9999.0f;
+	float closestdist_sq = FLT_MAX;
 	GameObject *closest = 0;
 	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
 	while (x)
@@ -451,10 +450,10 @@ GameObject SCRIPTS_API *Find_Closest_Preset_By_Team(int Team,const Vector3 &pos,
 		{
 			if ((Get_Object_Type(o2) == Team || Team == 2) && !_stricmp(Commands->Get_Preset_Name(o2),Preset))
 			{
-				float dist = Commands->Get_Distance(Commands->Get_Position(o2),pos);
-				if (dist < closestdist)
+				float dist_sq = Vector3::Distance_Squared(Commands->Get_Position(o2), pos);
+				if (dist_sq < closestdist_sq)
 				{
-					closestdist = dist;
+					closestdist_sq = dist_sq;
 					closest = o2;
 				}
 			}
@@ -560,6 +559,7 @@ GameObject SCRIPTS_API *Find_Closest_Building(const Vector3& position)
 GameObject SCRIPTS_API *Find_Nearest_Preset(Vector3 position, const char *preset)
 {
 	GameObject *object = 0;
+	float min_dist_sq = FLT_MAX;
 	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
 	while (x)
 	{
@@ -573,18 +573,13 @@ GameObject SCRIPTS_API *Find_Nearest_Preset(Vector3 position, const char *preset
 		{
 			if (!_stricmp(Commands->Get_Preset_Name(o2),preset))
 			{
-				if (object)
-				{
-					Vector3 obj_pos = Commands->Get_Position(object);
-					Vector3 o_pos = Commands->Get_Position(o2);
-					if (Commands->Get_Distance(position, o_pos) < Commands->Get_Distance(position, obj_pos))
-					{
-						object = o2;
-					}
-				}
-				else
+				Vector3 pos;
+				o2->Get_Position(&pos);
+				float dist_sq = Vector3::Distance_Squared(position, pos);
+				if (dist_sq < min_dist_sq)
 				{
 					object = o2;
+					min_dist_sq = dist_sq;
 				}
 			}
 		}
@@ -691,6 +686,8 @@ void SCRIPTS_API Send_Custom_All_Objects_Area(int type,const Vector3 &Position,f
 	{
 		return;
 	}
+	Vector3 TestPosition = Position;
+	TestPosition.Z = 0;
 	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
 	while (x) 
 	{
@@ -703,10 +700,8 @@ void SCRIPTS_API Send_Custom_All_Objects_Area(int type,const Vector3 &Position,f
 		if (o2)
 		{
 			Vector3 ObjPosition = Commands->Get_Position(o2);
-			Vector3 TestPosition = Position;
 			ObjPosition.Z = 0;
-			TestPosition.Z = 0;
-			if ((Commands->Get_Distance(ObjPosition,TestPosition) <= Distance))
+			if (Vector3::Distance_Squared(ObjPosition, TestPosition) <= Distance * Distance)
 			{
 				if ((Get_Object_Type(o2) == team) || (team == 2))
 				{
@@ -789,7 +784,7 @@ bool SCRIPTS_API Is_Unit_In_Range(const char *preset,float range,Vector3 locatio
 				Vector3 pos = Commands->Get_Position(o2);
 				pos.Z = 0;
 				location.Z = 0;
-				if (Commands->Get_Distance(pos,location) <= range)
+				if (Vector3::Distance_Squared(pos, location) <= range * range)
 				{
 					if (o2->As_VehicleGameObj() && !empty)
 					{
@@ -911,7 +906,7 @@ void SCRIPTS_API Set_Transform( GameObject* obj, Matrix3D transform )
 
 GameObject SCRIPTS_API *Get_Closest_Armed_Object_To_Object( GameObject* obj, int team )
 {
-	float closestdist = FLT_MAX;
+	float closestdist_sq = FLT_MAX;
 	GameObject *closest = 0;
 	Vector3 position = Commands->Get_Position(obj);
 	SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
@@ -928,10 +923,10 @@ GameObject SCRIPTS_API *Get_Closest_Armed_Object_To_Object( GameObject* obj, int
 			if ((team == 2 || Get_Object_Type(o2) == team) && o2->As_PhysicalGameObj() && o2->As_PhysicalGameObj()->As_ArmedGameObj())
 			{
 				Vector3 pos = Commands->Get_Position(o2);
-				float dist = Commands->Get_Distance(pos,position);
-				if (dist < closestdist)
+				float dist_sq = Vector3::Distance_Squared(pos, position);
+				if (dist_sq < closestdist_sq)
 				{
-					closestdist = dist;
+					closestdist_sq = dist_sq;
 					closest = o2;
 				}
 			}

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -64,6 +64,7 @@ public:
 	bool Get_Allow_Harvester_Spawn() { //DA
 		return AllowHarvesterSpawn;
 	}
+	static float HarvesterDumpRate;
 private:
 	void					Load_Variables (ChunkLoadClass &cload);	
 	HarvesterClass *	Harvester;
@@ -78,6 +79,8 @@ private:
 	AudibleSoundClass * MoneyTrickleSound;
 	bool					AllowHarvesterSpawn;
 	ReferencerClass HarvesterVehicle;
+	float accumulatedDumpCredits;
+	float DumpRate;
 }; // 2232, RH7 2252
 
 

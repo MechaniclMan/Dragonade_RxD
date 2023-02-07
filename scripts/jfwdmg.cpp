@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,6 +15,7 @@
 #include "engine.h"
 #include "jfwdmg.h"
 #include "BuildingGameObj.h"
+#include "SoldierGameObj.h"
 #include "VehicleGameObjDef.h"
 
 void JFW_Spawn_Object_Death::Killed(GameObject *obj,GameObject *killer)
@@ -1033,6 +1034,8 @@ void JFW_Kill_Message_Display::Created(GameObject *obj)
 	INIClass *config = Get_INI(Get_Parameter("ConfigFile"));
 	count = config->Get_Int("PresetNames","PresetNameCount",0);
 	messages = new KillMessage[count];
+	KillerIsMSBot = false;
+	KilledIsMSBot = false;
 	char preset[50];
 	char c[50];
 	for (int i = 0;i < count;i++)
@@ -1056,21 +1059,37 @@ void JFW_Kill_Message_Display::Custom(GameObject *obj,int type,int param,GameObj
 	}
 	if (type == Get_Int_Parameter("Message"))
 	{
+		KillerIsMSBot = false;
+		KilledIsMSBot = false;
+
 		if (Commands->Is_A_Star(sender))
 		{
 			KilledID = 0;
 			KilledPlayerID = Get_Player_ID(sender);
 		}
+		else if (sender->As_SoldierGameObj() && sender->As_SoldierGameObj()->Is_Bot())
+		{
+			KilledID = 0;
+			KilledPlayerID = sender->Get_ID();
+			KilledIsMSBot = true;
+		}
 		else if (sender->As_VehicleGameObj() && (Get_Vehicle_Driver(sender)))
 		{
 			KilledID = Commands->Get_Preset_ID(sender);
-			KilledPlayerID = Get_Player_ID(Get_Vehicle_Driver(sender));
+			if (Get_Vehicle_Driver(sender)->As_SoldierGameObj()->Is_Bot())
+			{
+				KilledIsMSBot = true;
+				KilledPlayerID = Get_Vehicle_Driver(sender)->Get_ID();
+			}
+			else
+				KilledPlayerID = Get_Player_ID(Get_Vehicle_Driver(sender));
 		}
 		else
 		{
 			KilledID = Commands->Get_Preset_ID(sender);
 			KilledPlayerID = 0;
 		}
+
 		GameObject *Killer = Commands->Find_Object(param);
 		GameObject *explosion = GetExplosionObj();
 		if (!explosion || (explosion->As_VehicleGameObj() && Get_Vehicle_Mode(explosion) != VEHICLE_TYPE_TURRET))
@@ -1083,6 +1102,12 @@ void JFW_Kill_Message_Display::Custom(GameObject *obj,int type,int param,GameObj
 			if (Commands->Is_A_Star(Killer))
 			{
 				KillerPlayerID = Get_Player_ID(Killer);
+				KillerTeam = Get_Object_Type(Killer);
+			}
+			else if (Killer->As_SoldierGameObj()->Is_Bot())
+			{
+				KillerIsMSBot = true;
+				KillerPlayerID = Killer->Get_ID();
 				KillerTeam = Get_Object_Type(Killer);
 			}
 			else
@@ -1108,7 +1133,14 @@ void JFW_Kill_Message_Display::Custom(GameObject *obj,int type,int param,GameObj
 			KillerTeam = Get_Object_Type(Killer);
 			if (Get_Vehicle_Gunner(Killer))
 			{
-				KillerPlayerID = Get_Player_ID(Get_Vehicle_Gunner(Killer));
+				if (Get_Vehicle_Gunner(Killer)->As_SoldierGameObj()->Is_Bot())
+				{
+					KillerIsMSBot = true;
+					KillerPlayerID = Get_Vehicle_Gunner(Killer)->Get_ID();
+				}
+				else
+					KillerPlayerID = Get_Player_ID(Get_Vehicle_Gunner(Killer));
+
 				KillerTeam = Get_Object_Type(Get_Vehicle_Gunner(Killer));
 			}
 			else
@@ -1127,7 +1159,14 @@ void JFW_Kill_Message_Display::Custom(GameObject *obj,int type,int param,GameObj
 	}
 	else if (type == CUSTOM_EVENT_VHEICLE_DRIVER_ID)
 	{
-		KillerPlayerID = Get_Player_ID(Commands->Find_Object(param));
+		if (Commands->Find_Object(param)->As_SoldierGameObj()->Is_Bot())
+		{
+			KillerIsMSBot = true;
+			KillerPlayerID = param;
+		}
+		else
+			KillerPlayerID = Get_Player_ID(Commands->Find_Object(param));
+
 		KillerTeam = Get_Object_Type(Commands->Find_Object(param));
 	}
 	else
@@ -1168,7 +1207,10 @@ void JFW_Kill_Message_Display::Custom(GameObject *obj,int type,int param,GameObj
 	}
 	if (KilledPlayerID)
 	{
-		KilledPlayerString = Get_Player_Name_By_ID(KilledPlayerID);
+		if (KilledIsMSBot)
+			KilledPlayerString = Get_Player_Name(Commands->Find_Object(KilledPlayerID));
+		else
+			KilledPlayerString = Get_Player_Name_By_ID(KilledPlayerID);
 	}
 	else
 	{
@@ -1176,7 +1218,10 @@ void JFW_Kill_Message_Display::Custom(GameObject *obj,int type,int param,GameObj
 	}
 	if (KillerPlayerID)
 	{
-		KillerPlayerString = Get_Player_Name_By_ID(KillerPlayerID);
+		if (KillerIsMSBot)
+			KillerPlayerString = Get_Player_Name(Commands->Find_Object(KillerPlayerID));
+		else
+			KillerPlayerString = Get_Player_Name_By_ID(KillerPlayerID);
 	}
 	else
 	{

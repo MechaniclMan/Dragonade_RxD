@@ -12,8 +12,8 @@
 #include "engine_player.h"
 #include "DefinitionMgrClass.h"
 #include "AudibleSoundDefinitionClass.h"
+#include "TranslateDBClass.h"
 bool JmgUtility::hasStatedDeathMessage[128] = {false};
-
 void JMG_Utility_Check_If_Script_Is_In_Library::Created(GameObject *obj)
 {
 	Commands->Start_Timer(obj,this,0.1f,1);
@@ -351,6 +351,7 @@ void JMG_Utility_Sync_System_Object::Timer_Expired(GameObject *obj,int number)
 	if (number == 2)
 	{
 		Force_Position_Update(obj);
+		Force_Orientation_Update(obj);
 	}
 }
 void JMG_Utility_Sync_System_Object::Killed(GameObject *obj,GameObject *killer)
@@ -421,6 +422,7 @@ void JMG_Utility_Sync_Object_Periodically::Timer_Expired(GameObject *obj,int num
 	if (number == 1)
 	{
 		Force_Position_Update(obj);
+		Force_Orientation_Update(obj);
 		Commands->Start_Timer(obj,this,Get_Float_Parameter("Sync_Rate"),1);
 	}
 }
@@ -441,7 +443,7 @@ void JMG_Utility_Basic_Spawner::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
 	{
-		if (!spawnedId && respawnTime > 0 && spawnLimit && enabled)
+		if (!spawnedId && respawnTime > 0 && spawnLimit && enabled && !The_Game()->Is_Game_Over())
 		{
 			respawnTime -= 0.1f;
 			if (respawnTime <= 0)
@@ -1246,25 +1248,21 @@ GameObject *JMG_Utility_AI_Vehicle::SetTarget(GameObject *target)
 }
 GameObject *JMG_Utility_AI_Vehicle::GetClosest(GameObject *obj,GameObject *new_target,GameObject *old_target)
 {
-	Vector3 obj_pos = Commands->Get_Position(obj);
-	Vector3 target1_pos = Commands->Get_Position(new_target);
-	Vector3 target2_pos = Commands->Get_Position(old_target);
-	float dist1 = JmgUtility::SimpleDistance(obj_pos,target1_pos);
-	float dist2 = JmgUtility::SimpleDistance(obj_pos,target2_pos);
-	if(dist1 < dist2)
+	Vector3 objPos = Commands->Get_Position(obj);
+	if(JmgUtility::SimpleDistance(objPos,Commands->Get_Position(new_target)) < JmgUtility::SimpleDistance(objPos,Commands->Get_Position(old_target)))
 		return new_target;
 	else
 		return old_target;
 }
 int JMG_Utility_AI_Vehicle::SelectAmmo(GameObject *target)
 {
-	if(target)
+	if (target)
 	{
-		if(target->As_SoldierGameObj())
+		if (target->As_SoldierGameObj())
 			return Get_Int_Parameter("vsSoldier");
-		if(target->As_VehicleGameObj()) 
+		if (target->As_VehicleGameObj()) 
 		{
-			if(Is_VTOL(target))
+			if (Is_VTOL(target))
 				return Get_Int_Parameter("vsAircraft");
 			return Get_Int_Parameter("vsVehicle");
 		}
@@ -1450,7 +1448,29 @@ int JMG_Utility_Dynamic_Clock_Control::getMinute()
 }
 void JMG_Utility_Dynamic_Clock_Object::Created(GameObject *obj)
 {
+	for (int x = 0;x < 128;x++)
+		animSynced[x] = false;
 	DynamicClockSystemControl += obj;
+	Commands->Start_Timer(obj,this,1.0f,1);
+}
+void JMG_Utility_Dynamic_Clock_Object::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1) 
+	{
+		for (int x = 1;x < 128;x++)
+		{
+			GameObject *player = Get_GameObj(x);
+			if (player && animSynced[x] < 3)
+			{
+				animSynced[x]++;
+				if (animSynced[x] == 3)
+					Set_Subobject_Animation_Player(player,obj,"s_ecwClock.a_ecwClock",false,0,Get_Animation_Frame(obj),Get_Animation_Frame(obj),false);
+			}
+			if (!player && animSynced[x])
+				animSynced[x] = 0;
+		}
+		Commands->Start_Timer(obj,this,0.1f,1);
+	}
 }
 void JMG_Utility_Dynamic_Clock_Object::Destroyed(GameObject *obj)
 {
@@ -1495,11 +1515,11 @@ void JMG_Utility_Play_Music_On_Join_Controller::Created(GameObject *obj)
 	sprintf(JMG_Utility_Play_Music_On_Join_Controller::musicFileName,"%s",Get_Parameter("Music"));
 	for (int x = 1;x < 128;x++)
 		playingMusic[x] = false;
-	Commands->Start_Timer(obj,this,1.0,1);
+	Commands->Start_Timer(obj,this,1.0,23453451);
 }
 void JMG_Utility_Play_Music_On_Join_Controller::Timer_Expired(GameObject *obj,int number)
 {
-	if (number == 1) 
+	if (number == 23453451) 
 	{
 		for (int x = 1;x < 128;x++)
 		{
@@ -1512,7 +1532,7 @@ void JMG_Utility_Play_Music_On_Join_Controller::Timer_Expired(GameObject *obj,in
 			if (!player && playingMusic[x])
 				playingMusic[x] = false;
 		}
-		Commands->Start_Timer(obj,this,1.0,1);
+		Commands->Start_Timer(obj,this,1.0,23453451);
 	}
 }
 void JMG_Utility_Play_Music_On_Join_Controller::Destroyed(GameObject *obj)
@@ -1521,6 +1541,8 @@ void JMG_Utility_Play_Music_On_Join_Controller::Destroyed(GameObject *obj)
 }
 void JMG_Utility_Play_Music_On_Join_Controller::Detach(GameObject *obj)
 {
+	if (Exe == 4)
+		return;
 	Destroyed(obj);
 }
 void JMG_Utility_Play_Music_On_Join_Controller::Set_Music(const char *musicFilName,int fadeOut,int fadeIn)
@@ -2205,7 +2227,7 @@ void JMG_Utility_Swimming_Zone::Entered(GameObject *obj,GameObject *enter)
 {
 	if (!enter->As_SoldierGameObj())
 		return;
-	if (!Is_Script_Attached(enter,"JMG_Utility_Swimming_Infantry") && !Is_Script_Attached(enter,"JMG_Utility_Swimming_Infantry_Advanced"))
+	if (!Is_Script_Attached(enter,"JMG_Utility_Swimming_Infantry") && !Is_Script_Attached(enter,"JMG_Utility_Swimming_Infantry_Advanced") && !Is_Script_Attached(enter,"JMG_Utility_Swimming_Infantry_AI") && !Is_Script_Attached(enter,"JMG_Utility_Swimming_Infantry_Advanced_AI"))
 	{
 		Commands->Apply_Damage(enter,9999.9f,"Death",obj);
 		if (Commands->Is_A_Star(enter) && !Commands->Get_Health(enter))
@@ -2236,6 +2258,14 @@ bool JMG_Utility_Swimming_Infantry::isUnderwater[128] = {false};
 bool JMG_Utility_Swimming_Infantry::isInWater[128] = {false};
 void JMG_Utility_Swimming_Infantry::Created(GameObject *obj)
 {
+	if (!Commands->Is_A_Star(obj))
+	{
+		char params[1024];
+		sprintf(params,"%s,%.2f,%.2f,%s,%s,%s,%.2f%,%.2f,%.2f,%s,%d,%d,%s,%s,%s",Get_Parameter("WeaponPreset"),Get_Float_Parameter("DrownTime"),Get_Float_Parameter("StartDrownSequence"),Get_Parameter("GaspForBreath"),Get_Parameter("PantingSoundEmitterModel"),Get_Parameter("HeartBeatSoundEmitterModel"),Get_Float_Parameter("DrownDamageRate"),Get_Float_Parameter("CatchBreathRate"),Get_Float_Parameter("WaterDamageAmount"),Get_Parameter("WaterDamageWarhead"),Get_Int_Parameter("WaterDamageDelayTime"),Get_Int_Parameter("WaterDamageDelayTimeRecover"),Get_Parameter("SwimmingSkin"),Get_Parameter("SwimmingArmor"),Get_Parameter("SwimmingModel"));
+		Commands->Attach_Script(obj,"JMG_Utility_Swimming_Infantry_AI",params);
+		Destroy_Script();
+		return;
+	}
 	lastDisplayTime = NULL;
 	lastWaterZoneId = 0;
 	heartBeatSoundId = 0;
@@ -2251,7 +2281,7 @@ void JMG_Utility_Swimming_Infantry::Created(GameObject *obj)
 	sprintf(originalSkin,"");
 	sprintf(originalArmor,"");
 	sprintf(originalModel,"");
-	for (SLNode<ScriptZoneGameObj>* node = GameObjManager::ScriptZoneGameObjList.Head(); node; node = node->Next())
+	for (SLNode<ScriptZoneGameObj>* node = GameObjManager::ScriptZoneGameObjList.Head();node;node = node->Next())
 	{
 		GameObject *zone = (GameObject *)node->Data();
 		if (Is_Script_Attached(zone,"JMG_Utility_Swimming_Zone") && IsInsideZone(zone,obj))
@@ -2411,6 +2441,17 @@ void JMG_Utility_Swimming_Infantry::Killed(GameObject *obj,GameObject *killer)
 {
 	DestroySoundEmitter(&heartBeatSoundId);
 	DestroySoundEmitter(&pantSoundId);
+	if (!waterZoneCount)
+		return;
+	if (startedFadeRed)
+	{
+		Set_Screen_Fade_Color_Player(obj,1.0f,0.0f,0.0f,JmgUtility::MathClamp(Get_Float_Parameter("DrownTime")-drownTime,0,Get_Float_Parameter("StartDrownSequence")));
+		CreateSoundEmitter(obj,Get_Parameter("HeartBeatSoundEmitterModel"),&heartBeatSoundId);
+	}
+	else
+		Set_Screen_Fade_Color_Player(obj,JMG_Utility_Swimming_Zone::waterNode[playerId].waterColor.X,JMG_Utility_Swimming_Zone::waterNode[playerId].waterColor.Y,JMG_Utility_Swimming_Zone::waterNode[playerId].waterColor.Z,0.0f);
+	Set_Screen_Fade_Opacity_Player(obj,JMG_Utility_Swimming_Zone::waterNode[playerId].waterColorOpacity,0.1f);
+	Set_Fog_Range_Player(obj,JMG_Utility_Swimming_Zone::waterNode[playerId].waterMinViewDistance,JMG_Utility_Swimming_Zone::waterNode[playerId].waterMaxViewDistance,0.1f);
 }
 void JMG_Utility_Swimming_Infantry::Destroyed(GameObject *obj)
 {
@@ -2576,6 +2617,8 @@ void JMG_Utility_AI_Guardian_Aircraft::Timer_Expired(GameObject *obj,int number)
 void JMG_Utility_AI_Guardian_Aircraft::Enemy_Seen(GameObject *obj,GameObject *seen)
 {
 	if (Is_Script_Attached(seen,"JMG_Utility_AI_Guardian_Ignored"))
+		return;
+	if (Is_Script_Attached(seen,"JMG_Utility_AI_Guardian_Aircraft_Ignored"))
 		return;
 	if (!JmgUtility::CanSeeStealth(stealthModeOverride,obj,seen))
 		return;
@@ -3061,40 +3104,63 @@ void JMG_Utility_AI_Goto_Player::Return_Home(GameObject *obj,ValidLastLocation g
 }
 void JMG_Utility_AI_Goto_Player::Stuck_Check(GameObject *obj,Vector3 targetPos)
 {
-	if (!obj->As_VehicleGameObj())
-		return;
-	Vector3 pos = Commands->Get_Position(obj);
-	if (JmgUtility::SimpleDistance(pos,lastPosition) < 1.0f)
+	if (obj->As_VehicleGameObj())
 	{
-		if (targetId && JmgUtility::SimpleDistance(pos,targetPos) <= attackArriveDistance*attackArriveDistance)
+		Vector3 pos = Commands->Get_Position(obj);
+		if (JmgUtility::SimpleDistance(pos,lastPosition) < 1.0f)
+		{
+			if (targetId && JmgUtility::SimpleDistance(pos,targetPos) <= attackArriveDistance*attackArriveDistance)
+			{
+				stuckTime = 0;
+				return;
+			}
+			if (!reverseTime)
+			{
+				stuckTime++;
+				if (stuckTime > 30)
+				{
+					moveBackward = true;
+					Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+					reverseTime = Commands->Get_Random_Int(10,60);
+					stuckTime = 0;
+				}
+			}
+		}
+		else
 		{
 			stuckTime = 0;
-			return;
+			lastPosition = pos;
 		}
-		if (!reverseTime)
+		if (reverseTime)
 		{
-			stuckTime++;
-			if (stuckTime > 30)
+			reverseTime--;
+			if (!reverseTime)
 			{
-				moveBackward = true;
+				moveBackward = false;
 				Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
-				reverseTime = Commands->Get_Random_Int(10,60);
-				stuckTime = 0;
 			}
 		}
 	}
 	else
 	{
-		stuckTime = 0;
-		lastPosition = pos;
-	}
-	if (reverseTime)
-	{
-		reverseTime--;
-		if (!reverseTime)
+		Vector3 pos = Commands->Get_Position(obj);
+		if (JmgUtility::SimpleDistance(pos,lastPosition) < 1.0f)
 		{
-			moveBackward = false;
-			Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+			if (targetId && JmgUtility::SimpleDistance(pos,targetPos) <= attackArriveDistance*attackArriveDistance)
+			{
+				stuckTime = 0;
+				return;
+			}
+			stuckTime++;
+			if (stuckTime > 30)
+				Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+			if (stuckTime > 60)
+				Attack_Move(obj,NULL,homeLocation,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+		}
+		else
+		{
+			stuckTime = 0;
+			lastPosition = pos;
 		}
 	}
 }
@@ -3169,6 +3235,10 @@ void JMG_Utility_AI_Aggressive_Attack_Spot_Point::Timer_Expired(GameObject *obj,
 		}
 		node = aggressiveAttackSpotSystemControl->addNode(obj,Get_Int_Parameter("GroupId"),Get_Vector3_Parameter("AttackOffset"));
 	}
+}
+void JMG_Utility_AI_Aggressive_Attack_Spot_Point::Killed(GameObject *obj,GameObject *killer)
+{
+	Destroyed(obj);
 }
 void JMG_Utility_AI_Aggressive_Attack_Spot_Point::Destroyed(GameObject *obj)
 {
@@ -3692,6 +3762,7 @@ void JMG_Utility_Objective_System_Controller::Created(GameObject *obj)
 	controllerPlaced = true;
 	for (int x = 0;x < 128;x++)
 		playerNames[x][0] = '\0';
+	BasicObjectiveSystem.controllerId = Commands->Get_ID(obj);
 	BasicObjectiveSystem = NewObjectiveSystem(Get_Int_Parameter("Team"),Get_Int_Parameter("ShowMarkersOnRadar") ? true : false,Get_Parameter("PrimaryObjectiveModel"),Get_Parameter("SecondaryObjectiveModel"),Get_Parameter("TertiaryObjectiveModel"));
 	Commands->Start_Timer(obj,this,1.0f,1);
 }
@@ -3757,17 +3828,19 @@ void JMG_Utility_Objective_System_Objective_Update_Enter::Custom(GameObject *obj
 		if (Get_Int_Parameter("NewObjectiveID"))
 		{
 			int objectiveMarkerId = Get_Int_Parameter("ObjectiveMarkerObjectID");
-			GameObject *ObjectiveMarker = objectiveMarkerId == -1 ? sender : Commands->Find_Object(objectiveMarkerId);
+			GameObject *ObjectiveMarker = BasicObjectiveSystem.GetObjectiveMarker(objectiveMarkerId,sender,Get_Int_Parameter("NewObjectiveID"));
 			if (!ObjectiveMarker && objectiveMarkerId)
 			{
 				Console_Input("msg JMG_Utility_Objective_System_Objective_Update_Enter ERROR: Could not find objective marker object!");
 				return;
 			}
+			bool added = false;
 			if (ObjectiveMarker)
-				BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),ObjectiveMarker);
+				added = BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),ObjectiveMarker);
 			else
-				BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
-			JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),BasicObjectiveSystem.Get_Hud_Help_Text_Color((NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority")));
+				added = BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
+			if (added)
+				JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),BasicObjectiveSystem.Get_Hud_Help_Text_Color(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority")));
 		}
 	}
 }
@@ -3788,17 +3861,19 @@ void JMG_Utility_Objective_System_Objective_Update_Pickup::Custom(GameObject *ob
 			BasicObjectiveSystem.Set_Objective_Status(Get_Int_Parameter("CompleteObjectiveID"),NewObjectiveSystem::Accomplished);
 		}
 		int objectiveMarkerId = Get_Int_Parameter("ObjectiveMarkerObjectID");
-		GameObject *ObjectiveMarker = objectiveMarkerId == -1 ? sender : Commands->Find_Object(objectiveMarkerId);
+		GameObject *ObjectiveMarker = BasicObjectiveSystem.GetObjectiveMarker(objectiveMarkerId,sender,Get_Int_Parameter("NewObjectiveID"));
 		if (!ObjectiveMarker && objectiveMarkerId)
 		{
 			Console_Input("msg JMG_Utility_Objective_System_Objective_Update_Pickup ERROR: Could not find objective marker object!");
 			return;
 		}
+		bool added = false;
 		if (ObjectiveMarker)
-			BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),ObjectiveMarker);
+			added = BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),ObjectiveMarker);
 		else
-			BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
-		JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),BasicObjectiveSystem.Get_Hud_Help_Text_Color((NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority")));
+			added = BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
+		if (added)
+			JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),BasicObjectiveSystem.Get_Hud_Help_Text_Color(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority")));
 	}
 }
 void JMG_Utility_Objective_System_Objective_Update_Killed::Killed(GameObject *obj, GameObject *damager)
@@ -3822,11 +3897,13 @@ void JMG_Utility_Objective_System_Objective_Update_Killed::Killed(GameObject *ob
 		Console_Input("msg JMG_Utility_Objective_System_Objective_Update_Killed ERROR: Could not find objective marker object!");
 		return;
 	}
+	bool added = false;
 	if (ObjectiveMarker)
-		BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),ObjectiveMarker);
+		added = BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),ObjectiveMarker);
 	else
-		BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
-	JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),BasicObjectiveSystem.Get_Hud_Help_Text_Color((NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority")));
+		added = BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
+	if (added)
+		JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),BasicObjectiveSystem.Get_Hud_Help_Text_Color(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority")));
 }
 void JMG_Utility_Objective_System_Objective_Update_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
 {
@@ -3843,17 +3920,19 @@ void JMG_Utility_Objective_System_Objective_Update_Custom::Custom(GameObject *ob
 			BasicObjectiveSystem.Set_Objective_Status(Get_Int_Parameter("CompleteObjectiveID"),NewObjectiveSystem::Accomplished);
 		}
 		int objectiveMarkerId = Get_Int_Parameter("ObjectiveMarkerObjectID");
-		GameObject *ObjectiveMarker = objectiveMarkerId == -1 ? sender : Commands->Find_Object(objectiveMarkerId);
+		GameObject *ObjectiveMarker = BasicObjectiveSystem.GetObjectiveMarker(objectiveMarkerId,sender,Get_Int_Parameter("NewObjectiveID"));
 		if (!ObjectiveMarker && objectiveMarkerId)
 		{
 			Console_Input("msg JMG_Utility_Objective_System_Objective_Update_Custom ERROR: Could not find objective marker object!");
 			return;
 		}
+		bool added = false;
 		if (ObjectiveMarker)
-			BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),ObjectiveMarker);
+			added = BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),ObjectiveMarker);
 		else
-			BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
-		JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),BasicObjectiveSystem.Get_Hud_Help_Text_Color((NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority")));
+			added = BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
+		if (added)
+			JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),BasicObjectiveSystem.Get_Hud_Help_Text_Color(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority")));
 	}
 }
 void JMG_Utility_Destroyed_Apply_Damage::Destroyed(GameObject *obj)
@@ -3964,6 +4043,8 @@ void JMG_Utility_Regen_HitPoints::Created(GameObject *obj)
 	armorPerPlayer = Get_Float_Parameter("ArmorPerPlayer");
 	damageDelay = Get_Float_Parameter("DamageDelay");
 	rate = Get_Float_Parameter("Rate");
+	scaleHealthPerHeal = Get_Float_Parameter("ScaleHealthPerHeal")*0.00001f;
+	scaleArmorPerHeal = Get_Float_Parameter("ScaleArmorPerHeal")*0.00001f;
 	enabled = true;
 	Commands->Start_Timer(obj,this,rate,1);
 }
@@ -3977,23 +4058,30 @@ void JMG_Utility_Regen_HitPoints::Timer_Expired(GameObject *obj,int number)
 			float maxHealth = Commands->Get_Max_Health(obj);
 			float armor = Commands->Get_Shield_Strength(obj);
 			float maxArmor = Commands->Get_Max_Shield_Strength(obj);
-			if (regenArmor == -1 && armor < maxArmor)
+			if (regenArmor == -1 && armor < maxArmor && armorAmount+armorPerPlayer)
 			{
 				Commands->Set_Shield_Strength(obj,armor+armorAmount+armorPerPlayer*Get_Player_Count());
 				if (Commands->Get_Shield_Strength(obj) > maxArmor)
 					Commands->Set_Shield_Strength(obj,maxArmor);
 			}
-			else if (regenHealth && health < maxHealth)
+			else if (regenHealth && health < maxHealth && healthAmount+healthPerPlayer)
 			{
 				Commands->Set_Health(obj,health+healthAmount+healthPerPlayer*Get_Player_Count());
 				if (Commands->Get_Health(obj) > maxHealth)
 					Commands->Set_Health(obj,maxHealth);
 			}
-			else if (regenArmor && armor < maxArmor)
+			else if (regenArmor && armor < maxArmor && armorAmount+armorPerPlayer)
 			{
 				Commands->Set_Shield_Strength(obj,armor+armorAmount+armorPerPlayer*Get_Player_Count());
 				if (Commands->Get_Shield_Strength(obj) > maxArmor)
 					Commands->Set_Shield_Strength(obj,maxArmor);
+			}
+			healthAmount = ScaleValue(healthAmount,scaleHealthPerHeal);
+			armorAmount = ScaleValue(armorAmount,scaleArmorPerHeal);
+			if ((!regenHealth || healthAmount == 0.0f) && (!regenArmor || armorAmount == 0.0f))
+			{
+				Destroy_Script();
+				return;
 			}
 		}
 		Commands->Start_Timer(obj,this,rate,1);
@@ -4010,6 +4098,15 @@ void JMG_Utility_Regen_HitPoints::Damaged(GameObject *obj,GameObject *damager,fl
 	enabled = false;
 	Stop_Timer2(obj,this,2);
 	Commands->Start_Timer(obj,this,damageDelay,2);
+}
+float JMG_Utility_Regen_HitPoints::ScaleValue(float value,float scale)
+{
+	if (scale == 0.0f || value == 0.0f)
+		return value;
+	value += scale;
+	if (value < 0.0f)
+		return 0.0f;
+	return value;
 }
 void JMG_Utility_Toggle_Flight_On_Delay::Created(GameObject *obj)
 {
@@ -4117,6 +4214,7 @@ void JMG_Utility_AI_Guardian_Infantry::Created(GameObject *obj)
 	if (ammo)
 		weaponRange = ammo->Range;
 	fireRange = Get_Float_Parameter("FireRange") >= 0 ? Get_Float_Parameter("FireRange") : weaponRange;
+	Commands->Innate_Disable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	Commands->Enable_Engine(obj,true);
 	Commands->Start_Timer(obj,this,1.0f,1);
@@ -4158,6 +4256,8 @@ void JMG_Utility_AI_Guardian_Infantry::Enemy_Seen(GameObject *obj,GameObject *se
 	if (!Commands->Get_Health(seen))
 		return;
 	if (Is_Script_Attached(seen,"JMG_Utility_AI_Guardian_Ignored"))
+		return;
+	if (Is_Script_Attached(seen,"JMG_Utility_AI_Guardian_Infantry_Ignored"))
 		return;
 	if (!JmgUtility::CanSeeStealth(stealthModeOverride,obj,seen))
 		return;
@@ -4749,6 +4849,8 @@ void JMG_Utility_Custom_Destroy_Closest_Object_To_Position::Custom(GameObject *o
 		}
 		if (nearest)
 			Commands->Destroy_Object(nearest);
+		if (Get_Int_Parameter("TriggerOnce"))
+			Destroy_Script();
 	}
 }
 void JMG_Utility_Zone_Set_Spawner::Entered(GameObject *obj,GameObject *enter)
@@ -5098,11 +5200,13 @@ void JMG_Utility_Objective_System_Objective_Update_Create::Timer_Expired(GameObj
 				Console_Input("msg JMG_Utility_Objective_System_Objective_Update_Create ERROR: Could not find objective marker object!");
 				return;
 			}
+			bool added = false;
 			if (ObjectiveMarker)
-				BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),ObjectiveMarker);
+				added = BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),ObjectiveMarker);
 			else
-				BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
-			JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),BasicObjectiveSystem.Get_Hud_Help_Text_Color((NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority")));
+				added = BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
+			if (added)
+				JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),BasicObjectiveSystem.Get_Hud_Help_Text_Color(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority")));
 		}
 	}
 }
@@ -5114,7 +5218,10 @@ void JMG_Utility_Objective_System_Objective_Remove_Custom::Custom(GameObject *ob
 {
 	if (message == custom)
 	{
-		BasicObjectiveSystem.Remove_Objective(Get_Int_Parameter("ObjectiveID"));
+		int objectiveId = Get_Int_Parameter("ObjectiveID");
+		if (Get_Int_Parameter("OnlyRemovePending") && BasicObjectiveSystem.Get_Objective_Status(objectiveId) != NewObjectiveSystem::Pending)
+			return;
+		BasicObjectiveSystem.Remove_Objective(objectiveId);
 	}
 }
 void JMG_Utility_Delay_Then_Rotate_Camera::Created(GameObject *obj)
@@ -5636,40 +5743,63 @@ void JMG_Utility_AI_Goto_Enemy::Return_Home(GameObject *obj,ValidLastLocation go
 }
 void JMG_Utility_AI_Goto_Enemy::Stuck_Check(GameObject *obj,Vector3 targetPos)
 {
-	if (!obj->As_VehicleGameObj())
-		return;
-	Vector3 pos = Commands->Get_Position(obj);
-	if (JmgUtility::SimpleDistance(pos,lastPosition) < 1.0f)
+	if (obj->As_VehicleGameObj())
 	{
-		if (targetId && JmgUtility::SimpleDistance(pos,targetPos) <= attackArriveDistance*attackArriveDistance)
+		Vector3 pos = Commands->Get_Position(obj);
+		if (JmgUtility::SimpleDistance(pos,lastPosition) < 1.0f)
+		{
+			if (targetId && JmgUtility::SimpleDistance(pos,targetPos) <= attackArriveDistance*attackArriveDistance)
+			{
+				stuckTime = 0;
+				return;
+			}
+			if (!reverseTime)
+			{
+				stuckTime++;
+				if (stuckTime > 30)
+				{
+					moveBackward = true;
+					Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+					reverseTime = Commands->Get_Random_Int(10,60);
+					stuckTime = 0;
+				}
+			}
+		}
+		else
 		{
 			stuckTime = 0;
-			return;
+			lastPosition = pos;
 		}
-		if (!reverseTime)
+		if (reverseTime)
 		{
-			stuckTime++;
-			if (stuckTime > 30)
+			reverseTime--;
+			if (!reverseTime)
 			{
-				moveBackward = true;
+				moveBackward = false;
 				Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
-				reverseTime = Commands->Get_Random_Int(10,60);
-				stuckTime = 0;
 			}
 		}
 	}
 	else
 	{
-		stuckTime = 0;
-		lastPosition = pos;
-	}
-	if (reverseTime)
-	{
-		reverseTime--;
-		if (!reverseTime)
+		Vector3 pos = Commands->Get_Position(obj);
+		if (JmgUtility::SimpleDistance(pos,lastPosition) < 1.0f)
 		{
-			moveBackward = false;
-			Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+			if (targetId && JmgUtility::SimpleDistance(pos,targetPos) <= attackArriveDistance*attackArriveDistance)
+			{
+				stuckTime = 0;
+				return;
+			}
+			stuckTime++;
+			if (stuckTime > 30)
+				Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+			if (stuckTime > 60)
+				Attack_Move(obj,NULL,homeLocation,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+		}
+		else
+		{
+			stuckTime = 0;
+			lastPosition = pos;
 		}
 	}
 }
@@ -6052,40 +6182,63 @@ void JMG_Utility_AI_Goto_Enemy_Not_Star::Return_Home(GameObject *obj,ValidLastLo
 }
 void JMG_Utility_AI_Goto_Enemy_Not_Star::Stuck_Check(GameObject *obj,Vector3 targetPos)
 {
-	if (!obj->As_VehicleGameObj())
-		return;
-	Vector3 pos = Commands->Get_Position(obj);
-	if (JmgUtility::SimpleDistance(pos,lastPosition) < 1.0f)
+	if (obj->As_VehicleGameObj())
 	{
-		if (targetId && JmgUtility::SimpleDistance(pos,targetPos) <= attackArriveDistance*attackArriveDistance)
+		Vector3 pos = Commands->Get_Position(obj);
+		if (JmgUtility::SimpleDistance(pos,lastPosition) < 1.0f)
+		{
+			if (targetId && JmgUtility::SimpleDistance(pos,targetPos) <= attackArriveDistance*attackArriveDistance)
+			{
+				stuckTime = 0;
+				return;
+			}
+			if (!reverseTime)
+			{
+				stuckTime++;
+				if (stuckTime > 30)
+				{
+					moveBackward = true;
+					Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+					reverseTime = Commands->Get_Random_Int(10,60);
+					stuckTime = 0;
+				}
+			}
+		}
+		else
 		{
 			stuckTime = 0;
-			return;
+			lastPosition = pos;
 		}
-		if (!reverseTime)
+		if (reverseTime)
 		{
-			stuckTime++;
-			if (stuckTime > 30)
+			reverseTime--;
+			if (!reverseTime)
 			{
-				moveBackward = true;
+				moveBackward = false;
 				Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
-				reverseTime = Commands->Get_Random_Int(10,60);
-				stuckTime = 0;
 			}
 		}
 	}
 	else
 	{
-		stuckTime = 0;
-		lastPosition = pos;
-	}
-	if (reverseTime)
-	{
-		reverseTime--;
-		if (!reverseTime)
+		Vector3 pos = Commands->Get_Position(obj);
+		if (JmgUtility::SimpleDistance(pos,lastPosition) < 1.0f)
 		{
-			moveBackward = false;
-			Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+			if (targetId && JmgUtility::SimpleDistance(pos,targetPos) <= attackArriveDistance*attackArriveDistance)
+			{
+				stuckTime = 0;
+				return;
+			}
+			stuckTime++;
+			if (stuckTime > 30)
+				Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+			if (stuckTime > 60)
+				Attack_Move(obj,NULL,homeLocation,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+		}
+		else
+		{
+			stuckTime = 0;
+			lastPosition = pos;
 		}
 	}
 }
@@ -6305,6 +6458,8 @@ void JMG_Utility_AI_Guardian_Vehicle::Enemy_Seen(GameObject *obj,GameObject *see
 		return;
 	if (Is_Script_Attached(seen,"JMG_Utility_AI_Guardian_Ignored"))
 		return;
+	if (Is_Script_Attached(seen,"JMG_Utility_AI_Guardian_Vehicle_Ignored"))
+		return;
 	if (!JmgUtility::CanSeeStealth(stealthModeOverride,obj,seen))
 		return;
 	if (!EnemyID || !EnemyTimeOutTime)
@@ -6407,6 +6562,7 @@ int JMG_Utility_Send_Custom_On_Deaths_Controller::myId = 0;
 bool JMG_Utility_Send_Custom_On_Deaths_Controller::controllerPlaced = false;
 bool JMG_Utility_Send_Custom_On_Deaths_Controller::announceOnFirstDeath = false;
 bool JMG_Utility_Send_Custom_On_Deaths_Controller::onlyTrackPlayerDeaths = false;
+bool JMG_Utility_Send_Custom_On_Deaths_Controller::recordAIDeaths = false;
 void JMG_Utility_Send_Custom_On_Deaths_Controller::Created(GameObject *obj)
 {
 	if (controllerPlaced)
@@ -6440,6 +6596,7 @@ void JMG_Utility_Send_Custom_On_Deaths_Controller::Created(GameObject *obj)
 	requiresADeathToStartNoPlayerAdd = Get_Int_Parameter("RequiresADeathToStartNoPlayerAdd") ? true : false;
 	announceOnFirstDeath = Get_Int_Parameter("AnnounceOnFirstDeath") ? true : false;
 	onlyTrackPlayerDeaths = Get_Int_Parameter("OnlyTrackPlayerDeaths") ? true : false;
+	recordAIDeaths = Get_Int_Parameter("RecordAIDeaths") ? true : false;
 	myId = Commands->Get_ID(obj);
 }
 void JMG_Utility_Send_Custom_On_Deaths_Controller::Timer_Expired(GameObject *obj,int number)
@@ -6492,7 +6649,7 @@ void JMG_Utility_Send_Custom_On_Deaths_Controller::ReportLogic(GameObject *obj)
 {
 	if (!controllerPlaced)
 		return;
-	if (onlyTrackPlayerDeaths && !Commands->Is_A_Star(obj))
+	if (onlyTrackPlayerDeaths && !(recordAIDeaths || Commands->Is_A_Star(obj)))
 		return;
 	deathCount++;
 	int remainingLives = maxDeaths-deathCount;
@@ -7448,6 +7605,10 @@ void JMG_Utility_AI_Follow_Player_On_Poke::Poked(GameObject *obj, GameObject *po
 	Commands->Set_Player_Type(obj,Commands->Get_Player_Type(poker));
 	Commands->Enable_HUD_Pokable_Indicator(obj,false);
 }
+void JMG_Utility_AI_Follow_Player_On_Poke::Killed(GameObject *obj, GameObject *killer)
+{
+	Destroyed(obj);
+}
 void JMG_Utility_AI_Follow_Player_On_Poke::Destroyed(GameObject *obj)
 {
 	if (detached)
@@ -7923,6 +8084,7 @@ void JMG_Utility_Created_Override_AI_Soldier_Muzzle_Direction::Created(GameObjec
 }
 void JMG_Utility_Custom_Send_Custom_On_Player_Count_HUD::Created(GameObject *obj)
 {
+	enabled = true;
 	hudStringId = Get_Int_Parameter("HudStringId");
 	sprintf(hudMessage,"%s",Get_Translated_String(hudStringId));
 	hudStringColor = Get_Vector3_Parameter("HudStringColor");
@@ -7934,6 +8096,8 @@ void JMG_Utility_Custom_Send_Custom_On_Player_Count_HUD::Created(GameObject *obj
 }
 void JMG_Utility_Custom_Send_Custom_On_Player_Count_HUD::Custom(GameObject *obj,int message,int param,GameObject *sender)
 {
+	if (!enabled)
+		return;
 	if (message == resetCustom)
 	{
 		runningCount = 0;
@@ -7942,7 +8106,8 @@ void JMG_Utility_Custom_Send_Custom_On_Player_Count_HUD::Custom(GameObject *obj,
 	{
 		runningCount++;
 		int requiredCount = baseCount+playerCount*Get_Player_Count();
-		JmgUtility::SetHUDHelpText(hudStringId,formatHUDMessage(hudMessage,runningCount,requiredCount),hudStringColor);
+		if (runningCount <= requiredCount)
+			JmgUtility::SetHUDHelpText(hudStringId,formatHUDMessage(hudMessage,runningCount,requiredCount),hudStringColor);
 		if (runningCount < requiredCount)
 			return;
 		int id = Get_Int_Parameter("ID");
@@ -7952,7 +8117,7 @@ void JMG_Utility_Custom_Send_Custom_On_Player_Count_HUD::Custom(GameObject *obj,
 			int Param = Get_Int_Parameter("Param");
 			Commands->Send_Custom_Event(obj,object,Get_Int_Parameter("SendCustom"),Param == -1 ? param : Param,Get_Float_Parameter("Delay"));
 		}
-		this->Destroy_Script();
+		enabled = false;
 	}
 }
 char *JMG_Utility_Custom_Send_Custom_On_Player_Count_HUD::formatHUDMessage(const char *format,...)
@@ -7975,9 +8140,11 @@ void JMG_Utility_Zone_Send_Custom_If_Has_Weapon_Ammo::Entered(GameObject *obj,Ga
 	int totalBullets = Get_Total_Bullets(enter,weaponName);
 	int id = Get_Int_Parameter("ID");
 	GameObject *object = id ? (id == -1 ? enter : Commands->Find_Object(id)) : obj;
+	int param = Get_Int_Parameter("Param");
+	param = param == -1 ? Commands->Get_ID(enter) : param;
 	if (object && totalBullets)
 		for (int x = 0;x < totalBullets;x++)
-			Commands->Send_Custom_Event(obj,object,Get_Int_Parameter("Custom"),Get_Int_Parameter("Param"),Get_Float_Parameter("Delay"));
+			Commands->Send_Custom_Event(obj,object,Get_Int_Parameter("Custom"),param,Get_Float_Parameter("Delay"));
 	if (Get_Int_Parameter("RemoveWeapon"))
 		Remove_Weapon(enter,weaponName);
 	if (Get_Int_Parameter("TriggerOnce"))
@@ -8070,7 +8237,7 @@ void JMG_Utility_Custom_Send_Translated_String_To_All_Players::Custom(GameObject
 }
 void JMG_Utility_Destroyed_Drop_Powerup::Destroyed(GameObject *obj)
 {
-	if (!Has_Weapon(obj,Get_Parameter("WeaponPreset")))
+	if (_stricmp(Get_Parameter("RequiredWeaponPreset"),"") && !Has_Weapon(obj,Get_Parameter("RequiredWeaponPreset")))
 		return;
 	Vector3 pos = Commands->Get_Position(obj);
 	pos.Z += Get_Float_Parameter("HeightAdjust");
@@ -8102,7 +8269,7 @@ void JMG_Utility_Objective_System_Objective_Status_Update_Custom::Custom(GameObj
 		}
 		int objectiveId = Get_Int_Parameter("ObjectiveID");
 		int objectiveMarkerId = Get_Int_Parameter("NewObjectiveMarkerObjectID");
-		GameObject *ObjectiveMarker = objectiveMarkerId == -1 ? sender : Commands->Find_Object(objectiveMarkerId);
+		GameObject *ObjectiveMarker = BasicObjectiveSystem.GetObjectiveMarker(objectiveMarkerId,sender,objectiveId);
 		if (!ObjectiveMarker && objectiveMarkerId)
 		{
 			Console_Input("msg JMG_Utility_Objective_System_Objective_Status_Update_Custom ERROR: Could not find objective marker object!");
@@ -8115,7 +8282,7 @@ void JMG_Utility_Objective_System_Objective_Status_Update_Custom::Custom(GameObj
 			BasicObjectiveSystem.Set_Radar_Blip(objectiveId,ObjectiveMarker,NULL);
 		else if (!objectiveMarkerId)
 			BasicObjectiveSystem.Remove_Radar_Blip(objectiveId);
-		JmgUtility::SetHUDHelpText(stringId,BasicObjectiveSystem.Get_Hud_Help_Text_Color((NewObjectiveSystem::Priority)BasicObjectiveSystem.Get_Objective_Priority(objectiveId)));
+		JmgUtility::SetHUDHelpText(stringId,BasicObjectiveSystem.Get_Hud_Help_Text_Color(objectiveId,(NewObjectiveSystem::Priority)BasicObjectiveSystem.Get_Objective_Priority(objectiveId)));
 	}
 }
 void JMG_Utility_Objective_System_Objective_Failed_Custom::Created(GameObject *obj)
@@ -8211,6 +8378,8 @@ void JMG_Utility_AI_Guardian_Generic::Enemy_Seen(GameObject *obj,GameObject *see
 	if (!Commands->Get_Health(seen))
 		return;
 	if (Is_Script_Attached(seen,"JMG_Utility_AI_Guardian_Ignored"))
+		return;
+	if (Is_Script_Attached(seen,"JMG_Utility_AI_Guardian_Generic_Ignored"))
 		return;
 	if (!JmgUtility::CanSeeStealth(stealthModeOverride,obj,seen))
 		return;
@@ -8458,7 +8627,9 @@ void JMG_Utility_Timer_Custom::Created(GameObject *obj)
 	id = Get_Int_Parameter("ID");
 	message = Get_Int_Parameter("Message");
 	param = Get_Int_Parameter("Param");
-	Commands->Start_Timer(obj,this,time,1);
+	enableCustom = Get_Int_Parameter("EnableCustom");
+	if (!enableCustom)
+		Commands->Start_Timer(obj,this,time,1);
 }
 void JMG_Utility_Timer_Custom::Timer_Expired(GameObject *obj,int number)
 {
@@ -8469,6 +8640,16 @@ void JMG_Utility_Timer_Custom::Timer_Expired(GameObject *obj,int number)
 			Commands->Send_Custom_Event(obj,object,message,param,0);
 		if (repeat)
 			Commands->Start_Timer(obj,this,time,1);
+	}
+}
+void JMG_Utility_Timer_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (enableCustom && enableCustom == message)
+	{
+		if (param)
+			Commands->Start_Timer(obj,this,time,1);
+		else
+			Stop_Timer(obj,1);
 	}
 }
 void JMG_Utility_Zone_Change_Character_Model::Created(GameObject *obj)
@@ -8937,6 +9118,7 @@ void JMG_Utility_Custom_Change_Character::Custom(GameObject *obj,int message,int
 		{
 			Commands->Give_Money(sender,-cost,0);
 			Change_Character(sender,preset);
+			obj->As_SoldierGameObj()->Set_Collision_Group(7);
 			Commands->Create_Sound(Get_Parameter("SuccessSound"),Commands->Get_Position(sender),sender);
 		}
 		else
@@ -9014,12 +9196,16 @@ void JMG_Utility_Custom_Create_Explosion_At_Bone::Created(GameObject *obj)
 	sprintf(bone,"%s",Get_Parameter("Bone"));
 	owner = Get_Int_Parameter("Owner");
 	custom = Get_Int_Parameter("Custom");
+	alive = Get_Int_Parameter("Alive") ? true : false;
 }
 void JMG_Utility_Custom_Create_Explosion_At_Bone::Custom(GameObject *obj,int message,int param,GameObject *sender)
 {
 	if (message == custom)
 	{
-		Commands->Create_Explosion_At_Bone(explosion,obj,bone,!owner ? obj : (owner == -1 ? sender : Commands->Find_Object(owner))); 
+		GameObject *exploder = !owner ? obj : (owner == -1 ? sender : Commands->Find_Object(owner));
+		if (alive && (!exploder || !Commands->Get_Health(exploder)))
+			return;
+		Commands->Create_Explosion_At_Bone(explosion,obj,bone,exploder); 
 	}
 }
 void JMG_Utility_Custom_Send_Custom_Repeat_Ignore_Time::Created(GameObject *obj)
@@ -9147,6 +9333,7 @@ void JMG_Utility_Custom_Enable_Spawners_In_Range_ModPlayer::Custom(GameObject *o
 bool JMG_Utility_Spawn_With_Last_Selected_Gun_Control::controllerPlaced = false;
 char JMG_Utility_Spawn_With_Last_Selected_Gun_Control::playerWeapons[128][256];
 char JMG_Utility_Spawn_With_Last_Selected_Gun_Control::playerNames[128][256];
+SList<JMG_Utility_Spawn_With_Last_Selected_Gun_Control::StringNode> JMG_Utility_Spawn_With_Last_Selected_Gun_Control::ignoredWeapons;
 void JMG_Utility_Spawn_With_Last_Selected_Gun_Control::Created(GameObject *obj)
 {
 	for (int x = 0;x < 128;x++)
@@ -9195,8 +9382,12 @@ void JMG_Utility_Spawn_With_Last_Selected_Gun_Player::Timer_Expired(GameObject *
 void JMG_Utility_Spawn_With_Last_Selected_Gun_Player::Destroyed(GameObject *obj)
 {
 	const char *weapon = Get_Current_Weapon(obj);
-	if (weapon)
-		sprintf(JMG_Utility_Spawn_With_Last_Selected_Gun_Control::playerWeapons[playerId],"%s",weapon);
+	if (!weapon)
+		return;
+	for (SLNode<JMG_Utility_Spawn_With_Last_Selected_Gun_Control::StringNode> *node = JMG_Utility_Spawn_With_Last_Selected_Gun_Control::ignoredWeapons.Head();node;node = node->Next())
+		if (node->Data() && !_stricmp(node->Data()->preset,weapon))
+			return;
+	sprintf(JMG_Utility_Spawn_With_Last_Selected_Gun_Control::playerWeapons[playerId],"%s",weapon);
 }
 void JMG_Utility_Spawn_With_Last_Selected_Gun_Player::GrantPlayersWeapon(GameObject *obj)
 {
@@ -9318,7 +9509,7 @@ void JMG_Utility_Objective_System_Objective_Marker_Update_Custom::Custom(GameObj
 		}
 		int objectiveId = Get_Int_Parameter("ObjectiveID");
 		int objectiveMarkerId = Get_Int_Parameter("NewObjectiveMarkerObjectID");
-		GameObject *ObjectiveMarker = objectiveMarkerId == -1 ? sender : Commands->Find_Object(objectiveMarkerId);
+		GameObject *ObjectiveMarker = BasicObjectiveSystem.GetObjectiveMarker(objectiveMarkerId,sender,objectiveId);
 		if (!ObjectiveMarker && objectiveMarkerId)
 		{
 			Console_Input("msg JMG_Utility_Objective_System_Objective_Marker_Update_Custom ERROR: Could not find objective marker object!");
@@ -9489,9 +9680,9 @@ SList<JMG_Utility_Basic_Spawner_In_Radius::SpawnObjectNode> JMG_Utility_Basic_Sp
 void JMG_Utility_Basic_Spawner_In_Radius::Created(GameObject *obj)
 {
 	attachScriptsGroupId = Get_Int_Parameter("Attach_Scripts_Group_ID");
-	scriptId = Get_Int_Parameter("Script_ID");
-	if (scriptId == -1)
-		scriptId = this->Get_ID();
+	spawnedObjectScriptID = Get_Int_Parameter("Spawned_Object_Script_ID");
+	if (spawnedObjectScriptID == -1)
+		spawnedObjectScriptID = this->Get_ID();
 	spawnedObjects = 0;
 	spawnLocation = Get_Vector3_Parameter("Spawn_Location");
 	if (spawnLocation.X == -1.0f && spawnLocation.Y == -1.0f)
@@ -9503,7 +9694,7 @@ void JMG_Utility_Basic_Spawner_In_Radius::Created(GameObject *obj)
 			spawnLocation.Z = mypos.Z;
 	}
 	spawnAtATime = Get_Int_Parameter("Spawn_At_A_Time");
-	spawnLimit = Get_Int_Parameter("Spawn_Limit");
+	maxTotalSpawned = Get_Int_Parameter("Max_Total_Spawned");
 	minRadius = Get_Float_Parameter("Min_Spawn_Radius");
 	maxRadius = Get_Float_Parameter("Max_Spawn_Radius");
 	initialSpawnHeight = Get_Float_Parameter("Initial_Spawn_Height");
@@ -9535,6 +9726,8 @@ void JMG_Utility_Basic_Spawner_In_Radius::Created(GameObject *obj)
 	if (enabled)
 		Initial_Spawn(obj);
 	Commands->Start_Timer(obj,this,rate+(randomRate ? Commands->Get_Random(-randomRate,randomRate) : 0.0f),1);
+	lastPlayerCount = 0;
+	Commands->Start_Timer(obj,this,2.5f,3);
 }
 void JMG_Utility_Basic_Spawner_In_Radius::Timer_Expired(GameObject *obj,int number)
 {
@@ -9551,28 +9744,42 @@ void JMG_Utility_Basic_Spawner_In_Radius::Timer_Expired(GameObject *obj,int numb
 		else
 			Commands->Start_Timer(obj,this,0.1f,1);
 	}
+	if (number == 3 && !The_Game()->Is_Game_Over())
+	{
+		int change = GetPlayerLimitModifier()-lastPlayerCount;
+		lastPlayerCount = change;
+		for (int x = 0;x < change;x++)
+			Commands->Send_Custom_Event(obj,obj,6873525,spawnedObjectScriptID,0.1f);
+		Commands->Start_Timer(obj,this,2.5f,3);
+	}
 }
 void JMG_Utility_Basic_Spawner_In_Radius::Custom(GameObject *obj,int message,int param,GameObject *sender)
 {
-	if (changeSpawnCapCustom == -1 && message == changeSpawnCapCustom)
+	if (changeSpawnCapCustom && message == changeSpawnCapCustom)
 	{
+		int change = param-spawnAtATime;
 		spawnAtATime = param;
+		for (int x = 0;x < change;x++)
+			Commands->Send_Custom_Event(obj,obj,6873525,spawnedObjectScriptID,0.1f);
 	}
-	if (message == 6873523 && param == scriptId)
+	if (message == 6873523 && param == spawnedObjectScriptID)
 	{
 		spawnedObjects++;
 	}
-	if (message == 6873524 && param == scriptId)
+	if (message == 6873524 && param == spawnedObjectScriptID)
 	{
-		spawnedObjects--;
-		Commands->Send_Custom_Event(obj,obj,6873525,scriptId,rate+(randomRate ? Commands->Get_Random(-randomRate,randomRate) : 0.0f));
+		if (spawnedObjects > 0)
+			spawnedObjects--;
+		Commands->Send_Custom_Event(obj,obj,6873525,spawnedObjectScriptID,rate+(randomRate ? Commands->Get_Random(-randomRate,randomRate) : 0.0f));
 	}
-	if (message == 6873525 && param == scriptId)
+	if (message == 6873525 && param == spawnedObjectScriptID && !The_Game()->Is_Game_Over())
 	{
-		if (!enabled || AttemptSpawn(obj) == SpawnFailureTypes::SPAWN_BLOCKED)
-			Commands->Send_Custom_Event(obj,obj,6873525,scriptId,0.1f);
+		if (!enabled)
+			return;
+		if (AttemptSpawn(obj) == SpawnFailureTypes::SPAWN_BLOCKED)
+			Commands->Send_Custom_Event(obj,obj,6873525,spawnedObjectScriptID,0.1f);
 	}
-	if (enableDisableCustom && message == enableDisableCustom)
+	if (enableDisableCustom && message == enableDisableCustom && !The_Game()->Is_Game_Over())
 	{
 		enabled = param != 0 ? true : false;
 		if (param == 1)
@@ -9583,7 +9790,7 @@ JMG_Utility_Basic_Spawner_In_Radius::SpawnFailureTypes JMG_Utility_Basic_Spawner
 {
 	if (!(spawnedObjects < spawnAtATime+GetPlayerLimitModifier()))
 		return SpawnFailureTypes::LIMIT_REACHED;
-	if (!((spawnLimit >= 0 && spawnCount < spawnLimit) || spawnLimit < 0))
+	if (!((maxTotalSpawned >= 0 && spawnCount < maxTotalSpawned) || maxTotalSpawned < 0))
 		return SpawnFailureTypes::LIMIT_REACHED;
 	float distance = (minRadius < maxRadius ? Commands->Get_Random(minRadius,maxRadius) : minRadius);
 	float facing = Commands->Get_Random(-180.0f,180.0f);
@@ -9663,7 +9870,7 @@ JMG_Utility_Basic_Spawner_In_Radius::SpawnFailureTypes JMG_Utility_Basic_Spawner
 		}
 		spawnCount++;
 		char params[512];
-		sprintf(params,"%d,%d,%d",Commands->Get_ID(obj),scriptId,spawnGroupId);
+		sprintf(params,"%d,%d,%d",Commands->Get_ID(obj),spawnedObjectScriptID,spawnGroupId);
 		Commands->Attach_Script(spawned,"JMG_Utility_Basic_Spawner_In_Radius_Attached",params);
 		Commands->Send_Custom_Event(spawned,obj,6873522,attachScriptsGroupId,0.0f);
 		return SpawnFailureTypes::SUCCESS;
@@ -9678,6 +9885,7 @@ JMG_Utility_Basic_Spawner_In_Radius::SpawnFailureTypes JMG_Utility_Basic_Spawner
 void JMG_Utility_Basic_Spawner_In_Radius::Initial_Spawn(GameObject *obj)
 {
 	int addSpawn = GetPlayerLimitModifier();
+	lastPlayerCount = addSpawn;
 	for (int x = spawnedObjects;x < initialSpawn+addSpawn;x++)
 	{
 		JMG_Utility_Basic_Spawner_In_Radius::SpawnFailureTypes spawnResult;
@@ -9690,7 +9898,7 @@ void JMG_Utility_Basic_Spawner_In_Radius::Initial_Spawn(GameObject *obj)
 				x = initialSpawn+1+addSpawn;
 		}
 		if (spawnResult == SpawnFailureTypes::SPAWN_BLOCKED)
-			Commands->Send_Custom_Event(obj,obj,6873525,scriptId,0.1f);
+			Commands->Send_Custom_Event(obj,obj,6873525,spawnedObjectScriptID,0.1f);
 		if (initialSpawn < spawnAtATime)
 		{
 			Stop_Timer(obj,1);
@@ -9731,16 +9939,22 @@ int JMG_Utility_Basic_Spawner_In_Radius::GetPlayerLimitModifier()
 }
 void JMG_Utility_Basic_Spawner_In_Radius_Attached::Created(GameObject *obj)
 {
+	if (sentCreateMessage)
+		return;
+	sentCreateMessage = true;
 	GameObject *controller = Commands->Find_Object(Get_Int_Parameter("Controller_ID"));
 	if (controller)
-		Commands->Send_Custom_Event(obj,controller,6873523,Get_Int_Parameter("Script_ID"),0.0f);
+		Commands->Send_Custom_Event(obj,controller,6873523,Get_Int_Parameter("Spawned_Object_Script_ID"),0.0f);
 	AddSpawnedObjectToGroup(obj);
 }
 void JMG_Utility_Basic_Spawner_In_Radius_Attached::Destroyed(GameObject *obj)
 {
+	if (sentDeathMessage)
+		return;
+	sentDeathMessage = true;
 	GameObject *controller = Commands->Find_Object(Get_Int_Parameter("Controller_ID"));
 	if (controller)
-		Commands->Send_Custom_Event(obj,controller,6873524,Get_Int_Parameter("Script_ID"),0.0f);
+		Commands->Send_Custom_Event(obj,controller,6873524,Get_Int_Parameter("Spawned_Object_Script_ID"),0.0f);
 }
 void JMG_Utility_Basic_Spawner_In_Radius_Attached::AddSpawnedObjectToGroup(GameObject *spawned)
 {
@@ -10018,18 +10232,20 @@ void JMG_Utility_Custom_Set_Position::Created(GameObject *obj)
 {
 	custom = Get_Int_Parameter("Custom");
 	position = Get_Vector3_Parameter("Position");
+	id = Get_Int_Parameter("ID");
 }
 void JMG_Utility_Custom_Set_Position::Custom(GameObject *obj,int message,int param,GameObject *sender)
 {
 	if (message == custom)
 	{
-		Commands->Set_Position(obj,position);
-		if (obj->As_ScriptZoneGameObj())
+		GameObject *target = id ? Commands->Find_Object(id) : obj;
+		Commands->Set_Position(target,position);
+		if (target->As_ScriptZoneGameObj())
 		{
-			OBBoxClass *zone = Get_Zone_Box(obj);
+			OBBoxClass *zone = Get_Zone_Box(target);
 			zone->Center = position;
-			JmgUtility::RotateZoneBox(Commands->Get_Facing(obj),zone->Basis);
-			Set_Zone_Box(obj,*zone);
+			JmgUtility::RotateZoneBox(Commands->Get_Facing(target),zone->Basis);
+			Set_Zone_Box(target,*zone);
 		}
 	}
 }
@@ -10456,6 +10672,7 @@ void JMG_Utility_AI_Skittish_Herd_Animal::setRetreatLocation(GameObject *obj,Gam
 	float dist = Commands->Get_Random(minRetreatRange,maxRetreatRange);
 	if (Commands->Get_Random(0.0f,1.0f) < runTowardThreatChance)
 		dist *= -1.0f;
+	pos = Commands->Get_Position(obj);
 	pos.X += cos(TempRotation)*dist;
 	pos.Y += sin(TempRotation)*dist;
 	if (Get_A_Wander_Point(&pos,wanderPointGroup))
@@ -10713,6 +10930,14 @@ void JMG_Utility_Custom_Set_Human_Anim_Override::Custom(GameObject *obj,int mess
 }
 void JMG_Utility_Swimming_Infantry_Advanced::Created(GameObject *obj)
 {
+	if (!Commands->Is_A_Star(obj))
+	{
+		char params[1024];
+		sprintf(params,"%d,%s,%d,%d,%.2f,%.2f,%.2f,%s,%s,%s,%.2f%,%.2f,%.2f,%s,%d,%d,%s,%s,%s,%.2f,%.2f",Get_Int_Parameter("WeaponsGroupID"),Get_Parameter("WeaponPreset"),Get_Int_Parameter("ForceDefinedWeapons"),Get_Int_Parameter("DefaultHoldStyle"),Get_Float_Parameter("DefaultSwimSpeed"),Get_Float_Parameter("DrownTime"),Get_Float_Parameter("StartDrownSequence"),Get_Parameter("GaspForBreath"),Get_Parameter("PantingSoundEmitterModel"),Get_Parameter("HeartBeatSoundEmitterModel"),Get_Float_Parameter("DrownDamageRate"),Get_Float_Parameter("CatchBreathRate"),Get_Float_Parameter("WaterDamageAmount"),Get_Parameter("WaterDamageWarhead"),Get_Int_Parameter("WaterDamageDelayTime"),Get_Int_Parameter("WaterDamageDelayTimeRecover"),Get_Parameter("SwimmingSkin"),Get_Parameter("SwimmingArmor"),Get_Parameter("SwimmingModel"),Get_Float_Parameter("SwimmingHeightScale"),Get_Float_Parameter("SwimmingWidthScale"));
+		Commands->Attach_Script(obj,"JMG_Utility_Swimming_Infantry_Advanced_AI",params);
+		Destroy_Script();
+		return;
+	}
 	lastDisplayTime = NULL;
 	lastWaterZoneId = 0;
 	heartBeatSoundId = 0;
@@ -10753,7 +10978,7 @@ void JMG_Utility_Swimming_Infantry_Advanced::Created(GameObject *obj)
 	originalWidthScale = 0.0f;
 	drownDamageRate = drownDamageRate;
 	weaponSwitchForward = true;
-	for (SLNode<ScriptZoneGameObj>* node = GameObjManager::ScriptZoneGameObjList.Head(); node; node = node->Next())
+	for (SLNode<ScriptZoneGameObj> *node = GameObjManager::ScriptZoneGameObjList.Head();node;node = node->Next())
 	{
 		GameObject *zone = (GameObject *)node->Data();
 		if (Is_Script_Attached(zone,"JMG_Utility_Swimming_Zone") && IsInsideZone(zone,obj))
@@ -10901,7 +11126,8 @@ void JMG_Utility_Swimming_Infantry_Advanced::Custom(GameObject *obj,int message,
 			waterSpeedMultiplier = (param/100.0f);
 			JMG_Utility_Swimming_Infantry::isInWater[playerId] = true;
 			sprintf(enterWeapon,"%s",Get_Current_Weapon(obj) ? Get_Current_Weapon(obj) : "");
-			Grant_Weapon(obj,defaultWeaponPreset,true,-1,1);
+			if (forceDefinedWeapons)
+				Grant_Weapon(obj,defaultWeaponPreset,true,-1,1);
 			obj->As_SoldierGameObj()->Set_Can_Play_Damage_Animations(false);
 			obj->As_SoldierGameObj()->Set_Movement_Loiters_Allowed(false);
 			obj->As_SoldierGameObj()->Set_Human_Anim_Override(false);
@@ -10931,6 +11157,17 @@ void JMG_Utility_Swimming_Infantry_Advanced::Killed(GameObject *obj,GameObject *
 {
 	DestroySoundEmitter(&heartBeatSoundId);
 	DestroySoundEmitter(&pantSoundId);
+	if (!waterZoneCount)
+		return;
+	if (startedFadeRed)
+	{
+		Set_Screen_Fade_Color_Player(obj,1.0f,0.0f,0.0f,JmgUtility::MathClamp(defaultDrownTime-drownTime,0,startDrownSequence));
+		CreateSoundEmitter(obj,heartBeatSoundEmitterModel,&heartBeatSoundId);
+	}
+	else
+		Set_Screen_Fade_Color_Player(obj,JMG_Utility_Swimming_Zone::waterNode[playerId].waterColor.X,JMG_Utility_Swimming_Zone::waterNode[playerId].waterColor.Y,JMG_Utility_Swimming_Zone::waterNode[playerId].waterColor.Z,0.0f);
+	Set_Screen_Fade_Opacity_Player(obj,JMG_Utility_Swimming_Zone::waterNode[playerId].waterColorOpacity,0.1f);
+	Set_Fog_Range_Player(obj,JMG_Utility_Swimming_Zone::waterNode[playerId].waterMinViewDistance,JMG_Utility_Swimming_Zone::waterNode[playerId].waterMaxViewDistance,0.1f);
 }
 void JMG_Utility_Swimming_Infantry_Advanced::Destroyed(GameObject *obj)
 {
@@ -11143,8 +11380,6 @@ void JMG_Utility_Custom_Send_Cycled_Customs::Custom(GameObject *obj,int message,
 }
 void JMG_Utility_Killed_Send_Custom_From_Killer::Killed(GameObject *obj,GameObject *killer)
 {
-	if (!Commands->Is_A_Star(killer))
-		return;
 	int id = Get_Int_Parameter("ID");
 	GameObject *object = id ? (id == -1 ? killer : Commands->Find_Object(id)) : obj;
 	Commands->Send_Custom_Event(killer,object,Get_Int_Parameter("Custom"),Get_Int_Parameter("Param"),Get_Float_Parameter("Delay"));
@@ -11608,6 +11843,8 @@ void JMG_Utility_Base_Defense_Simple::Timer_Expired(GameObject *obj,int number)
 }
 float JMG_Utility_Base_Defense_Simple::GetPriority(GameObject *seen)
 {
+	if (!seen)
+		return 0;
 	if (seen->As_VehicleGameObj())
 		switch (Get_Vehicle_Mode(seen))
 		{
@@ -11980,6 +12217,7 @@ void JMG_Utility_AI_Lobbed_Vehicle_Projectile_Custom::Timer_Expired(GameObject *
 			else if (useLowAngleTargetAboveHeight && Commands->Get_Position(obj).Z+useLowAngleTargetAboveHeight < Commands->Get_Position(seen).Z)
 				useHighAngle = false;
 			double height = enemyPos.Z-myPos.Z,angle;
+			myPos.Z = enemyPos.Z = 0.0f;
 			if (!CalculateAngle(&angle,Commands->Get_Distance(enemyPos,myPos),height,useHighAngle))
 			{
 				Commands->Start_Timer(obj,this,0.01f,1);
@@ -12148,6 +12386,5787 @@ void JMG_Utility_Player_Seen_Send_Custom::Timer_Expired(GameObject *obj,int numb
 		Commands->Start_Timer(obj,this,0.1f,1);
 	}
 }
+void JMG_Utility_Enter_Play_Animation_And_Relocate::Created(GameObject *obj)
+{
+	sprintf(presetName,"%s",Get_Parameter("PresetName"));
+	sprintf(animation,"%s",Get_Parameter("Animation"));
+	sprintf(attachedModel,"%s",Get_Parameter("AttachedModel"));
+	sprintf(attachedAnimation,"%s",Get_Parameter("AttachedAnimation"));
+	centerToZone = Get_Int_Parameter("CenterToZone") ? true : false;
+	custom = Get_Int_Parameter("Custom");
+	customParam = Get_Int_Parameter("Param");
+	OBBoxClass *zone = Get_Zone_Box(obj);
+	if (!zone)
+	{
+		Console_Input("msg JMG_Utility_Enter_Play_Animation_And_Relocate ERROR: Must be attached to a script zone!");
+		Destroy_Script();
+		return;
+	}
+	zoneRotation = zone->Basis.Get_Z_Rotation()*(180/PI);
+}
+void JMG_Utility_Enter_Play_Animation_And_Relocate::Entered(GameObject *obj,GameObject *enterer)
+{
+	if (Is_Script_Attached(enterer,"JMG_Utility_Enter_Play_Animation_And_Relocate_Attached"))
+		return;
+	if (!enterer->As_SmartGameObj())
+		return;
+	if (!_stricmp(presetName,"") || !_stricmp(presetName,Commands->Get_Preset_Name(enterer)))
+	{
+		if (centerToZone)
+			Commands->Set_Position(enterer,Commands->Get_Position(obj));
+		if (enterer->As_SoldierGameObj())
+		{
+			enterer->As_SoldierGameObj()->Set_Override_Weapon_Hold_Style(14);
+			enterer->As_SoldierGameObj()->Set_Can_Play_Damage_Animations(false);
+		}
+		Commands->Set_Animation(enterer,animation,false,NULL,0.0f,-1.0f,true);
+		char params[512];
+		sprintf(params,"%s,%s,%.2f,%d,%d",attachedModel,attachedAnimation,zoneRotation,custom,customParam);
+		Attach_Script_Once(enterer,"JMG_Utility_Enter_Play_Animation_And_Relocate_Attached",params);
+	}
+}
+void JMG_Utility_Enter_Play_Animation_And_Relocate_Attached::Created(GameObject *obj)
+{
+	GameObject *holder = Commands->Create_Object("Daves Arrow",Commands->Get_Position(obj));
+	Commands->Set_Model(holder,Get_Parameter("AttachedModel"));
+	Commands->Set_Animation(holder,Get_Parameter("AttachedAnimation"),false,NULL,0.0f,-1.0f,true);
+	Commands->Set_Facing(holder,Get_Float_Parameter("Facing"));
+	Commands->Attach_To_Object_Bone(obj,holder,"attach");
+	holderId = Commands->Get_ID(holder);
+}
+void JMG_Utility_Enter_Play_Animation_And_Relocate_Attached::Animation_Complete(GameObject *obj,const char *anim)
+{
+	if (obj->As_SoldierGameObj())
+	{
+		obj->As_SoldierGameObj()->Set_Override_Weapon_Hold_Style(-1);
+		obj->As_SoldierGameObj()->Set_Can_Play_Damage_Animations(true);
+		Commands->Action_Reset(obj,100.0f);
+	}
+	obj->As_PhysicalGameObj()->Peek_Physical_Object()->Set_Collision_Group(Collision_Group_Type::SOLDIER_GHOST_COLLISION_GROUP);
+	Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("Custom"),Get_Int_Parameter("Param"),0);
+	Destroyed(obj);
+	Destroy_Script();
+}
+void JMG_Utility_Enter_Play_Animation_And_Relocate_Attached::Destroyed(GameObject *obj)
+{
+	GameObject *holder = Commands->Find_Object(holderId);
+	if (holder)
+		Commands->Destroy_Object(holder);
+}
+void JMG_Utility_Custom_Destroy_Closest_Object_To_Self::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+}
+void JMG_Utility_Custom_Destroy_Closest_Object_To_Self::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		GameObject *nearest = NULL;
+		float dist = 0.0f;
+		Vector3 pos = Commands->Get_Position(obj);
+		const char *presetName = Get_Parameter("PresetName");
+		float maxDist = Get_Float_Parameter("MaxDistance");
+		maxDist *= maxDist;
+		for (SLNode<BaseGameObj> *current = GameObjManager::GameObjList.Head();current;current = current->Next())
+		{
+			GameObject* o = current->Data()->As_ScriptableGameObj();
+			if (!_stricmp(presetName,Commands->Get_Preset_Name(o)))
+			{
+				float tempDistance = JmgUtility::SimpleDistance(pos,Commands->Get_Position(o));
+				if (!nearest || (tempDistance < dist && (maxDist == 0.0 || tempDistance <= maxDist)))
+				{
+					nearest = o;
+					dist = tempDistance;
+				}
+			}
+		}
+		if (nearest)
+			Commands->Destroy_Object(nearest);
+		if (Get_Int_Parameter("TriggerOnce"))
+			Destroy_Script();
+	}
+}
+void JMG_Utility_Custom_Apply_Damage_Closest_Object_To_Self::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+}
+void JMG_Utility_Custom_Apply_Damage_Closest_Object_To_Self::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		GameObject *nearest = NULL;
+		float dist = 0.0f;
+		Vector3 pos = Commands->Get_Position(obj);
+		const char *presetName = Get_Parameter("PresetName");
+		float maxDist = Get_Float_Parameter("MaxDistance");
+		maxDist *= maxDist;
+		for (SLNode<BaseGameObj> *current = GameObjManager::GameObjList.Head();current;current = current->Next())
+		{
+			GameObject* o = current->Data()->As_ScriptableGameObj();
+			if (!_stricmp(presetName,Commands->Get_Preset_Name(o)))
+			{
+				float tempDistance = JmgUtility::SimpleDistance(pos,Commands->Get_Position(o));
+				if (!nearest || (tempDistance < dist && (maxDist == 0.0 || tempDistance <= maxDist)))
+				{
+					nearest = o;
+					dist = tempDistance;
+				}
+			}
+		}
+		if (nearest)
+			Commands->Apply_Damage(nearest,Get_Float_Parameter("DamageAmount"),Get_Parameter("Warhead"),sender);
+		if (Get_Int_Parameter("TriggerOnce"))
+			Destroy_Script();
+	}
+}
+void JMG_Utility_Custom_Restore_Building::Created(GameObject *obj)
+{
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("Custom");
+	triggerOnce = Get_Int_Parameter("TriggerOnce") ? true : false;
+}
+void JMG_Utility_Custom_Restore_Building::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		GameObject *building = obj;
+		if (id)
+			if (id < 0)
+				building = sender;
+			else
+				building = Commands->Find_Object(id);
+		Restore_Building(building);
+		if (triggerOnce)
+			Destroy_Script();
+	}
+}
+void JMG_Utility_Timer_Custom_Random::Created(GameObject *obj)
+{
+	time = Get_Float_Parameter("Time");
+	random = Get_Float_Parameter("Random");
+	repeat = Get_Int_Parameter("Repeat") ? true : false;
+	id = Get_Int_Parameter("ID");
+	message = Get_Int_Parameter("Message");
+	param = Get_Int_Parameter("Param");
+	Commands->Start_Timer(obj,this,time+(random ? Commands->Get_Random(-random,random) : 0.0f),1);
+}
+void JMG_Utility_Timer_Custom_Random::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		GameObject *object = !id ? obj : Commands->Find_Object(id);
+		if (object)
+			Commands->Send_Custom_Event(obj,object,message,param,0);
+		if (repeat)
+			Commands->Start_Timer(obj,this,time+(random ? Commands->Get_Random(-random,random) : 0.0f),1);
+	}
+}
+DynamicAttachScript JMG_Utility_Dynamic_Script_Controller::dynamicAttachScript;
+void JMG_Utility_Dynamic_Script_Controller::Destroyed(GameObject *obj)
+{
+	JMG_Utility_Dynamic_Script_Controller::dynamicAttachScript.EmptyList();
+}
+void JMG_Utility_Dynamic_Script_Definition::Created(GameObject *obj)
+{
+	JMG_Utility_Dynamic_Script_Controller::dynamicAttachScript.AddDynamicScript(Get_Int_Parameter("ScriptID"),Get_Parameter("ScriptName"));
+	Destroy_Script();
+}
+void JMG_Utility_Dynamic_Script_Created_Add_Update_Parameter::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,0.01f,1);
+}
+void JMG_Utility_Dynamic_Script_Created_Add_Update_Parameter::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		const char *parameters = Get_Parameter("Param");
+		char *params = newstr(parameters);
+		char delim = Get_Parameter("Delim")[0];
+		if (delim != '\0')
+		{
+			unsigned int length = strlen(parameters);
+			for (unsigned int x = 0;x < length;x++)
+				if (params[x] == delim)
+					params[x] = ',';
+		}
+		JMG_Utility_Dynamic_Script_Controller::dynamicAttachScript.AddParamToScript(Get_Int_Parameter("ScriptID"),Get_Int_Parameter("Index"),params);
+		Destroy_Script();
+	}
+}
+void JMG_Utility_Dynamic_Script_Custom_Add_Update_Parameter::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+}
+void JMG_Utility_Dynamic_Script_Custom_Add_Update_Parameter::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		const char *parameters = Get_Parameter("Param");
+		char *params = newstr(parameters);
+		char delim = Get_Parameter("Delim")[0];
+		if (delim != '\0')
+		{
+			unsigned int length = strlen(parameters);
+			for (unsigned int x = 0;x < length;x++)
+				if (params[x] == delim)
+					params[x] = ',';
+		}
+		JMG_Utility_Dynamic_Script_Controller::dynamicAttachScript.AddParamToScript(Get_Int_Parameter("ScriptID"),Get_Int_Parameter("Index"),params);
+	}
+}
+void JMG_Utility_Dynamic_Script_Custom_Attach::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+}
+void JMG_Utility_Dynamic_Script_Custom_Attach::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		DynamicAttachScript::DynamicAttachScriptNode *script = JMG_Utility_Dynamic_Script_Controller::dynamicAttachScript.FindDynamicScript(Get_Int_Parameter("ScriptID"));
+		if (!script)
+			return;
+		char attachParams[2048];
+		sprintf(attachParams,"");
+		int addedParams = 0;
+		for (int x = 0;x < 128 && addedParams < script->dynamicAttachScriptParams.objectCount;x++)
+		{
+			DynamicAttachScript::DynamicAttachScriptParams::DynamicAttachScriptParamNode *scriptParam = script->dynamicAttachScriptParams.FindParam(x);
+			if (scriptParam)
+			{
+				sprintf(attachParams,"%s%s%s",attachParams,addedParams ? "," : "",scriptParam->param);
+				addedParams++;
+			}
+		}
+		Commands->Attach_Script(sender,script->scriptName,attachParams);
+	}
+}
+void JMG_Utility_Objective_System_Custom_Add_Objective_Send_Custom::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+}
+void JMG_Utility_Objective_System_Custom_Add_Objective_Send_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		if (!JMG_Utility_Objective_System_Controller::controllerPlaced)
+		{
+			Console_Input("msg JMG_Utility_Objective_System_Custom_Add_Objective_Send_Custom ERROR: Make sure you have a JMG_Utility_Objective_System_Controller placed on the map!");
+			return;
+		}
+		if (Get_Int_Parameter("CompleteObjectiveID") && BasicObjectiveSystem.Get_Objective_Status(Get_Int_Parameter("CompleteObjectiveID")) != NewObjectiveSystem::Failed)
+		{
+			BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("CompleteObjectiveID"),NewObjectiveSystem::Primary,NewObjectiveSystem::Hidden,0,"",0);
+			BasicObjectiveSystem.Set_Objective_Status(Get_Int_Parameter("CompleteObjectiveID"),NewObjectiveSystem::Accomplished);
+		}
+		int objectiveMarkerId = Get_Int_Parameter("ObjectiveMarkerObjectID");
+		GameObject *ObjectiveMarker = BasicObjectiveSystem.GetObjectiveMarker(objectiveMarkerId,sender,Get_Int_Parameter("NewObjectiveID"));
+		if (!ObjectiveMarker && objectiveMarkerId)
+		{
+			Console_Input("msg JMG_Utility_Objective_System_Objective_Update_Custom ERROR: Could not find objective marker object!");
+			return;
+		}
+		int status = BasicObjectiveSystem.Get_Objective_Status(Get_Int_Parameter("NewObjectiveID"));
+		if (status == NewObjectiveSystem::NotDefined || status == NewObjectiveSystem::Removed)
+		{
+			int id = Get_Int_Parameter("ID");
+			int Param = Get_Int_Parameter("Param");
+			GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+			Commands->Send_Custom_Event(obj,object,Get_Int_Parameter("SendCustom"),Param == -1 ? param : Param,Get_Float_Parameter("CustomDelay"));
+			bool added = false;
+			if (ObjectiveMarker)
+				added = BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),ObjectiveMarker);
+			else
+				added = BasicObjectiveSystem.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
+			if (added)
+				JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),BasicObjectiveSystem.Get_Hud_Help_Text_Color(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority")));
+		}
+	}
+}
+void JMG_Utility_Objective_System_Custom_Send_Custom_Status::Created(GameObject *obj)
+{
+	objectiveId = Get_Int_Parameter("ObjectiveID");
+	status = Get_Int_Parameter("Status");
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+}
+void JMG_Utility_Objective_System_Custom_Send_Custom_Status::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage)
+	{
+		if (BasicObjectiveSystem.Get_Objective_Status(objectiveId) != status)
+			return;
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,custom,Param == -1 ? param : Param,delay);
+	}
+}
+void JMG_Utility_Objective_System_Custom_Send_Custom_Does_Not_Exist::Created(GameObject *obj)
+{
+	objectiveId = Get_Int_Parameter("ObjectiveID");
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+}
+void JMG_Utility_Objective_System_Custom_Send_Custom_Does_Not_Exist::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage)
+	{
+		int status = BasicObjectiveSystem.Get_Objective_Status(objectiveId);
+		if (status != NewObjectiveSystem::NotDefined && status != NewObjectiveSystem::Removed)
+			return;
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,custom,Param == -1 ? param : Param,delay);
+	}
+}
+void JMG_Utility_Objective_System_Send_Random_Objective_As_Custom::Created(GameObject *obj)
+{
+	for (int x = 0;x < 10;x++)
+	{
+		char objectiveName[15];
+		sprintf(objectiveName,"ObjectiveID%0d",x);
+		objectiveId[x] = Get_Int_Parameter(objectiveName);
+	}
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+}
+void JMG_Utility_Objective_System_Send_Random_Objective_As_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage)
+	{
+		int random = Commands->Get_Random_Int(1,10);
+		int originalRandom = random;
+		int tmpObjectiveId = -1;
+		for (int x = 0;;x++)
+		{
+			if (x == 10)
+			{
+				if (random == originalRandom)
+					return;
+				x = 0;
+			}
+			if (objectiveId[x] == -999)
+				continue;
+			int status = BasicObjectiveSystem.Get_Objective_Status(objectiveId[x]);
+			if (status != NewObjectiveSystem::NotDefined && status != NewObjectiveSystem::Removed)
+				continue;
+			random--;
+			if (!random)
+			{
+				tmpObjectiveId = objectiveId[x];
+				break;
+			}
+		}
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,tmpObjectiveId,Param == -1 ? param : Param,delay);
+	}
+}
+void JMG_Utility_Objective_System_Custom_Send_Custom_Not_Status::Created(GameObject *obj)
+{
+	objectiveId = Get_Int_Parameter("ObjectiveID");
+	status = Get_Int_Parameter("Status");
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+}
+void JMG_Utility_Objective_System_Custom_Send_Custom_Not_Status::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage)
+	{
+		if (BasicObjectiveSystem.Get_Objective_Status(objectiveId) == status)
+			return;
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,custom,Param == -1 ? param : Param,delay);
+	}
+}
+GlobalKeycardSystem globalKeycardSystem = GlobalKeycardSystem();
+void GlobalKeycardSystem::AddKeycardToPlayerObjects(int keycardId,int groupId)
+{
+	for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+	{
+		SmartGameObj* o = current->Data();
+		if (o)
+		{
+			JMG_Utility_Global_Keycard_System_Soldier *keycardScript = (JMG_Utility_Global_Keycard_System_Soldier*)Find_Script_On_Object(o,"JMG_Utility_Global_Keycard_System_Soldier");
+			if (keycardScript && keycardScript->groupId == groupId)
+				Commands->Grant_Key(o,keycardId,true);
+		}
+	}
+}
+void GlobalKeycardSystem::RemoveKeycardFromPlayerObjects(int keycardId,int groupId)
+{
+	for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+	{
+		SmartGameObj* o = current->Data();
+		if (o)
+		{
+			JMG_Utility_Global_Keycard_System_Soldier *keycardScript = (JMG_Utility_Global_Keycard_System_Soldier*)Find_Script_On_Object(o,"JMG_Utility_Global_Keycard_System_Soldier");
+			if (keycardScript && keycardScript->groupId == groupId)
+				Commands->Grant_Key(o,keycardId,false);
+		}
+	}
+}
+void JMG_Utility_Global_Keycard_System_Controller::Destroyed(GameObject *obj)
+{
+	globalKeycardSystem.emptyList();
+}
+void JMG_Utility_Global_Keycard_System_Created_Add_Keycard::Created(GameObject *obj)
+{
+	globalKeycardSystem.AddKeycard(Get_Int_Parameter("KeycardID"),Get_Int_Parameter("GroupID"));
+}
+void JMG_Utility_Global_Keycard_System_Custom_Add_Keycard::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+}
+void JMG_Utility_Global_Keycard_System_Custom_Add_Keycard::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		globalKeycardSystem.AddKeycard(Get_Int_Parameter("KeycardID"),Get_Int_Parameter("GroupID"));
+	}
+}
+void JMG_Utility_Global_Keycard_System_Custom_Remove_Keycard::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+}
+void JMG_Utility_Global_Keycard_System_Custom_Remove_Keycard::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		globalKeycardSystem.RemoveKeycard(Get_Int_Parameter("KeycardID"),Get_Int_Parameter("GroupID"));
+	}
+}
+void JMG_Utility_Global_Keycard_System_Soldier::Created(GameObject *obj)
+{
+	groupId = Get_Int_Parameter("GroupID");
+	globalKeycardSystem.GrantKeycards(obj,groupId);
+}
+void JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change::Created(GameObject *obj)
+{
+	occupiedId = Get_Int_Parameter("OccupiedID");
+	occupiedCustom = Get_Int_Parameter("OccupiedCustom");
+	occupiedParam = Get_Int_Parameter("OccupiedParam");
+	occupiedDelay = Get_Float_Parameter("OccupiedDelay");
+	vacantId = Get_Int_Parameter("VacantID");
+	vacantCustom = Get_Int_Parameter("VacantCustom");
+	vacantParam = Get_Int_Parameter("VacantParam");
+	vacantDelay = Get_Float_Parameter("VacantDelay");
+}
+void JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change::Entered(GameObject *obj,GameObject *enterer)
+{
+	if (!Commands->Is_A_Star(enterer))
+		return;
+	int playerId = JmgUtility::JMG_Get_Player_ID(enterer);
+	if (inZone[playerId])
+		return;
+	inZone[playerId] = true;
+	if (!count && occupiedCustom)
+	{
+		GameObject *object = occupiedId ? (occupiedId == -1 ? enterer : Commands->Find_Object(occupiedId)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,occupiedCustom,occupiedParam,occupiedDelay);
+	}
+	count++;
+	char params[128];
+	sprintf(params,"%d",Commands->Get_ID(obj));
+	Commands->Attach_Script(enterer,"JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change_Attached",params);
+}
+void JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change::Exited(GameObject *obj,GameObject *exiter)
+{
+	if (!Commands->Is_A_Star(exiter))
+		return;
+	int playerId = JmgUtility::JMG_Get_Player_ID(exiter);
+	if (!inZone[playerId])
+		return;
+	inZone[playerId] = false;
+	count--;
+	if (!count && vacantCustom)
+	{
+		GameObject *object = vacantId ? (vacantId == -1 ? exiter : Commands->Find_Object(vacantId)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,vacantCustom,vacantParam,vacantDelay);
+	}
+}
+void JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change_Attached::Destroyed(GameObject *obj)
+{
+	GameObject *controller = Commands->Find_Object(Get_Int_Parameter("ID"));
+	if (!controller)
+		return;
+	JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change *occupationScript = (JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change*)Find_Script_On_Object(controller,"JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change");
+	if (!occupationScript)
+		return;
+	occupationScript->Exited(controller,obj);
+}
+bool JMG_Utility_Silent_Countdown_Controller::controllerPlaced = false;
+JMG_Utility_Silent_Countdown_Controller::SendCustomIdNode *JMG_Utility_Silent_Countdown_Controller::sendCustomIdNodeList = NULL;
+void JMG_Utility_Silent_Countdown_Controller::Created(GameObject *obj)
+{
+	controllerPlaced = true;
+}
+void JMG_Utility_Silent_Countdown_Controller::Destroyed(GameObject *obj)
+{
+	EmptyList();
+}
+void JMG_Utility_Silent_Countdown_Timer::Created(GameObject *obj)
+{
+	paused = true;
+	sendCustomIdNode = JMG_Utility_Silent_Countdown_Controller::FindOrCreateCountdownId(Get_Int_Parameter("TimerID"));
+	time = Get_Int_Parameter("Time");
+	startCustom = Get_Int_Parameter("StartCustom");
+	pausedCustom = Get_Int_Parameter("PausedCustom");
+	cancelCustom = Get_Int_Parameter("CancelCustom");
+}
+void JMG_Utility_Silent_Countdown_Timer::Timer_Expired(GameObject *obj,int number)
+{
+	if (1 == number && JMG_Utility_Silent_Countdown_Controller::controllerPlaced && time)
+	{
+		time--;
+		JMG_Utility_Silent_Countdown_Controller::NodeSendCustom(obj,sendCustomIdNode,time);
+		if (!paused)
+			Commands->Start_Timer(obj,this,1.0f,1);
+	}
+}
+void JMG_Utility_Silent_Countdown_Timer::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (startCustom == message)
+	{
+		if (paused)
+			Commands->Start_Timer(obj,this,1.0f,1);
+		paused = false;
+	}
+	if (pausedCustom == message)
+	{
+		Stop_Timer(obj,1);
+		paused = true;
+	}
+	if (cancelCustom == message)
+	{
+		Stop_Timer(obj,1);
+		paused = true;
+		time = Get_Int_Parameter("Time");
+	}
+}
+void JMG_Utility_Silent_Countdown_Send_Custom::Created(GameObject *obj)
+{
+	int id = Get_Int_Parameter("ID");
+	id = id ? id : Commands->Get_ID(obj);
+	JMG_Utility_Silent_Countdown_Controller::AddSecondNode(Get_Int_Parameter("TimerID"),Get_Int_Parameter("TriggerTime"),id,Get_Int_Parameter("Custom"),Get_Int_Parameter("Param"),Get_Float_Parameter("Delay"));
+}
+int JMG_Utility_Zone_Teleport_To_Random_WP_Boss::BossObjectId = 0;
+void JMG_Utility_Zone_Teleport_To_Random_WP_Boss::Created(GameObject *obj)
+{
+	retryOnFailure = Get_Int_Parameter("RetryOnFailure") ? true : false;
+	changeGroupIDCustom = Get_Int_Parameter("ChangeGroupIDCustom");
+	playerType = Get_Int_Parameter("PlayerType");
+	safeTeleportDistance = Get_Float_Parameter("SafeTeleportDistance");
+	wanderPointGroup = Get_Int_Parameter("WanderingAIGroupID");
+	aiOnly = Get_Int_Parameter("AiOnly") != 0;
+	faceBoss = Get_Int_Parameter("FaceBoss") ? true : false;
+}
+void JMG_Utility_Zone_Teleport_To_Random_WP_Boss::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == changeGroupIDCustom)
+	{
+		wanderPointGroup = param;
+	}
+}
+void JMG_Utility_Zone_Teleport_To_Random_WP_Boss::Entered(GameObject *obj,GameObject *enter)
+{
+	if (aiOnly && Commands->Is_A_Star(enter))
+		return;
+	if (CheckPlayerType(enter,playerType))
+		return;
+	Grab_Teleport_Spot(enter,5);
+}
+bool JMG_Utility_Zone_Teleport_To_Random_WP_Boss::Grab_Teleport_Spot(GameObject *enter,int attempts)
+{
+	if (The_Game()->Get_Game_Duration_S() < 1.0f)
+	{
+		char params[220];
+		sprintf(params,"%d,%.2f",wanderPointGroup,safeTeleportDistance);
+		Commands->Attach_Script(enter,"JMG_Utility_Zone_Teleport_To_Random_Wander_Point_Attach",params);
+		return false;
+	}
+	if (!attempts)
+	{
+		if (retryOnFailure)
+		{
+			char params[220];
+			sprintf(params,"%d,%.2f",wanderPointGroup,safeTeleportDistance);
+			Commands->Attach_Script(enter,"JMG_Utility_Zone_Teleport_To_Random_Wander_Point_Attach",params);
+		}
+		return false;
+	}
+	attempts--;
+	Vector3 targetPos;
+	float facing;
+	GameObject *boss = Commands->Find_Object(JMG_Utility_Zone_Teleport_To_Random_WP_Boss::BossObjectId);
+	if (!Get_A_Defense_Point(&targetPos,&facing,boss))
+	{
+		char errormsg[220];
+		sprintf(errormsg,"msg JMG_Utility_Zone_Teleport_To_Random_Wander_Point ERROR: No wander points found for group %d!",wanderPointGroup);
+		Console_Input(errormsg);
+		return false;
+	}
+	MoveablePhysClass *mphys = enter->As_PhysicalGameObj() ? enter->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
+	if (mphys && mphys->Find_Teleport_Location(targetPos,safeTeleportDistance,&targetPos))
+	{
+		Toggle_Fly_Mode(enter);
+		Commands->Set_Position(enter,targetPos);
+		Force_Position_Update(enter);
+		Toggle_Fly_Mode(enter);
+		if (faceBoss)
+		{
+			Vector3 bossPos = Commands->Get_Position(boss);
+			bossPos.X -= targetPos.X;
+			bossPos.Y -= targetPos.Y;
+			facing = atan2(bossPos.Y,bossPos.X) * 180 / PI;
+		}
+		char params[220];
+		sprintf(params,"0.1,%.2f",facing);
+		Commands->Attach_Script(enter,"JMG_Utility_Delay_Then_Rotate_Camera",params);
+		return true;
+	}
+	else
+	{
+		Commands->Set_Position(enter,targetPos);
+		return Grab_Teleport_Spot(enter,attempts);
+	}
+}
+void JMG_Utility_Zone_Teleport_To_Random_WP_Boss_Object::Created(GameObject *obj)
+{
+	JMG_Utility_Zone_Teleport_To_Random_WP_Boss::BossObjectId = Commands->Get_ID(obj);
+}
+void JMG_Utility_Custom_Set_Soldier_Speed::Created(GameObject *obj)
+{
+	if (!obj->As_SoldierGameObj())
+	{
+		Console_Input("msg JMG_Utility_Custom_Set_Soldier_Speed ERROR: Script only works on soldiers!");
+		Destroy_Script();
+		return;
+	}
+	custom = Get_Int_Parameter("Custom");
+}
+void JMG_Utility_Custom_Set_Soldier_Speed::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		obj->As_SoldierGameObj()->Set_Max_Speed(Get_Float_Parameter("Speed"));
+	}
+}
+SList<JMG_Utility_Control_Point_Controller::ControlPointTeamData> JMG_Utility_Control_Point_Controller::controlPointTeamData;
+SList<GameObject> JMG_Utility_Control_Point_Controller::controlPoints;
+SList<GameObject> JMG_Utility_Control_Point_Controller::wanderPoints;
+bool JMG_Utility_Control_Point_Controller::controllerPlaced = false;
+bool JMG_Utility_Control_Point_Controller::allSetupComplete = false;
+void JMG_Utility_Control_Point_Controller::Created(GameObject *obj)
+{
+	JMG_Utility_Control_Point_Controller::controlPointTeamData.Add_Tail(new JMG_Utility_Control_Point_Controller::ControlPointTeamData(-2,Get_Parameter("NeutralTeamName"),Get_Int_Parameter("NeutralPlayerType"),Get_Int_Parameter("NeutralRadarBlipColor"),Get_Parameter("NeutralDefaultPointModel"),Get_Parameter("NeutralDefaultAnimation"),Get_Float_Parameter("NeutralAnimationLength"),Get_Parameter("NeutralCaptureSound"),Get_Parameter("NeutralLostSound"),Get_Parameter("NeutralLockedModel"),Get_Parameter("NeutralLockedAnim"),Get_Float_Parameter("NeutralLockedAnimLength"),Get_Int_Parameter("NeutralDefenseMultiplier"),Get_Int_Parameter("NeutralCaptureMultiplier"),Get_Int_Parameter("NeutralUnoccupiedMultiplier"),Get_Int_Parameter("NeutralCustomID"),Get_Int_Parameter("NeutralTeamMemberCaptureCustom"),Get_Int_Parameter("NeutralTeamMembmerLostCustom"),Get_Int_Parameter("NeutralTeamCaptureCustom"),Get_Int_Parameter("NeutralTeamLostCustom"),Get_Int_Parameter("NeutralTeamMemberNeutralize")));
+	Commands->Start_Timer(obj,this,0.1f,1);
+}
+void JMG_Utility_Control_Point_Controller::Timer_Expired(GameObject *obj,int number)
+{
+	if (1 == number)
+	{
+		for (SLNode<BaseGameObj> *current = GameObjManager::GameObjList.Head();current;current = current->Next())
+		{
+			GameObject* o = current->Data()->As_ScriptableGameObj();
+			if (!Is_Script_Attached(o,"JMG_Utility_Control_Point"))
+				continue;
+			JMG_Utility_Control_Point *cpScript = (JMG_Utility_Control_Point*)Find_Script_On_Object(o,"JMG_Utility_Control_Point");
+			if (!cpScript || !cpScript->setupComplete)
+			{
+				Commands->Start_Timer(obj,this,0.1f,1);
+				return;
+			}
+		}
+		allSetupComplete = true;
+	}
+}
+void JMG_Utility_Control_Point_Controller::Destroyed(GameObject *obj)
+{
+	controllerPlaced = false;
+	controlPointTeamData.Remove_All();
+	controlPoints.Remove_All();
+	wanderPoints.Remove_All();
+	allSetupComplete = false;
+}
+void JMG_Utility_Control_Point_Team_Setting::Created(GameObject *obj)
+{
+	if (!JMG_Utility_Control_Point_Controller::controllerPlaced)
+	{
+		Console_Input("msg JMG_Utility_Control_Point_Team_Setting ERROR: JMG_Utility_Control_Point_Controller must be placed on the map!");
+		return;
+	}
+	if (Get_Int_Parameter("TeamID") == -2)
+	{
+		Console_Input("msg JMG_Utility_Control_Point_Team_Setting ERROR: Team -2 is reserved for team neutral!");
+		return;
+	}
+	JMG_Utility_Control_Point_Controller::controlPointTeamData.Add_Tail(new JMG_Utility_Control_Point_Controller::ControlPointTeamData(Get_Int_Parameter("TeamID"),Get_Parameter("TeamName"),Get_Int_Parameter("PlayerType"),Get_Int_Parameter("RadarBlipColor"),Get_Parameter("PointModel"),Get_Parameter("Animation"),Get_Float_Parameter("AnimationLength"),Get_Parameter("CaptureSound"),Get_Parameter("LostSound"),Get_Parameter("LockedModel"),Get_Parameter("LockedAnim"),Get_Float_Parameter("LockedAnimLength"),Get_Int_Parameter("DefenseMultiplier"),Get_Int_Parameter("CaptureMultiplier"),Get_Int_Parameter("UnoccupiedMultiplier"),Get_Int_Parameter("CustomID"),Get_Int_Parameter("TeamMemberCaptureCustom"),Get_Int_Parameter("TeamMembmerLostCustom"),Get_Int_Parameter("TeamCaptureCustom"),Get_Int_Parameter("TeamLostCustom"),Get_Int_Parameter("TeamMemberNeutralize")));
+	Destroy_Script();
+}
+void JMG_Utility_Control_Point::Created(GameObject *obj)
+{
+	occupied = false;
+	sprintf(controlPointName,"%s",Get_Parameter("ControlPointName"));
+	controllingTeamId = Get_Int_Parameter("ControllingTeamID");
+	maxCapturePoints = Get_Int_Parameter("MaxCapturePoints");
+	controlDistance = Get_Float_Parameter("ControlDistance");
+	controlDistance *= controlDistance;
+	controlHeightMinMax = Get_Vector3_Parameter("ControlHeight[Min|Max]");
+	zoneId = Get_Int_Parameter("ZoneID");
+	captureScore = Get_Float_Parameter("CaptureScore");
+	neutralizeScore = Get_Float_Parameter("NeutralizeScore");
+	currerntCapturePoints = controllingTeamId != -2 ? maxCapturePoints : 0;
+	currentFrame = 0;
+	captured = controllingTeamId != -2 ? true : false;
+	lockCustom = Get_Int_Parameter("LockCustom");
+	specialLocked = Get_Int_Parameter("StartsLocked") ? true : false;
+	locked = false;
+	cpGroupId = Get_Int_Parameter("ControlGroupID");
+	controllingTeamOverride = NULL;
+	controllingTeam = NULL;
+	wasLocked = false;
+	radarBipType = obj->As_PhysicalGameObj()->Get_Radar_Blip_Shape_Type();
+	JMG_Utility_Control_Point_Controller::controlPoints.Add_Head(obj);
+	Commands->Set_Is_Visible(obj,false);
+	Commands->Start_Timer(obj,this,0.25f,1);
+}
+void JMG_Utility_Control_Point::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == lockCustom)
+	{
+		specialLocked = param ? true : false;
+		if (!controllingTeam)
+			return;
+		ChangeModelAndTeam(obj);
+		UpdateAnimation(obj);
+	}
+}
+void JMG_Utility_Control_Point::Timer_Expired(GameObject *obj,int number)
+{
+	if (1 == number)
+	{
+		UpdateTeam(controllingTeamId);
+		UpdateTeamOverride(controllingTeamId);
+		for (SLNode<JMG_Utility_Control_Point_Controller::ControlPointTeamData> *node = JMG_Utility_Control_Point_Controller::controlPointTeamData.Head();node != NULL;node = node->Next())
+			if (JMG_Utility_Control_Point_Controller::ControlPointTeamData *data = node->Data())
+				if (data->teamId == -2)
+				{
+					neutralTeam = data;
+					break;
+				}
+		if (!controllingTeam)
+		{
+			char errorMsg[220];
+			sprintf(errorMsg,"msg JMG_Utility_Control_Point ERROR: Team %d has not been defined!",controllingTeamId);
+			Console_Input(errorMsg);
+			return;
+		}
+		Final_CP_Calculation(obj);
+		Commands->Set_Player_Type(obj,controllingTeam->playerType);
+		setupComplete = true;
+		if (!zoneId)
+			Timer_Expired(obj,2);
+		else
+			Timer_Expired(obj,3);
+	}
+	if (2 == number)
+	{
+		Vector3 pos = Commands->Get_Position(obj);
+		occupied = false;
+		if (!locked && !specialLocked)
+			for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+			{
+				SmartGameObj* o = current->Data();
+				if (!o)
+					continue;
+				Vector3 unitPos = Commands->Get_Position(o);
+				if (controlHeightMinMax.X && (pos.Z + controlHeightMinMax.X) > unitPos.Z)
+					continue;
+				if (controlHeightMinMax.Y && (pos.Z + controlHeightMinMax.Y) < unitPos.Z)
+					continue;
+				if (JmgUtility::SimpleDistance(pos,unitPos) > controlDistance)
+					continue;
+				JMG_Utility_Control_Point_Team_Member *unitScript = (JMG_Utility_Control_Point_Team_Member*)Find_Script_On_Object(o,"JMG_Utility_Control_Point_Team_Member");
+				if (!unitScript || !unitScript->setupComplete)
+					continue;
+				AddUpCpPoints(obj,unitScript->teamData,unitScript->multiplier);
+			}
+		ChangeModelAndTeam(obj);
+		Final_CP_Calculation(obj);
+		Commands->Start_Timer(obj,this,0.25f,2);
+	}
+	if (3 == number)
+	{
+		GameObject *zone = Commands->Find_Object(zoneId);
+		if (!zone)
+		{
+			Console_Input("msg JMG_Utility_Control_Point ERROR: Zone not found!");
+			return;
+		}
+		Vector3 pos = Commands->Get_Position(obj);
+		occupied = false;
+		if (!locked && !specialLocked)
+			for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+			{
+				SmartGameObj* o = current->Data();
+				if (!o)
+					continue;
+				Vector3 unitPos = Commands->Get_Position(o);
+				if (!IsInsideZone(zone,o))
+					continue;
+				JMG_Utility_Control_Point_Team_Member *unitScript = (JMG_Utility_Control_Point_Team_Member*)Find_Script_On_Object(o,"JMG_Utility_Control_Point_Team_Member");
+				if (!unitScript || !unitScript->setupComplete)
+					continue;
+				AddUpCpPoints(obj,unitScript->teamData,unitScript->multiplier);
+			}
+		ChangeModelAndTeam(obj);
+		Final_CP_Calculation(obj);
+		Commands->Start_Timer(obj,this,0.25f,3);
+	}
+}
+void JMG_Utility_Control_Point::AddUpCpPoints(GameObject *obj,JMG_Utility_Control_Point_Controller::ControlPointTeamData *unitTeamData,int multiplier)
+{
+	if (unitTeamData->teamId != controllingTeamId)
+		currerntCapturePoints -= unitTeamData->captureMultiplier*multiplier;
+	if (unitTeamData->teamId == controllingTeamId)
+		currerntCapturePoints += unitTeamData->defenseMultiplier*multiplier;
+	if (currerntCapturePoints < 0 && !captured)
+	{
+		currerntCapturePoints = abs(currerntCapturePoints);
+		controllingTeamId = unitTeamData->teamId;
+	}
+	if (!currerntCapturePoints && !captured)
+		controllingTeamId = neutralTeam->teamId;
+	occupied = true;
+}
+void JMG_Utility_Control_Point::Final_CP_Calculation(GameObject *obj)
+{
+	if (!occupied)
+	{
+		if (captured)
+			currerntCapturePoints += controllingTeam->unoccupiedMultiplier;
+		else
+			currerntCapturePoints += neutralTeam->unoccupiedMultiplier;
+	}
+	if (currerntCapturePoints > maxCapturePoints)
+	{
+		if (!captured)
+		{
+			captured = true;
+			UpdateTeam(controllingTeamId);
+			UpdateTeamOverride(controllingTeamId);
+			ChangeModelAndTeam(obj);
+			CaptureControlPoint(obj);
+		}
+		currerntCapturePoints = maxCapturePoints;
+	}
+	if (currerntCapturePoints < 0)
+	{
+		lastTeam = controllingTeam;
+		lastTeamOverride = controllingTeamOverride;
+		currerntCapturePoints = 0;
+		controllingTeam = neutralTeam;
+		UpdateTeamOverride(controllingTeam->teamId);
+		if (captured)
+		{
+			captured = false;
+			ChangeModelAndTeam(obj);
+			LostControlPoint(obj);
+		}
+	}
+	UpdateAnimation(obj);
+}
+void JMG_Utility_Control_Point::ChangeModelAndTeam(GameObject *obj)
+{
+	Commands->Set_Player_Type(obj,controllingTeam->playerType);
+	obj->As_PhysicalGameObj()->Set_Radar_Blip_Color_Type(controllingTeam->radarBlipColor);
+	if (!locked && !specialLocked)
+	{
+		if (wasLocked)
+			obj->As_PhysicalGameObj()->Set_Radar_Blip_Shape_Type(radarBipType);
+		if (controllingTeamOverride && _stricmp(controllingTeamOverride->pointModelOverride,""))
+			Commands->Set_Model(obj,controllingTeamOverride->pointModelOverride);
+		else
+			Commands->Set_Model(obj,controllingTeam->pointModel);
+	}
+	else
+	{
+		if (!wasLocked)
+			obj->As_PhysicalGameObj()->Set_Radar_Blip_Shape_Type(RADAR_BLIP_SHAPE_NONE);
+		if (controllingTeamOverride && _stricmp(controllingTeamOverride->lockedPointModelOverride,""))
+				Commands->Set_Model(obj,controllingTeamOverride->lockedPointModelOverride);
+			else
+				Commands->Set_Model(obj,controllingTeam->lockedModel);
+	}
+	wasLocked = locked | specialLocked;
+}
+void JMG_Utility_Control_Point::UpdateAnimation(GameObject *obj)
+{
+	if (!locked && !specialLocked)
+		if (controllingTeamOverride && _stricmp(controllingTeamOverride->animOverride,""))
+			SetAnimation(obj,controllingTeamOverride->animOverride,controllingTeamOverride->animationLength);
+		else
+			SetAnimation(obj,controllingTeam->defaultAnimation,controllingTeam->animationLength);
+	else
+		if (controllingTeamOverride && _stricmp(controllingTeamOverride->lockedAnimOverride,""))
+			SetAnimation(obj,controllingTeamOverride->lockedAnimOverride,controllingTeamOverride->lockedAnimationLength);
+		else
+			SetAnimation(obj,controllingTeam->lockedAnim,controllingTeam->lockedAnimLen);
+}
+void JMG_Utility_Control_Point::SetAnimation(GameObject *obj,const char *anim,float length)
+{
+	float frame = length-((float)currerntCapturePoints/(float)maxCapturePoints)*length;
+	if (frame != currentFrame)
+	{
+		Commands->Set_Animation(obj,anim,false,0,frame,frame,false);
+		currentFrame = frame;
+	}
+}
+void JMG_Utility_Control_Point::UpdateTeamOverride(int teamId)
+{
+	for (SLNode<ControlPointSettingOverride> *node = controlPointSettingOverride.Head();node != NULL;node = node->Next())
+		if (ControlPointSettingOverride *data = node->Data())
+			if (data->teamId == teamId)
+			{
+				controllingTeamOverride = data;
+				break;
+			}
+}
+void JMG_Utility_Control_Point::UpdateTeam(int teamId)
+{
+	for (SLNode<JMG_Utility_Control_Point_Controller::ControlPointTeamData> *node = JMG_Utility_Control_Point_Controller::controlPointTeamData.Head();node != NULL;node = node->Next())
+		if (JMG_Utility_Control_Point_Controller::ControlPointTeamData *data = node->Data())
+			if (data->teamId == controllingTeamId)
+			{
+				controllingTeam = data;
+				break;
+			}
+}
+void JMG_Utility_Control_Point::LostControlPoint(GameObject *obj)
+{
+	if (lastTeam)
+	{
+		char LostMessage[512];
+		sprintf(LostMessage,"%s lost control of %s!",lastTeam->teamName,controlPointName);
+		JmgUtility::MessageAllPlayers(127,255,127,LostMessage);
+		Commands->Create_2D_Sound(lastTeam->lostSound);
+		SendCustomToAllInRange(obj,lastTeam->customId,lastTeam->teamId,lastTeam->teamMembmerLostCustom);
+		if (lastTeam->teamLostCustom)
+		{
+			GameObject *object = lastTeam->customId ? Commands->Find_Object(lastTeam->customId) : obj;
+ 			Commands->Send_Custom_Event(obj,object,lastTeam->teamLostCustom,0,0);
+		}
+		SendNeutralizeToAllInRange(obj,lastTeam->teamId);
+		if (lastTeamOverride)
+		{
+			GameObject *object = lastTeamOverride->id ? Commands->Find_Object(lastTeamOverride->id) : obj;
+			Commands->Send_Custom_Event(obj,object,lastTeamOverride->lostCustom,0,0.0f);
+		}
+		GrantPointsToTeamMembersInRange(obj,neutralizeScore,false);
+		TriggerAssaultLinesUpdate();
+		UpdateControllerWanderPoints();
+	}
+}
+void JMG_Utility_Control_Point::CaptureControlPoint(GameObject *obj)
+{
+	char CapMessage[512];
+	sprintf(CapMessage,"%s gained control of %s!",controllingTeam->teamName,controlPointName);
+	JmgUtility::MessageAllPlayers(127,255,127,CapMessage);
+	Commands->Create_2D_Sound(controllingTeam->captureSound);
+	GrantPointsToTeamMembersInRange(obj,captureScore,true);
+	SendCustomToAllInRange(obj,controllingTeam->customId,controllingTeam->teamId,controllingTeam->teamMemberCaptureCustom);
+	if (controllingTeam->teamCaptureCustom)
+	{
+		GameObject *object = controllingTeam->customId ? Commands->Find_Object(controllingTeam->customId) : obj;
+ 		Commands->Send_Custom_Event(obj,object,controllingTeam->teamCaptureCustom,0,0);
+	}
+	if (controllingTeamOverride)
+	{
+		GameObject *object = controllingTeamOverride->id ? Commands->Find_Object(controllingTeamOverride->id) : obj;
+		Commands->Send_Custom_Event(obj,object,controllingTeamOverride->captureCustom,0,0.0f);
+	}
+	TriggerAssaultLinesUpdate();
+	UpdateControllerWanderPoints();
+}
+void JMG_Utility_Control_Point::GrantPointsToTeamMembersInRange(GameObject *obj,float points,bool matchTeam)
+{
+	int UnitCount = 0;
+	Vector3 pos = Commands->Get_Position(obj);
+	for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+	{
+		SmartGameObj* o = current->Data();
+		if (!o)
+			continue;
+		if (JmgUtility::SimpleDistance(pos,Commands->Get_Position(o)) > controlDistance)
+			continue;
+		JMG_Utility_Control_Point_Team_Member *unitScript = (JMG_Utility_Control_Point_Team_Member*)Find_Script_On_Object(o,"JMG_Utility_Control_Point_Team_Member");
+		if (!unitScript || !unitScript->setupComplete || (matchTeam && unitScript->teamId != controllingTeamId) || (!matchTeam && unitScript->teamId == controllingTeamId))
+			continue;
+		UnitCount++;
+	}
+	float GivePoints = points/UnitCount;
+	for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+	{
+		SmartGameObj* o = current->Data();
+		if (!o)
+			continue;
+		if (JmgUtility::SimpleDistance(pos,Commands->Get_Position(o)) > controlDistance)
+			continue;
+		JMG_Utility_Control_Point_Team_Member *unitScript = (JMG_Utility_Control_Point_Team_Member*)Find_Script_On_Object(o,"JMG_Utility_Control_Point_Team_Member");
+		if (!unitScript || !unitScript->setupComplete || (matchTeam && unitScript->teamId != controllingTeamId) || (!matchTeam && unitScript->teamId == controllingTeamId))
+			continue;
+		Commands->Give_Points(o,GivePoints,true);
+	}
+}
+void JMG_Utility_Control_Point::SendCustomToAllInRange(GameObject *obj,int id,int teamId,int custom)
+{
+	if (!custom)
+		return;
+	Vector3 pos = Commands->Get_Position(obj);
+	for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+	{
+		SmartGameObj* o = current->Data();
+		if (!o)
+			continue;
+		Vector3 unitPos = Commands->Get_Position(o);
+		if (controlHeightMinMax.X && (pos.Z + controlHeightMinMax.X) > unitPos.Z)
+			continue;
+		if (controlHeightMinMax.Y && (pos.Z + controlHeightMinMax.Y) < unitPos.Z)
+			continue;
+		if (JmgUtility::SimpleDistance(pos,unitPos) > controlDistance)
+			continue;
+		JMG_Utility_Control_Point_Team_Member *unitScript = (JMG_Utility_Control_Point_Team_Member*)Find_Script_On_Object(o,"JMG_Utility_Control_Point_Team_Member");
+		if (!unitScript || !unitScript->setupComplete)
+			continue;
+		if (unitScript->teamData->teamId == teamId)
+		{
+			GameObject *object = id ? Commands->Find_Object(id) : obj;
+ 			Commands->Send_Custom_Event(o,object,custom,0,0);
+		}
+	}
+}
+void JMG_Utility_Control_Point::SendNeutralizeToAllInRange(GameObject *obj,int teamId)
+{
+	Vector3 pos = Commands->Get_Position(obj);
+	for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+	{
+		SmartGameObj* o = current->Data();
+		if (!o)
+			continue;
+		Vector3 unitPos = Commands->Get_Position(o);
+		if (controlHeightMinMax.X && (pos.Z + controlHeightMinMax.X) > unitPos.Z)
+			continue;
+		if (controlHeightMinMax.Y && (pos.Z + controlHeightMinMax.Y) < unitPos.Z)
+			continue;
+		if (JmgUtility::SimpleDistance(pos,unitPos) > controlDistance)
+			continue;
+		JMG_Utility_Control_Point_Team_Member *unitScript = (JMG_Utility_Control_Point_Team_Member*)Find_Script_On_Object(o,"JMG_Utility_Control_Point_Team_Member");
+		if (!unitScript || !unitScript->setupComplete)
+			continue;
+		if (unitScript->teamData->teamId == teamId || !unitScript->teamData->teamMemberNeutralize)
+			continue;
+		GameObject *object = unitScript->teamData->customId ? Commands->Find_Object(unitScript->teamData->customId) : obj;
+		Commands->Send_Custom_Event(o,object,unitScript->teamData->teamMemberNeutralize,0,0);
+	}
+}
+void JMG_Utility_Control_Point::Destroyed(GameObject *obj)
+{
+	controlPointSettingOverride.Remove_All();
+	controlPointWanderPoints.Remove_All();
+}
+void JMG_Utility_Control_Point::TriggerAssaultLinesUpdate()
+{
+	if (!JMG_Utility_Control_Point_Assault_Mode::controllerId)
+		return;
+	GameObject *assaultController = Commands->Find_Object(JMG_Utility_Control_Point_Assault_Mode::controllerId);
+	if (!assaultController)
+		return;
+	JMG_Utility_Control_Point_Assault_Mode *assaultScript = (JMG_Utility_Control_Point_Assault_Mode*)Find_Script_On_Object(assaultController,"JMG_Utility_Control_Point_Assault_Mode");
+	if (!assaultScript)
+		return;
+	assaultScript->UpdateAssaultLine(assaultController,false);
+}
+void JMG_Utility_Control_Point::UpdateControllerWanderPoints()
+{
+	for (SLNode<GameObject> *current = JMG_Utility_Control_Point_Controller::wanderPoints.Head();current;current = current->Next())
+	{
+		GameObject* o = current->Data();
+		if (!o)
+			continue;
+		if (Is_Script_Attached(o,"JMG_Utility_Control_Point_Wander_Point"))
+		{
+			JMG_Utility_Control_Point_Wander_Point *cpScript = (JMG_Utility_Control_Point_Wander_Point*)Find_Script_On_Object(o,"JMG_Utility_Control_Point_Wander_Point");
+			if (!cpScript)
+				continue;
+			cpScript->UpdateWanderpointSettings();
+		}
+		if (Is_Script_Attached(o,"JMG_Utility_Control_Point_Team_Target_Wander_Point"))
+		{
+			JMG_Utility_Control_Point_Team_Target_Wander_Point *cpScript = (JMG_Utility_Control_Point_Team_Target_Wander_Point*)Find_Script_On_Object(o,"JMG_Utility_Control_Point_Team_Target_Wander_Point");
+			if (!cpScript)
+				continue;
+			cpScript->UpdateWanderpointSettings();
+		}
+	}
+}
+void JMG_Utility_Control_Point_Setting_Override::Created(GameObject *obj)
+{
+	JMG_Utility_Control_Point *cpScript = (JMG_Utility_Control_Point*)Find_Script_On_Object(obj,"JMG_Utility_Control_Point");
+	if (!cpScript)
+	{
+		Console_Input("msg JMG_Utility_Control_Point_Setting_Override ERROR: JMG_Utility_Control_Point must be on the attached object!");
+		return;
+	}
+	cpScript->controlPointSettingOverride.Add_Tail(new JMG_Utility_Control_Point::ControlPointSettingOverride(Get_Int_Parameter("TeamID"),Get_Int_Parameter("ID"),Get_Int_Parameter("CaptureCustom"),Get_Int_Parameter("LostCustom"),Get_Parameter("PointModelOverride"),Get_Parameter("AnimationOverride"),Get_Float_Parameter("AnimationLength"),Get_Parameter("LockedPointModelOverride"),Get_Parameter("LockedAnimationOverride"),Get_Float_Parameter("LockedAnimationLength")));
+	Destroy_Script();
+}
+void JMG_Utility_Control_Point_Team_Member::Created(GameObject *obj)
+{
+	if (!JMG_Utility_Control_Point_Controller::controllerPlaced)
+	{
+		Destroy_Script();
+		return;
+	}
+	teamId = Get_Int_Parameter("TeamID");
+	multiplier = Get_Int_Parameter("Multiplier");
+	Timer_Expired(obj,1);
+}
+void JMG_Utility_Control_Point_Team_Member::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		for (SLNode<JMG_Utility_Control_Point_Controller::ControlPointTeamData> *node = JMG_Utility_Control_Point_Controller::controlPointTeamData.Head();node != NULL;node = node->Next())
+			if (JMG_Utility_Control_Point_Controller::ControlPointTeamData *data = node->Data())
+				if (data->teamId == teamId)
+				{
+					teamData = data;
+					setupComplete =  true;
+					return;
+				}
+		Commands->Start_Timer(obj,this,0.1f,1);
+	}
+}
+void JMG_Utility_Control_Point_Team_Member::Killed(GameObject *obj,GameObject *killer)
+{
+	setupComplete = false;
+}
+int JMG_Utility_Control_Point_Assault_Mode::teamId = 0;
+int JMG_Utility_Control_Point_Assault_Mode::controllerId = 0;
+int JMG_Utility_Control_Point_Assault_Mode::frontLineGroup = 0;
+int JMG_Utility_Control_Point_Assault_Mode::spawnGroup = 0;
+int JMG_Utility_Control_Point_Assault_Mode::enemySpawnGroup = 0;
+void JMG_Utility_Control_Point_Assault_Mode::Created(GameObject *obj)
+{
+	id = Get_Int_Parameter("ID");
+	advanceCustom = Get_Int_Parameter("AdvanceCustom");
+	pushedBackCustom = Get_Int_Parameter("PushBackCustom");
+	controlAllCustom = Get_Int_Parameter("ControlAllCustom");
+	lostAllCustom = Get_Int_Parameter("LostAllCustom");
+	frontLineGroup = -1;
+	spawnGroup = -1;
+	enemySpawnGroup = -1;
+	teamId = Get_Int_Parameter("TeamID");
+	controllerId = Commands->Get_ID(obj);
+	Timer_Expired(obj,1);
+}
+void JMG_Utility_Control_Point_Assault_Mode::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		if (!JMG_Utility_Control_Point_Controller::allSetupComplete)
+		{
+			Commands->Start_Timer(obj,this,0.1f,1);
+			return;
+		}
+		for (SLNode<GameObject> *current = JMG_Utility_Control_Point_Controller::controlPoints.Head();current;current = current->Next())
+		{
+			GameObject* o = current->Data();
+			if (!o || !Is_Script_Attached(o,"JMG_Utility_Control_Point"))
+				continue;
+			JMG_Utility_Control_Point *cpScript = (JMG_Utility_Control_Point*)Find_Script_On_Object(o,"JMG_Utility_Control_Point");
+			if (!cpScript || !cpScript->setupComplete)
+			{
+				Commands->Start_Timer(obj,this,0.1f,1);
+				return;
+			}
+		}
+		UpdateAssaultLine(obj,true);
+	}
+}
+void JMG_Utility_Control_Point_Assault_Mode::UpdateAssaultLine(GameObject *obj,bool initialSetup)
+{
+	int friendlyCount = 0;
+	int enemyCount = 0;
+	int maxEnemyGroup = 0;
+	int maxEnemySpawnGroup = 0;
+	int minFriendlyGroup = -1;
+	int minSpawnGroup = -1;
+	for (SLNode<GameObject> *current = JMG_Utility_Control_Point_Controller::controlPoints.Head();current;current = current->Next())
+	{
+		GameObject* o = current->Data();
+		if (!o || !Is_Script_Attached(o,"JMG_Utility_Control_Point"))
+			continue;
+		JMG_Utility_Control_Point *cpScript = (JMG_Utility_Control_Point*)Find_Script_On_Object(o,"JMG_Utility_Control_Point");
+		if (!cpScript || !cpScript->setupComplete || cpScript->cpGroupId < 0)
+			continue;
+		if (cpScript->controllingTeamId != teamId && cpScript->captured)
+			enemyCount++;
+		if (cpScript->controllingTeamId == teamId && cpScript->captured)
+			friendlyCount++;
+		if ((cpScript->controllingTeamId != teamId || !cpScript->captured) && cpScript->cpGroupId > maxEnemyGroup)
+			maxEnemyGroup = cpScript->cpGroupId;
+		if (cpScript->controllingTeamId != teamId && cpScript->captured && cpScript->cpGroupId > maxEnemySpawnGroup)
+			maxEnemySpawnGroup = cpScript->cpGroupId;
+		if ((cpScript->controllingTeamId == teamId || !cpScript->captured) && (minFriendlyGroup == -1 || cpScript->cpGroupId < minFriendlyGroup))
+			minFriendlyGroup = cpScript->cpGroupId;
+		if ((cpScript->controllingTeamId == teamId && cpScript->captured) && (minSpawnGroup == -1 || cpScript->cpGroupId < minSpawnGroup))
+			minSpawnGroup = cpScript->cpGroupId;
+	}
+	for (SLNode<GameObject> *current = JMG_Utility_Control_Point_Controller::controlPoints.Head();current;current = current->Next())
+	{
+		GameObject* o = current->Data();
+		if (!o || !Is_Script_Attached(o,"JMG_Utility_Control_Point"))
+			continue;
+		JMG_Utility_Control_Point *cpScript = (JMG_Utility_Control_Point*)Find_Script_On_Object(o,"JMG_Utility_Control_Point");
+		if (!cpScript || !cpScript->setupComplete || cpScript->cpGroupId < 0)
+			continue;
+		if (cpScript->cpGroupId != minFriendlyGroup && cpScript->cpGroupId != maxEnemyGroup && !cpScript->locked)
+		{
+			cpScript->locked = true;
+			cpScript->ChangeModelAndTeam(o);
+			cpScript->UpdateAnimation(o);
+		}
+		if ((cpScript->cpGroupId == minFriendlyGroup || cpScript->cpGroupId == maxEnemyGroup) && cpScript->locked)
+		{
+			cpScript->locked = false;
+			cpScript->ChangeModelAndTeam(o);
+			cpScript->UpdateAnimation(o);
+		}
+	}
+	if (!initialSetup)
+	{
+		if (spawnGroup != minSpawnGroup && minSpawnGroup != -1 && enemyCount)
+		{
+			if (spawnGroup < minSpawnGroup && spawnGroup != -1)
+				SendCustom(obj,pushedBackCustom,frontLineGroup);
+			else
+				SendCustom(obj,advanceCustom,maxEnemySpawnGroup);
+		}
+		if (!enemyCount)
+			SendCustom(obj,controlAllCustom,frontLineGroup);
+		if (!friendlyCount)
+			SendCustom(obj,lostAllCustom,frontLineGroup);
+	}
+	frontLineGroup = minFriendlyGroup;
+	spawnGroup = minSpawnGroup;
+	enemySpawnGroup = maxEnemySpawnGroup;
+	for (SLNode<GameObject> *current = JMG_Utility_Control_Point_Controller::wanderPoints.Head();current;current = current->Next())
+	{
+		GameObject* o = current->Data();
+		if (!o)
+			continue;
+		if (Is_Script_Attached(o,"JMG_Utility_Control_Point_Wander_Point"))
+		{
+			JMG_Utility_Control_Point_Wander_Point *cpScript = (JMG_Utility_Control_Point_Wander_Point*)Find_Script_On_Object(o,"JMG_Utility_Control_Point_Wander_Point");
+			if (!cpScript)
+				continue;
+			cpScript->UpdateWanderpointSettings();
+		}
+		if (Is_Script_Attached(o,"JMG_Utility_Control_Point_Team_Target_Wander_Point"))
+		{
+			JMG_Utility_Control_Point_Team_Target_Wander_Point *cpScript = (JMG_Utility_Control_Point_Team_Target_Wander_Point*)Find_Script_On_Object(o,"JMG_Utility_Control_Point_Team_Target_Wander_Point");
+			if (!cpScript)
+				continue;
+			cpScript->UpdateWanderpointSettings();
+		}
+	}
+}
+void JMG_Utility_Control_Point_Assault_Mode::Destroyed(GameObject *obj)
+{
+	controllerId = 0;
+}
+void JMG_Utility_Control_Point_Assault_Mode::SendCustom(GameObject* obj,int custom,int thisFrontLineGroup)
+{
+	if (!custom)
+		return;
+	GameObject *object = id ? Commands->Find_Object(id) : obj;
+	Commands->Send_Custom_Event(obj,object,custom,thisFrontLineGroup,0.0f);
+}
+void JMG_Utility_Control_Point_Wander_Point::Created(GameObject *obj)
+{
+	controlPointId = Get_Int_Parameter("ControlPointID");
+	teamId = Get_Int_Parameter("TeamID");
+	spawnableGroupId = Get_Int_Parameter("SpawnableGroupID");
+	unspawnableGroupId = Get_Int_Parameter("UnspawnableGroupId");
+	wanderPoint = AddAndReturnWanderpoint(obj);
+	wanderPoint->value = -999;
+	Commands->Set_Is_Rendered(obj,false);
+	Commands->Set_Is_Visible(obj,false);
+	Timer_Expired(obj,1);
+}
+void JMG_Utility_Control_Point_Wander_Point::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		GameObject *controller = Commands->Find_Object(controlPointId);
+		if (!controller)
+		{
+			Commands->Start_Timer(obj,this,0.1f,1);
+			return;
+		}
+		cpScript = (JMG_Utility_Control_Point*)Find_Script_On_Object(controller,"JMG_Utility_Control_Point");
+		if (!cpScript || !cpScript->setupComplete)
+		{
+			Commands->Start_Timer(obj,this,0.1f,1);
+			return;
+		}
+		cpScript->controlPointWanderPoints.Add_Tail(obj);
+		JMG_Utility_Control_Point_Controller::wanderPoints.Add_Tail(obj);
+		UpdateWanderpointSettings();
+	}
+}
+void JMG_Utility_Control_Point_Wander_Point::UpdateWanderpointSettings()
+{
+	if (!cpScript || !cpScript->setupComplete || cpScript->cpGroupId < 0)
+		return;
+	if (spawnableGroupId != -999 && cpScript->captured && cpScript->controllingTeamId == teamId && (!cpScript->locked || 
+	   (cpScript->cpGroupId == JMG_Utility_Control_Point_Assault_Mode::spawnGroup && JMG_Utility_Control_Point_Assault_Mode::teamId == teamId) || 
+	   (cpScript->cpGroupId == JMG_Utility_Control_Point_Assault_Mode::enemySpawnGroup && JMG_Utility_Control_Point_Assault_Mode::teamId != teamId)))
+		wanderPoint->value = spawnableGroupId;
+	else if (unspawnableGroupId != -999)
+		wanderPoint->value = unspawnableGroupId;
+}
+void JMG_Utility_Control_Point_Select_Spawn_System::Created(GameObject *obj)
+{
+	stringId = Get_Int_Parameter("StringId");
+	controlPointId = 0;
+	ungroupedControlPointId = 0;
+	selectedCpId = 0;
+	teamId = Get_Int_Parameter("TeamID");
+	groupChangeCustom = Get_Int_Parameter("GroupChangeCustom");
+	ungroupedChangeCustom = Get_Int_Parameter("UngroupedChangeCustom");
+	spawnCustom = Get_Int_Parameter("SpawnCustom");
+	safeTeleportDistance = Get_Float_Parameter("SafeTeleportDistance");
+	maxSpawnTime = spawnTime = Get_Int_Parameter("SpawnTime")*10;
+	maxWanderRange = Get_Float_Parameter("MaxWanderRange");
+	startFadeRange = maxWanderRange*0.833f;
+	maxWanderRange *= maxWanderRange;
+	startFadeRange *= startFadeRange;
+	lastSpawnGroup = -1;
+	Commands->Set_Player_Type(obj,-4);
+	Lock_Soldier_Collision_Group(obj,Collision_Group_Type::SOLDIER_GHOST_COLLISION_GROUP);
+	Set_Screen_Fade_Opacity_Player(obj,0.25f,0.0f);
+	Timer_Expired(obj,1);
+}
+void JMG_Utility_Control_Point_Select_Spawn_System::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		if (!JMG_Utility_Control_Point_Controller::allSetupComplete)
+		{
+			Commands->Start_Timer(obj,this,0.1f,1);
+			return;
+		}
+		Custom(obj,groupChangeCustom,0,obj);
+		if (!selectedCpId)
+			Commands->Start_Timer(obj,this,0.1f,1);
+		else
+		{
+			if (spawnTime)
+				DisplaySpawnTime(obj);
+			Timer_Expired(obj,2);
+		}
+	}
+	if (number == 2)
+	{
+		if (The_Game()->Is_Game_Over())
+			return;
+		if (selectedCpId)
+		{
+			GameObject *controlPoint = Commands->Find_Object(selectedCpId);
+			JMG_Utility_Control_Point *cpScript = (JMG_Utility_Control_Point*)Find_Script_On_Object(controlPoint,"JMG_Utility_Control_Point");
+			if (cpScript && cpScript->setupComplete && (!cpScript->captured || cpScript->controllingTeamId != teamId))
+			{
+				lastSpawnGroup = -1;
+				Custom(obj,groupChangeCustom,0,obj);
+			}
+			else
+			{
+				float spawnTimeRatio = spawnTime/(float)maxSpawnTime;
+				Vector3 spawnScreenColors = Vector3(spawnTimeRatio*0.75f,abs((spawnTimeRatio*0.75f)-((1-spawnTimeRatio)*0.39f)),(1-spawnTimeRatio)*0.78f);
+				float tempSimpDist = JmgUtility::SimpleDistance(Commands->Get_Position(controlPoint),Commands->Get_Position(obj));
+				float tempDistCalc = min(max(tempSimpDist-startFadeRange,0.0f)/(maxWanderRange-startFadeRange),1.0f);
+				spawnScreenColors *= (1-tempDistCalc);
+				Set_Screen_Fade_Color_Player(obj,min(tempDistCalc+spawnScreenColors.X,1.0f),spawnScreenColors.Y,spawnScreenColors.Z,0.1f);
+				if (tempSimpDist > maxWanderRange)
+					MoveToControlledWanderPointForCp(obj,selectedCpId);
+			}
+		}
+		if (spawnTime)
+		{
+			if ((spawnTime <= 100 && !(spawnTime%10)) || (spawnTime > 100 && !(spawnTime%100)))
+				DisplaySpawnTime(obj);
+			spawnTime--;
+			if (!spawnTime)
+			{
+				Set_HUD_Help_Text_Player_Text(obj,stringId,"Left click to spawn",Vector3(1.0f,0.5f,0.0f));
+				Commands->Start_Timer(obj,this,5.0f,3);
+			}
+		}
+		Commands->Start_Timer(obj,this,0.1f,2);
+	}
+	if (number == 3)
+	{
+		Set_HUD_Help_Text_Player_Text(obj,stringId,"Right click to cycle front line",Vector3(1.0f,0.5f,0.0f));
+		Commands->Start_Timer(obj,this,5.0f,4);
+	}
+	if (number == 4)
+	{
+		Set_HUD_Help_Text_Player_Text(obj,stringId,"Middle click to cycle bonus points",Vector3(1.0f,0.5f,0.0f));
+		Commands->Start_Timer(obj,this,5.0f,2);
+	}
+}
+void JMG_Utility_Control_Point_Select_Spawn_System::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == spawnCustom)
+	{
+		if (spawnTime || The_Game()->Is_Game_Over())
+			return;
+		Set_HUD_Help_Text_Player_Text(obj,stringId," ",Vector3(1.0f,0.5f,0.0f));
+		Set_Screen_Fade_Opacity_Player(obj,0.0f,0.1f);
+		Change_Character(obj,Get_Parameter("SpawnPreset"));
+		obj->As_SoldierGameObj()->Set_Collision_Group(Collision_Group_Type::SOLDIER_GHOST_COLLISION_GROUP);
+	}
+	if (message == groupChangeCustom)
+	{
+		if (The_Game()->Is_Game_Over())
+			return;
+		if (lastSpawnGroup != JMG_Utility_Control_Point_Assault_Mode::spawnGroup)
+			controlPointId = 0;
+		lastSpawnGroup = JMG_Utility_Control_Point_Assault_Mode::spawnGroup;
+		selectedCpId = controlPointId = SelectCpToSpawnFrom(obj,controlPointId,true);
+	}
+	if (message == ungroupedChangeCustom)
+	{
+		if (The_Game()->Is_Game_Over())
+			return;
+		selectedCpId = ungroupedControlPointId = SelectCpToSpawnFrom(obj,ungroupedControlPointId,false);
+	}
+}
+int JMG_Utility_Control_Point_Select_Spawn_System::SelectCpToSpawnFrom(GameObject *obj,int cpId,bool assaultLines)
+{
+	JMG_Utility_Control_Point *cpScript = NULL;
+	int originalCpId = cpId;
+	bool foundCp = false;
+	SLNode<GameObject> *current = JMG_Utility_Control_Point_Controller::controlPoints.Head();
+	while (current)
+	{
+		GameObject* o = current->Data();
+		if (!o || !Is_Script_Attached(o,"JMG_Utility_Control_Point"))
+			goto JMG_UTILITY_CONTROL_POINT_SELECT_SPAWN_SYSTEM_FIRST_LOOP;
+		cpScript = (JMG_Utility_Control_Point*)Find_Script_On_Object(o,"JMG_Utility_Control_Point");
+		if (!cpScript || !cpScript->setupComplete)
+			goto JMG_UTILITY_CONTROL_POINT_SELECT_SPAWN_SYSTEM_FIRST_LOOP;
+		if (cpScript->captured && cpScript->controllingTeamId == teamId && 
+			(assaultLines && ((!cpScript->locked && cpScript->cpGroupId >= 0) || (cpScript->cpGroupId == JMG_Utility_Control_Point_Assault_Mode::spawnGroup && JMG_Utility_Control_Point_Assault_Mode::teamId == teamId))) || 
+			(!assaultLines && cpScript->cpGroupId < 0))
+		{
+			int tmpId = Commands->Get_ID(o);
+			if (!cpId || foundCp)
+			{
+				cpId = tmpId;
+				break;
+			}
+			if (originalCpId == tmpId)
+				foundCp = true;
+		}
+JMG_UTILITY_CONTROL_POINT_SELECT_SPAWN_SYSTEM_FIRST_LOOP:
+		current = current->Next();
+		if (!current)
+		{
+			if (originalCpId == cpId && !foundCp)
+				break;
+			current = JMG_Utility_Control_Point_Controller::controlPoints.Head();
+		}
+	}
+	if (!cpId || !cpScript)
+		return cpId;
+	if (!MoveToControlledWanderPointForCp(obj,cpId))
+		return 0;
+	char selectCpMsg[220];
+	sprintf(selectCpMsg,"Selected Control Point is %s.",cpScript->controlPointName);
+	JmgUtility::DisplayChatMessage(obj,255,127,0,selectCpMsg);	
+	return cpId;
+}
+bool JMG_Utility_Control_Point_Select_Spawn_System::MoveToControlledWanderPointForCp(GameObject *obj,int cpId)
+{
+	JMG_Utility_Control_Point *cpScript = (JMG_Utility_Control_Point*)Find_Script_On_Object(Commands->Find_Object(cpId),"JMG_Utility_Control_Point");
+	if (!cpScript || !cpScript->setupComplete || cpScript->controlPointWanderPoints.Is_Empty())
+		return false;
+	int randomPoint = Commands->Get_Random_Int(0,cpScript->controlPointWanderPoints.Get_Count())+1;
+	int origianlRandom = randomPoint;
+	SLNode<GameObject> *current = cpScript->controlPointWanderPoints.Head();
+	while (current)
+	{
+		GameObject* o = current->Data();
+		if (!o || !Is_Script_Attached(o,"JMG_Utility_Control_Point_Wander_Point"))
+			goto JMG_UTILITY_CONTROL_POINT_SELECT_SPAWN_SYSTEM_LOOP_END;
+		JMG_Utility_Control_Point_Wander_Point *wanderScript = (JMG_Utility_Control_Point_Wander_Point*)Find_Script_On_Object(o,"JMG_Utility_Control_Point_Wander_Point");
+		if (!wanderScript || wanderScript->teamId != teamId)
+			goto JMG_UTILITY_CONTROL_POINT_SELECT_SPAWN_SYSTEM_LOOP_END;
+		if (randomPoint)
+			randomPoint--;
+		if (!randomPoint)
+		{
+			Vector3 pos = Commands->Get_Position(o);
+			MoveablePhysClass *mphys = obj->As_PhysicalGameObj() ? obj->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
+			if (mphys && mphys->Find_Teleport_Location(pos,safeTeleportDistance,&pos))
+			{
+				Toggle_Fly_Mode(obj);
+				Commands->Set_Position(obj,pos);
+				Force_Position_Update(obj);
+				Toggle_Fly_Mode(obj);
+				Lock_Soldier_Collision_Group(obj,Collision_Group_Type::SOLDIER_GHOST_COLLISION_GROUP);
+				char params[220];
+				sprintf(params,"0.1,%.2f",Commands->Get_Facing(o));
+				Commands->Attach_Script(obj,"JMG_Utility_Delay_Then_Rotate_Camera",params);
+			}
+			return true;
+		}
+JMG_UTILITY_CONTROL_POINT_SELECT_SPAWN_SYSTEM_LOOP_END:
+		current = current->Next();
+		if (!current)
+		{
+			if (origianlRandom == randomPoint)
+				return false;
+			current = cpScript->controlPointWanderPoints.Head();
+		}
+	}
+	return false;
+}
+void JMG_Utility_Control_Point_Select_Spawn_System::DisplaySpawnTime(GameObject *obj)
+{
+	char disString[220];
+	sprintf(disString,"%d",spawnTime/10);
+	Set_HUD_Help_Text_Player_Text(obj,stringId,disString,Vector3(1.0f,0.5f,0.0f));
+}
+void JMG_Utility_Custom_And_Param_Send_Custom::Created(GameObject *obj)
+{
+	recieveMessage = Get_Int_Parameter("Custom");
+	recieveParam = Get_Int_Parameter("Param");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	Param = Get_Int_Parameter("SendParam");
+	delay = Get_Float_Parameter("Delay");
+	randomDelay = Get_Float_Parameter("RandomDelay");
+	randomChance = Get_Float_Parameter("RandomChance");
+}
+void JMG_Utility_Custom_And_Param_Send_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage && param == recieveParam)
+	{
+		if (randomChance && randomChance < Commands->Get_Random(0.0f,1.0f))
+			return;
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,custom,Param == -1 ? param : Param,delay+(randomDelay > 0 ? Commands->Get_Random(0.0f,randomDelay) : 0.0f));
+	}
+}
+void JMG_Utility_Create_Move_To_Nearest_Pathfind::Created(GameObject *obj)
+{
+	Vector3 pos;
+	Get_Closest_Pathfind_Spot_Size(Commands->Get_Position(obj),999999.0,&pos,0.5f);
+	Commands->Set_Position(obj,pos);
+}
+void JMG_Utility_Objective_System_Objective_GameObject::Created(GameObject *obj)
+{
+	objectiveId = Get_Int_Parameter("ObjectiveID");
+	objectivePriority = Get_Int_Parameter("ObjectivePriority");
+	sprintf(preset,"%s",Get_Parameter("Preset"));
+	attach = Get_Int_Parameter("Attach") ? true : false;
+}
+void JMG_Utility_Objective_System_Objective_GameObject_Tracker::Created(GameObject *obj)
+{
+	gameObjectId = Get_Int_Parameter("GameObjectID");
+	markerId = Get_Int_Parameter("MarkerID");
+}
+void JMG_Utility_Attach_Script_To_Object_With_Weapon::Created(GameObject *obj)
+{
+	sprintf(weaponName,"%s",Get_Parameter("WeaponName"));
+	rate = Get_Float_Parameter("Rate");
+	sprintf(script,"%s",Get_Parameter("Script"));
+	const char *parameters = Get_Parameter("Params");
+	params = newstr(parameters);
+	char delim = Get_Parameter("Delim")[0];
+	unsigned int length = strlen(parameters);
+	for (unsigned int x = 0;x < length;x++)
+		if (params[x] == delim)
+			params[x] = ',';
+	playerType = Get_Int_Parameter("PlayerType");
+	Commands->Start_Timer(obj,this,rate,1);
+}
+void JMG_Utility_Attach_Script_To_Object_With_Weapon::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		Vector3 mypos = Commands->Get_Position(obj);
+		for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+		{
+			SmartGameObj *o = current->Data();
+			if (!o)
+				continue;
+			const char *weap = Get_Current_Weapon(o);
+			if (!weap || _stricmp(weap,weaponName) || CheckPlayerType(o,playerType))
+				continue;
+			Attach_Script_Once(o,script,params);
+		}
+		Commands->Start_Timer(obj,this,rate,1);
+	}
+}
+void JMG_Utility_Drop_Object_On_Death_And_Attach_Script::Killed(GameObject *obj,GameObject *killer)
+{
+	if (Commands->Get_Random(0,100) <= Get_Float_Parameter("Probability"))
+	{
+		Vector3 dropLocation = Commands->Get_Position(obj);
+		dropLocation.Z += Get_Float_Parameter("Drop_Height");
+		GameObject *drop = Commands->Create_Object(Get_Parameter("Drop_Object"),dropLocation);
+		Commands->Set_Facing(drop,Commands->Get_Facing(obj));
+		char script[128];
+		sprintf(script,"%s",Get_Parameter("Script"));
+		if (_stricmp(script,""))
+		{
+			const char *parameters = Get_Parameter("Params");
+			char *params = newstr(parameters);
+			char delim = Get_Parameter("Delim")[0];
+			unsigned int length = strlen(parameters);
+			for (unsigned int x = 0;x < length;x++)
+				if (params[x] == delim)
+					params[x] = ',';
+			Commands->Attach_Script(drop,script,params);
+		}
+	}
+}
+void JMG_SinglePlayer_M04_Modifier::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,0.1f,1);
+}
+void JMG_SinglePlayer_M04_Modifier::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		if (!setupComplete)
+		{
+			setupComplete = true;
+			float difficultyModifier = 100.0f-(Commands->Get_Difficulty_Level()/3.0f)*100.0f;
+			char params[256];
+			sprintf(params,"Weapon_Shotgun_Ai,JMG_Utility_Drop_Object_On_Death_And_Attach_Script,POW_Shotgun_Player@0.25@%.2f@SUR_Timed_Death@30.0^9999.0^BlamoKiller@^,@,1.0,0",difficultyModifier);
+			Commands->Attach_Script(obj,"JMG_Utility_Attach_Script_To_Object_With_Weapon",params);
+			sprintf(params,"Weapon_Shotgun_Ai_BH,JMG_Utility_Drop_Object_On_Death_And_Attach_Script,POW_Shotgun_Player@0.25@%.2f@SUR_Timed_Death@30.0^9999.0^BlamoKiller@^,@,1.0,0",difficultyModifier);
+			Commands->Attach_Script(obj,"JMG_Utility_Attach_Script_To_Object_With_Weapon",params);
+			sprintf(params,"Weapon_Shotgun_Player,JMG_Utility_Drop_Object_On_Death_And_Attach_Script,POW_Shotgun_Player@0.25@%.2f@SUR_Timed_Death@30.0^9999.0^BlamoKiller@^,@,1.0,0",difficultyModifier);
+			Commands->Attach_Script(obj,"JMG_Utility_Attach_Script_To_Object_With_Weapon",params);
+			GameObject *bubble = Commands->Create_Object("Daves Arrow",Vector3(0.0f,0.0f,-14.648f));
+			Commands->Set_Model(bubble,"m04_bubbler");
+		}
+		Commands->Start_Timer(obj,this,0.1f,1);
+	}
+}
+void JMG_SinglePlayer_M04_Modifier::Register_Auto_Save_Variables()
+{
+}
+void JMG_Utility_Custom_Send_Delayed_Ordered_Customs::Created(GameObject *obj)
+{
+	delay = false;
+	id = Get_Int_Parameter("ID");
+	for (int x = 0;x < 10;x++)
+	{
+		char param[20];
+		sprintf(param,"Custom%0d",x);
+		customs[x] = Get_Int_Parameter(param);
+		sprintf(param,"Time%0d",x);
+		times[x] = Get_Float_Parameter(param);
+	}
+	Commands->Start_Timer(obj,this,0.1f,1);
+}
+void JMG_Utility_Custom_Send_Delayed_Ordered_Customs::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		SLNode<TimedOrderedCustom> *current = timedOrderedCustom.Head();
+		if (current)
+		{
+			TimedOrderedCustom *data = current->Data();
+			GameObject *object = !id ? obj : (id == -1 ? Commands->Find_Object(data->senderId) : Commands->Find_Object(id));
+			Commands->Send_Custom_Event(Commands->Find_Object(data->senderId),object,data->custom,data->param,0.0f);
+			Commands->Start_Timer(obj,this,data->time,1);
+			timedOrderedCustom.Remove_Head();
+		}
+		else
+			delay = false;
+	}
+}
+void JMG_Utility_Custom_Send_Delayed_Ordered_Customs::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	for (int x = 0;x < 10;x++)
+		if (customs[x] == message)
+		{
+			if (delay)
+				timedOrderedCustom.Add_Tail(new TimedOrderedCustom(Commands->Get_ID(sender),message,param,times[x]));
+			else
+			{
+				GameObject *object = !id ? obj : (id == -1 ? sender : Commands->Find_Object(id));
+				Commands->Send_Custom_Event(sender,object,message,param,0.0f);
+				Commands->Start_Timer(obj,this,times[x],1);
+				delay = true;
+			}
+			break;
+		}
+}
+void JMG_Utility_Custom_Send_Delayed_Ordered_Customs::Destroyed(GameObject *obj)
+{
+	timedOrderedCustom.Remove_All();
+}
+void JMG_Utility_Custom_Send_Delayed_Ordered_Customs::Detach(GameObject *obj)
+{
+	timedOrderedCustom.Remove_All();
+}
+void JMG_Utility_Custom_Send_Custom_If_Model::Created(GameObject *obj)
+{
+	sprintf(model,"%s",Get_Parameter("Model"));
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+}
+void JMG_Utility_Custom_Send_Custom_If_Model::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage && !_stricmp(model,Get_Model(obj)))
+	{
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,custom,Param == -1 ? param : Param,delay);
+	}
+}
+void JMG_Utility_Poke_Grant_Weapon_Destroy_Self::Created(GameObject *obj)
+{
+	Commands->Enable_HUD_Pokable_Indicator(obj,true);
+}
+void JMG_Utility_Poke_Grant_Weapon_Destroy_Self::Poked(GameObject *obj, GameObject *poker)
+{
+	if (Commands->Get_Player_Type(poker) == -4)
+		return;
+	Grant_Weapon(poker,Get_Parameter("Weapon"),true,Get_Int_Parameter("Rounds"),Get_Int_Parameter("Backpack") ? true : false);
+	Commands->Destroy_Object(obj);
+}
+void JMG_Utility_Killed_Drop_Object_If_Weapon_Present::Killed(GameObject *obj,GameObject *killer)
+{
+	Destroyed(obj);
+}
+void JMG_Utility_Killed_Drop_Object_If_Weapon_Present::Destroyed(GameObject *obj)
+{
+	if (dropped)
+		return;
+	dropped = true;
+	if (!Has_Weapon(obj,Get_Parameter("Weapon")))
+		return;
+	Vector3 pos = Commands->Get_Position(obj);
+	pos.Z += Get_Float_Parameter("Height");
+	GameObject *drop = Commands->Create_Object(Get_Parameter("DropPreset"),pos);
+	Commands->Set_Facing(drop,Commands->Get_Facing(obj));
+}
+void JMG_Utility_Killed_Drop_Object_If_Weapon_Present::Detach(GameObject *obj)
+{
+	if (Exe == 4)
+		return;
+	Destroyed(obj);
+}
+void JMG_Utility_Poke_Send_Custom_If_Has_Weapon::Created(GameObject *obj)
+{
+	id = Get_Int_Parameter("ID");
+	playerType = Get_Int_Parameter("PlayerType");
+	custom = Get_Int_Parameter("Custom");
+	param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+	triggerOnce = Get_Int_Parameter("TriggerOnce");
+	sprintf(weapon,"%s",Get_Parameter("Weapon"));
+	removeWeapon = Get_Int_Parameter("RemoveWeapon");
+	mustBeHeld = Get_Int_Parameter("MustBeHeld");
+	Commands->Enable_HUD_Pokable_Indicator(obj,true);
+}
+void JMG_Utility_Poke_Send_Custom_If_Has_Weapon::Poked(GameObject *obj, GameObject *poker)
+{
+	if (CheckPlayerType(poker,playerType) || Commands->Get_Player_Type(poker) == -4)
+		return;
+	if (mustBeHeld)
+	{
+		const char *pWeapon = Get_Current_Weapon(poker);
+		if (!pWeapon || _stricmp(weapon,pWeapon))
+			return;
+	}
+	else if (!Has_Weapon(poker,weapon))
+		return;
+	GameObject *object = id ? (id == -1 ? poker : Commands->Find_Object(id)) : obj;
+	if (object)
+		Commands->Send_Custom_Event(poker,object,custom,param,delay);
+	if (removeWeapon)
+		Remove_Weapon(poker,weapon);
+	if (triggerOnce)
+	{
+		Commands->Enable_HUD_Pokable_Indicator(obj,false);
+		Destroy_Script();
+	}
+}
+void JMG_Utility_Send_Custom_If_Weapon_Held_In_Range::Created(GameObject *obj)
+{
+	range = Get_Float_Parameter("Range");
+	range *= range;
+	id = Get_Int_Parameter("ID");
+	playerType = Get_Int_Parameter("PlayerType");
+	custom = Get_Int_Parameter("Custom");
+	param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+	triggerOnce = Get_Int_Parameter("TriggerOnce");
+	sprintf(weapon,"%s",Get_Parameter("Weapon"));
+	removeWeapon = Get_Int_Parameter("RemoveWeapon");
+	mustBeHeld = Get_Int_Parameter("MustBeHeld");
+	Commands->Enable_HUD_Pokable_Indicator(obj,true);
+	Commands->Start_Timer(obj,this,0.1f,1);
+}
+void JMG_Utility_Send_Custom_If_Weapon_Held_In_Range::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		Vector3 pos = Commands->Get_Position(obj);
+		for (int x = 1;x < 128;x++)
+		{
+			GameObject *player = Get_GameObj(x);
+			if (!player || JmgUtility::SimpleDistance(pos,Commands->Get_Position(player)) > range)
+				continue;
+			if (CheckPlayerType(player,playerType) || Commands->Get_Player_Type(player) == -4)
+				continue;
+			if (mustBeHeld)
+			{
+				const char *pWeapon = Get_Current_Weapon(player);
+				if (!pWeapon || _stricmp(weapon,pWeapon))
+					continue;
+			}
+			else if (!Has_Weapon(player,weapon))
+				continue;
+			GameObject *object = id ? (id == -1 ? player : Commands->Find_Object(id)) : obj;
+			if (object)
+				Commands->Send_Custom_Event(player,object,custom,param,delay);
+			if (removeWeapon)
+				Remove_Weapon(player,weapon);
+			if (triggerOnce)
+			{
+				Commands->Enable_HUD_Pokable_Indicator(obj,false);
+				Destroy_Script();
+			}
+		}
+		Commands->Start_Timer(obj,this,0.1f,1);
+	}
+}
+void JMG_Utility_Custom_Refect_Custom_If_Model::Created(GameObject *obj)
+{
+	sendFromSelf = Get_Int_Parameter("SendFromSelf");
+	sprintf(model,"%s",Get_Parameter("Model"));
+}
+void JMG_Utility_Custom_Refect_Custom_If_Model::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (obj != sender && !_stricmp(model,Get_Model(obj)))
+	{
+		if (sendFromSelf)
+ 			Commands->Send_Custom_Event(sender,sender,message,param,0);
+		else
+ 			Commands->Send_Custom_Event(obj,sender,message,param,0);
+	}
+}
+void JMG_Utility_Custom_Set_Team::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	team = Get_Int_Parameter("Team");
+}
+void JMG_Utility_Custom_Set_Team::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		Commands->Set_Player_Type(obj,team);
+	}
+}
+void JMG_Utility_Custom_Create_Object_At_Random_Wander_Point::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	sprintf(preset,"%s",Get_Parameter("Preset"));
+	wanderPointGroup = Get_Int_Parameter("WanderingAIGroupID");
+	Commands->Start_Timer(obj,this,0.1f,1);
+}
+void JMG_Utility_Custom_Create_Object_At_Random_Wander_Point::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		Vector3 targetPos;
+		float facing;
+		if (!Get_A_Defense_Point(&targetPos,&facing))
+		{
+			Console_Input("msg No Wanderpoint found for that group!");
+			return;
+		}
+		GameObject *created = Commands->Create_Object(Get_Parameter("Preset"),targetPos);
+		Commands->Set_Facing(created,facing);
+	}
+}
+void JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point::Created(GameObject *obj)
+{
+	retryOnFailure = Get_Int_Parameter("RetryOnFailure") ? true : false;
+	changeGroupIDCustom = Get_Int_Parameter("ChangeGroupIDCustom");
+	playerType = Get_Int_Parameter("PlayerType");
+	safeTeleportDistance = Get_Float_Parameter("SafeTeleportDistance");
+	wanderPointGroup = Get_Int_Parameter("WanderingAIGroupID");
+	aiOnly = Get_Int_Parameter("AiOnly") != 0;
+}
+void JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == changeGroupIDCustom)
+	{
+		wanderPointGroup = param;
+	}
+}
+void JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point::Entered(GameObject *obj,GameObject *enter)
+{
+	if (aiOnly && Commands->Is_A_Star(enter))
+		return;
+	if (CheckPlayerType(enter,playerType))
+		return;
+	Grab_Teleport_Spot(enter,5);
+}
+bool JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point::Grab_Teleport_Spot(GameObject *enter,int attempts)
+{
+	if (The_Game()->Get_Game_Duration_S() < 1.0f)
+	{
+		char params[220];
+		sprintf(params,"%d,%.2f",wanderPointGroup,safeTeleportDistance);
+		Commands->Attach_Script(enter,"JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point_Attach",params);
+		return false;
+	}
+	if (!attempts)
+	{
+		if (retryOnFailure)
+		{
+			char params[220];
+			sprintf(params,"%d,%.2f",wanderPointGroup,safeTeleportDistance);
+			Commands->Attach_Script(enter,"JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point_Attach",params);
+		}
+		return false;
+	}
+	attempts--;
+	Vector3 targetPos;
+	float facing;
+	if (!Get_A_Defense_Point(&targetPos,&facing))
+	{
+		char errormsg[220];
+		sprintf(errormsg,"msg JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point ERROR: No wander points found for group %d!",wanderPointGroup);
+		Console_Input(errormsg);
+		return false;
+	}
+	MoveablePhysClass *mphys = enter->As_PhysicalGameObj() ? enter->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
+	if (mphys && mphys->Find_Teleport_Location(targetPos,safeTeleportDistance,&targetPos))
+	{
+		Toggle_Fly_Mode(enter);
+		Commands->Set_Position(enter,targetPos);
+		Force_Position_Update(enter);
+		Toggle_Fly_Mode(enter);
+		char params[220];
+		sprintf(params,"0.1,%.2f",facing);
+		Commands->Attach_Script(enter,"JMG_Utility_Delay_Then_Rotate_Camera",params);
+		return true;
+	}
+	else
+	{
+		Commands->Set_Position(enter,targetPos);
+		return Grab_Teleport_Spot(enter,attempts);
+	}
+}
+void JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point_Attach::Created(GameObject *obj)
+{
+	safeTeleportDistance = Get_Float_Parameter("SafeTeleportDistance");
+	wanderPointGroup = Get_Int_Parameter("WanderingAIGroupID");
+	Commands->Start_Timer(obj,this,0.1f,1);
+}
+void JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point_Attach::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		Vector3 targetPos;
+		float facing;
+		if (!Get_A_Defense_Point(&targetPos,&facing))
+		{
+			Commands->Start_Timer(obj,this,0.25f,1);
+			return;
+		}
+		MoveablePhysClass *mphys = obj->As_PhysicalGameObj() ? obj->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
+		if (mphys && mphys->Find_Teleport_Location(targetPos,safeTeleportDistance,&targetPos))
+		{
+			Toggle_Fly_Mode(obj);
+			Commands->Set_Position(obj,targetPos);
+			Force_Position_Update(obj);
+			Toggle_Fly_Mode(obj);
+			char params[220];
+			sprintf(params,"0.1,%.2f",facing);
+			Commands->Attach_Script(obj,"JMG_Utility_Delay_Then_Rotate_Camera",params);
+		}
+		else
+		{
+			Commands->Start_Timer(obj,this,0.25f,1);
+			return;
+		}
+		Destroy_Script();
+	}
+}
+void JMG_Utility_Security_System_Random_NumberPad_Control::Created(GameObject *obj)
+{
+	if (Get_Int_Parameter("RandomCombinationDigits") >= 25)
+	{
+		Console_Input("msg JMG_Utility_Security_System_Random_NumberPad_Control ERROR: Check length of arrays!");
+		return;
+	}
+	char presetName[220],boneName[220],params[225];
+	const char *realPresetName = Commands->Get_Preset_Name(obj);
+	for (int x = 0;x < 10;x++)
+	{
+		sprintf(presetName,"%s_Key_%0d",realPresetName,x);
+		sprintf(boneName,"Number%0d",x);
+		GameObject *button = Commands->Create_Object(presetName,Commands->Get_Position(obj));
+		Commands->Attach_To_Object_Bone(button,obj,boneName);
+		sprintf(params,"%d,4356341,%0d,null",Commands->Get_ID(obj),x);
+		Commands->Attach_Script(button,"JMG_Utility_Custom_Combination_Lock_Key",params);
+		buttonIds[x] = Commands->Get_ID(button);
+	}
+	sprintf(presetName,"%s_Key_Clear",realPresetName);
+	GameObject *button = Commands->Create_Object(presetName,Commands->Get_Position(obj));
+	Commands->Attach_To_Object_Bone(button,obj,"Clear");
+	sprintf(params,"%d,4356340,0,null",Commands->Get_ID(obj));
+	Commands->Attach_Script(button,"JMG_Utility_Custom_Combination_Lock_Key",params);
+	buttonIds[10] = Commands->Get_ID(button);
+
+	sprintf(presetName,"%s_Key_Enter",realPresetName);
+	button = Commands->Create_Object(presetName,Commands->Get_Position(obj));
+	Commands->Attach_To_Object_Bone(button,obj,"Enter");
+	sprintf(params,"%d,4356342,0,null",Commands->Get_ID(obj));
+	Commands->Attach_Script(button,"JMG_Utility_Custom_Combination_Lock_Key",params);
+	buttonIds[11] = Commands->Get_ID(button);
+
+	int rand = Get_Int_Parameter("RandomCombinationDigits");
+	for (int x = 0;x < rand;x++)
+	{
+		combination[x] = (char)('0'+Commands->Get_Random_Int(0,10));
+		combination[x+1] = '\0';
+	}
+	sprintf(params,"%d,%s,4356341,4356342,4356340,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s",Commands->Get_ID(obj),combination,Get_Int_Parameter("Success_Custom"),Get_Int_Parameter("Partial_Failure_Custom"),Get_Int_Parameter("Failure_Custom"),Get_Int_Parameter("Disable_On_Success"),Get_Int_Parameter("Disable_On_Failure"),Get_Int_Parameter("Starts_Enabled"),Get_Int_Parameter("Enable_Custom"),Get_Int_Parameter("Failure_Safty"),Get_Int_Parameter("Max_Failures"),Get_Parameter("Sound_Name_Base"));
+	Commands->Attach_Script(obj,"JMG_Utility_Custom_Combination_Lock",params);
+}
+void JMG_Utility_Security_System_Random_NumberPad_Control::Destroyed(GameObject *obj)
+{
+	for (int x = 0;x < 12;x++)
+	{
+		GameObject *button = Commands->Find_Object(buttonIds[x]);
+		if (button)
+			Commands->Destroy_Object(button);
+	}
+}
+void JMG_Utility_Custom_Combination_Lock::Created(GameObject *obj)
+{
+	id = Get_Int_Parameter("ID");
+	inputCustom = Get_Int_Parameter("Input_Number_Custom");
+	inputEnter = Get_Int_Parameter("Input_Enter_Custom");
+	inputClear = Get_Int_Parameter("Input_Clear_Custom");
+	enableCustom = Get_Int_Parameter("Enable_Custom");
+	sprintf(combination,"%s",Get_Parameter("Combination"));
+	successCustom = Get_Int_Parameter("Success_Custom");
+	failureSaftey = Get_Int_Parameter("Failure_Safty");
+	maxFailures = Get_Int_Parameter("Max_Failures");
+	partialFailCustom = Get_Int_Parameter("Partial_Failure_Custom");
+	failureCustom = Get_Int_Parameter("Failure_Custom");
+	disableOnFailure = Get_Int_Parameter("Disable_On_Failure") ? true : false;
+	disableOnSuccess = Get_Int_Parameter("Disable_On_Success") ? true : false;
+	ClearUserEntry();
+	failCount = 0;
+	Enable(Get_Int_Parameter("Starts_Enabled") == 0 ? false : true);
+	sprintf(soundNameBase,"%s",Get_Parameter("Sound_Name_Base"));
+}
+void JMG_Utility_Custom_Combination_Lock::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == inputCustom)
+	{
+		if (!enabled)
+			return;
+		if (depth >= 127)
+			return;
+		char sound[128];
+		sprintf(sound,"%s%c",soundNameBase,(char)(param+'0'));
+		Commands->Create_Sound(sound,Commands->Get_Position(obj),obj);
+		inputCode[depth] = (char)(param+'0');
+		inputCode[depth+1] = '\0';
+		depth++;
+	}
+	if (message == inputEnter)
+	{
+		if (!enabled)
+			return;
+		char sound[128];
+		sprintf(sound,"%sEnter",soundNameBase);
+		Commands->Create_Sound(sound,Commands->Get_Position(obj),obj);
+		if (_stricmp(inputCode,combination))
+		{
+			if (failureSaftey && depth)
+			{
+				failCount++;
+				if (failCount < maxFailures)
+					Send_Custom(sender,partialFailCustom,depth);
+				else
+				{
+					failCount = 0;
+					Send_Custom(sender,failureCustom,depth);
+					if (disableOnFailure)
+						enabled = false;
+				}
+			}
+			else if (!failureSaftey)
+			{
+				Send_Custom(sender,failureCustom,depth);
+				if (disableOnFailure)
+					enabled = false;
+			}
+			ClearUserEntry();
+		}
+		else
+		{
+			if (disableOnSuccess)
+				enabled = false;
+			ClearUserEntry();
+			failCount = 0;
+			Send_Custom(sender,successCustom,param);
+		}
+	}
+	if (message == inputClear)
+	{
+		if (!enabled)
+			return;
+		char sound[128];
+		sprintf(sound,"%sClear",soundNameBase);
+		Commands->Create_Sound(sound,Commands->Get_Position(obj),obj);
+		ClearUserEntry();
+	}
+	if (message == enableCustom)
+	{
+		if (enabled)
+			return;
+		Enable(true);
+	}
+}
+void JMG_Utility_Custom_Combination_Lock::Send_Custom(GameObject *obj,int custom,int param)
+{
+	GameObject *object = id ? Commands->Find_Object(id) : obj;
+	if (object)
+		Commands->Send_Custom_Event(obj,object,custom,param,0.0f);
+}
+void JMG_Utility_Custom_Combination_Lock::Enable(bool enableLock)
+{
+	ClearUserEntry();
+	failCount = 0;
+	enabled = enableLock;
+	for (unsigned int x = 0;x < strlen(combination);x++)
+		if (combination[x] < '0' || combination[x] > '9')
+		{
+			Console_Input("msg JMG_Custom_Combination_Lock ERROR: Combination must be a number 0 - 9!");
+			enabled = false;
+			break;
+		}
+}
+void JMG_Utility_Custom_Combination_Lock::ClearUserEntry()
+{
+	depth = 0;
+	sprintf(inputCode,"\0");
+}
+void JMG_Utility_Custom_Combination_Lock_Key::Created(GameObject *obj)
+{
+	id = Get_Int_Parameter("ID");
+	message = Get_Int_Parameter("Message");
+	param = Get_Int_Parameter("Param");
+	sprintf(soundName,"%s",Get_Parameter("Sound_Name"));
+	useAltAnimation = false;
+	sprintf(animation,"%s.%s",Get_Model(obj),Get_Model(obj));
+	sprintf(animation2,"%s.%sA",Get_Model(obj),Get_Model(obj));
+}
+void JMG_Utility_Custom_Combination_Lock_Key::Poked(GameObject *obj,GameObject *poker)
+{
+	if (Commands->Get_Player_Type(poker) == -4)
+		return;
+	if (id == 0)
+		Commands->Send_Custom_Event(poker,obj,message,param,0);
+	if (id != 0)
+		Commands->Send_Custom_Event(poker,Commands->Find_Object(id),message,param,0);
+	Commands->Create_Sound(soundName,Commands->Get_Position(obj),obj);
+	Commands->Set_Animation(obj,useAltAnimation ? animation2 : animation,false,0,1,5,false);
+	useAltAnimation = !useAltAnimation;
+}
+void JMG_Utility_Security_System_Sync_String_Random_NumberPad_Control::Created(GameObject *obj)
+{
+	delim = Get_Parameter("Delim")[0];
+	stringId = Get_Int_Parameter("StringID");
+	Commands->Start_Timer(obj,this,0.1f,1);
+}
+void JMG_Utility_Security_System_Sync_String_Random_NumberPad_Control::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		JMG_Utility_Security_System_Random_NumberPad_Control *script = (JMG_Utility_Security_System_Random_NumberPad_Control*)Find_Script_On_Object(obj,"JMG_Utility_Security_System_Random_NumberPad_Control");
+		if (!script)
+			return;
+		TDBObjClass *tdbobj = TranslateDBClass::Find_Object(stringId);
+		char newString[2048];
+		sprintf(newString,"%s",tdbobj->Get_English_String());
+		char tmpString[2048];
+		int offset = 0;
+		for (int x = 0;x < 2048;x++,offset++)
+		{
+			if (newString[x] == delim)
+				for (int y = 0;y < 25;y++)
+				{
+					if (script->combination[y] == '\0')
+					{
+						offset--;
+						break;
+					}
+					tmpString[offset] = script->combination[y];
+					offset++;
+				}
+			else
+				tmpString[offset] = newString[x];
+		}
+		if (tdbobj)
+		{
+			WideStringClass str(tmpString);
+			tdbobj->Set_String(TranslateDBClass::Get_Current_Language(),str);
+		}
+		for (int x = 1;x < 128;x++)
+		{
+			GameObject *player = Get_GameObj(x);
+			if (!player)
+				continue;
+			Change_String_Player(player,stringId,tmpString);
+		}
+	}
+}
+void JMG_Utility_Created_Animate_SubObject_On_Join::Created(GameObject *obj)
+{
+	sprintf(animation,"%s",Get_Parameter("Animation"));
+	sprintf(subobject,"%s",Get_Parameter("SubObject"));
+	for (int x = 1;x < 128;x++)
+		animating[x] = false;
+	Timer_Expired(obj,1024);
+}
+void JMG_Utility_Created_Animate_SubObject_On_Join::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1024) 
+	{
+		for (int x = 1;x < 128;x++)
+		{
+			GameObject *player = Get_GameObj(x);
+			if (player && !animating[x])
+			{
+				animating[x] = true;
+				TriggerAnimationForThePlayer(obj,x);
+				Commands->Start_Timer(obj,this,0.25f,x);
+			}
+			if (!player && animating[x])
+				animating[x] = false;
+		}
+		Commands->Start_Timer(obj,this,0.1f,1024);
+	}
+	if (number < 128)
+		TriggerAnimationForThePlayer(obj,number);
+
+}
+void JMG_Utility_Created_Animate_SubObject_On_Join::TriggerAnimationForThePlayer(GameObject *obj,int playerId)
+{
+	GameObject *player = Get_GameObj(playerId);
+	if (!player)
+		return;
+	Set_Subobject_Animation_Player(player,obj,animation,true,subobject,0,-1,true);
+}
+void JMG_Utility_Custom_Play_Animation_Send_Custom_When_Complete::Created(GameObject *obj)
+{
+	receivedCustom = Get_Int_Parameter("ReceivedCustom");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("Custom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+	sprintf(animation,"%s",Get_Parameter("Animation"));
+	startFrame = Get_Float_Parameter("StartFrame");
+	endFrame = Get_Float_Parameter("EndFrame");
+}
+void JMG_Utility_Custom_Play_Animation_Send_Custom_When_Complete::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == receivedCustom)
+	{
+		if (obj->As_SoldierGameObj())
+		{
+			obj->As_SoldierGameObj()->Set_Override_Weapon_Hold_Style(14);
+			obj->As_SoldierGameObj()->Set_Can_Play_Damage_Animations(false);
+		}
+		Commands->Set_Animation(obj,animation,false,0,startFrame,endFrame,true);
+	}
+}
+void JMG_Utility_Custom_Play_Animation_Send_Custom_When_Complete::Animation_Complete(GameObject *obj,const char *anim)
+{
+	if (_stricmp(anim,animation))
+		return;
+	if (obj->As_SoldierGameObj())
+	{
+		obj->As_SoldierGameObj()->Set_Override_Weapon_Hold_Style(-1);
+		obj->As_SoldierGameObj()->Set_Can_Play_Damage_Animations(true);
+	}
+	GameObject *object = id ? Commands->Find_Object(id) : obj;
+	if (object)
+		Commands->Send_Custom_Event(obj,object,custom,Param,0.0f);
+}
+void JMG_Utility_Created_Play_Locked_Infantry_Animation::Created(GameObject *obj)
+{
+	if (!obj->As_SoldierGameObj())
+	{
+		Console_Input("msg JMG_Utility_Custom_Play_Locked_Infantry_Animation ERROR: Can only be used on infantry!");
+		return;
+	}
+	obj->As_SoldierGameObj()->Set_Override_Weapon_Hold_Style(14);
+	obj->As_SoldierGameObj()->Set_Can_Play_Damage_Animations(false);
+	Commands->Set_Animation(obj,Get_Parameter("Animation"),true,0,0.0f,-1.0,true);
+}
+void JMG_Utility_Custom_Send_Custom_To_Preset::Created(GameObject *obj)
+{
+	receivedCustom = Get_Int_Parameter("ReceivedCustom");
+	sprintf(preset,"%s",Get_Parameter("Preset"));
+	custom = Get_Int_Parameter("Custom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+}
+void JMG_Utility_Custom_Send_Custom_To_Preset::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == receivedCustom)
+	{
+		for (SLNode<BaseGameObj> *current = GameObjManager::GameObjList.Head();current;current = current->Next())
+		{
+			GameObject *target = current->Data()->As_ScriptableGameObj();
+			if (target && target->As_ScriptableGameObj() && !_stricmp(preset,Commands->Get_Preset_Name(target))) 
+			{
+				Commands->Send_Custom_Event(obj,target,custom,Param,delay);
+			}
+		}
+	}
+}
+void JMG_Utility_Custom_Talk::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	stringId = Get_Int_Parameter("StringID");
+}
+void JMG_Utility_Custom_Talk::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		Say_Dynamic_Dialogue(stringId,obj->As_SoldierGameObj(),&soundId);
+	}
+}
+void JMG_Utility_Custom_Talk::Killed(GameObject *obj,GameObject *killer)
+{
+	Stop_Sound_Team(soundId,true,2);
+}
+void JMG_Utility_Zone_Send_Custom_Enter_Preset::Created(GameObject *obj)
+{
+	sprintf(preset,"%s",Get_Parameter("Preset"));
+	playerType = Get_Int_Parameter("PlayerType");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("Custom");
+	param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+	triggerOnce = Get_Int_Parameter("TriggerOnce") ? true : false;
+}
+void JMG_Utility_Zone_Send_Custom_Enter_Preset::Entered(GameObject *obj,GameObject *enter)
+{
+	if (CheckPlayerType(enter,playerType) || Commands->Get_Player_Type(enter) == -4 || _stricmp(preset,Commands->Get_Preset_Name(enter)))
+		return;
+	GameObject *object = id ? (id == -1 ? enter : Commands->Find_Object(id)) : obj;
+	if (object)
+		Commands->Send_Custom_Event(obj,object,custom,param,delay);
+	if (triggerOnce)
+		Destroy_Script();
+}
+float JMG_Utility_Global_Armor_Controller::maxArmor = 0.0f;
+float JMG_Utility_Global_Armor_Controller::armor = 0.0f;
+void JMG_Utility_Global_Armor_Controller::Created(GameObject *obj)
+{
+	maxArmor = Get_Float_Parameter("DefaultMaxArmor");
+	armor = Get_Float_Parameter("DefaultArmor");
+}
+void JMG_Utility_Global_Armor_Custom::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	maxArmor = Get_Float_Parameter("MaxArmor");
+	armor = Get_Float_Parameter("Armor");
+	updateAllObjects = Get_Int_Parameter("UpdateAllObjects") ? true : false;
+}
+void JMG_Utility_Global_Armor_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		JMG_Utility_Global_Armor_Controller::maxArmor = maxArmor == -1.0f ? param : maxArmor;
+		JMG_Utility_Global_Armor_Controller::armor = armor == -1.0f ? param : armor;
+		if (!updateAllObjects)
+			return;
+		for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+		{
+			SmartGameObj *o = current->Data();
+			if (!o)
+				continue;
+			if (!Is_Script_Attached(o,"JMG_Utility_Global_Armor_Object"))
+				continue;
+			Set_Max_Shield_Strength(o,JMG_Utility_Global_Armor_Controller::maxArmor);
+			Commands->Set_Shield_Strength(o,JMG_Utility_Global_Armor_Controller::armor);
+		}
+	}
+}
+void JMG_Utility_Global_Armor_Object::Created(GameObject *obj)
+{
+	Set_Max_Shield_Strength(obj,JMG_Utility_Global_Armor_Controller::maxArmor);
+	Commands->Set_Shield_Strength(obj,JMG_Utility_Global_Armor_Controller::armor);
+}
+float JMG_Utility_Global_Health_Controller::maxHealth = 0.0f;
+float JMG_Utility_Global_Health_Controller::health = 0.0f;
+void JMG_Utility_Global_Health_Controller::Created(GameObject *obj)
+{
+	maxHealth = Get_Float_Parameter("DefaultMaxHealth");
+	health = Get_Float_Parameter("DefaultHealth");
+}
+void JMG_Utility_Global_Health_Custom::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	maxHealth = Get_Float_Parameter("MaxHealth");
+	health = Get_Float_Parameter("Health");
+	updateAllObjects = Get_Int_Parameter("UpdateAllObjects") ? true : false;
+}
+void JMG_Utility_Global_Health_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		JMG_Utility_Global_Health_Controller::maxHealth = maxHealth == -1.0f ? param : maxHealth;
+		JMG_Utility_Global_Health_Controller::health = health == -1.0f ? param : health;
+		if (!updateAllObjects)
+			return;
+		for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+		{
+			SmartGameObj *o = current->Data();
+			if (!o)
+				continue;
+			if (!Is_Script_Attached(o,"JMG_Utility_Global_Health_Object"))
+				continue;
+			Set_Max_Health(o,JMG_Utility_Global_Health_Controller::maxHealth);
+			Commands->Set_Health(o,JMG_Utility_Global_Health_Controller::health);
+		}
+	}
+}
+void JMG_Utility_Global_Health_Object::Created(GameObject *obj)
+{
+	Set_Max_Health(obj,JMG_Utility_Global_Health_Controller::maxHealth);
+	Commands->Set_Health(obj,JMG_Utility_Global_Health_Controller::health);
+}
+void JMG_Utility_Custom_Create_Random_Explosions::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	sprintf(explosionPreset,"%s",Get_Parameter("ExplosionPreset"));
+	count = Get_Int_Parameter("Count");
+	distance = Get_Float_Parameter("MaxDistance");
+	killerId = Get_Int_Parameter("KillerID");
+}
+void JMG_Utility_Custom_Create_Random_Explosions::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		GameObject *killer = killerId ? (killerId == -1 ? sender : Commands->Find_Object(killerId)) : obj;
+		Vector3 originalPos = Commands->Get_Position(obj);
+		for (int x = 0;x < count;x++)
+		{
+			Vector3 pos = originalPos;
+			float Distance = Commands->Get_Random(0.0f,distance);
+			float Rotation = Commands->Get_Random(-180.0,180);
+			pos.X += cos(Rotation*PI180)*Distance;
+			pos.Y += sin(Rotation*PI180)*Distance;
+			Commands->Create_Explosion(explosionPreset,pos,killer);
+		}
+	}
+}
+void JMG_Utility_Custom_Enable_Spawners_Incrementally_In_Range::Created(GameObject *obj)
+{
+	currentId = Get_Int_Parameter("StartID");
+	enable = Get_Int_Parameter("Enable") ? true : false;
+	custom = Get_Int_Parameter("Custom");
+	endId = Get_Int_Parameter("EndID");
+}
+void JMG_Utility_Custom_Enable_Spawners_Incrementally_In_Range::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		if (currentId > endId)
+			return;
+		Commands->Enable_Spawner(currentId,enable);
+		currentId++;
+	}
+}
+void JMG_Utility_Control_Point_Team_Target_Wander_Point::Created(GameObject *obj)
+{
+	controlPointId = Get_Int_Parameter("ControlPointID");
+	teamId = Get_Int_Parameter("TeamID");
+	targetGroupId = Get_Int_Parameter("TargetGroupID");
+	nonTargetGroupId = Get_Int_Parameter("NonTargetGroupId");
+	wanderPoint = AddAndReturnWanderpoint(obj);
+	wanderPoint->value = -999;
+	Commands->Set_Is_Rendered(obj,false);
+	Commands->Set_Is_Visible(obj,false);
+	Timer_Expired(obj,1);
+}
+void JMG_Utility_Control_Point_Team_Target_Wander_Point::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		GameObject *controller = Commands->Find_Object(controlPointId);
+		if (!controller)
+		{
+			Commands->Start_Timer(obj,this,0.1f,1);
+			return;
+		}
+		cpScript = (JMG_Utility_Control_Point*)Find_Script_On_Object(controller,"JMG_Utility_Control_Point");
+		if (!cpScript || !cpScript->setupComplete)
+		{
+			Commands->Start_Timer(obj,this,0.1f,1);
+			return;
+		}
+		cpScript->controlPointWanderPoints.Add_Tail(obj);
+		JMG_Utility_Control_Point_Controller::wanderPoints.Add_Tail(obj);
+		UpdateWanderpointSettings();
+	}
+}
+void JMG_Utility_Control_Point_Team_Target_Wander_Point::UpdateWanderpointSettings()
+{
+	if (!cpScript || !cpScript->setupComplete || cpScript->cpGroupId < 0)
+		return;
+	if (targetGroupId != -999 && !cpScript->locked && (!cpScript->captured || cpScript->controllingTeamId != teamId) && (!cpScript->captured || 
+	   (cpScript->cpGroupId == JMG_Utility_Control_Point_Assault_Mode::spawnGroup && JMG_Utility_Control_Point_Assault_Mode::teamId != teamId) || 
+	   (cpScript->cpGroupId == JMG_Utility_Control_Point_Assault_Mode::enemySpawnGroup && JMG_Utility_Control_Point_Assault_Mode::teamId == teamId)))
+		wanderPoint->value = targetGroupId;
+	else
+		wanderPoint->value = nonTargetGroupId;
+}
+void JMG_Utility_AI_Control_Point::Created(GameObject *obj)
+{
+	state = IDLE;
+	moveBackward = false;
+	lastPosition = Commands->Get_Position(obj);
+	targetId = 0;
+	lastSeenTime = 0;
+	stuckTime = 0;
+	reverseTime = 0;
+	allowCaptureAttackDistract = false;
+	captureCpGroupId = Get_Int_Parameter("CaptureCpGroupId");
+	captureCpChance = Get_Float_Parameter("CaptureCpChance");
+	captureSpeed = Get_Float_Parameter("CaptureSpeed");
+	captureDistance = Get_Float_Parameter("CaptureDistance");
+	captureDistanceSquared = captureDistance*captureDistance;
+	defendCpGroupId = Get_Int_Parameter("DefendCpGroupId");
+	defendSpeed = Get_Float_Parameter("DefendSpeed");
+	defendDistance = Get_Float_Parameter("DefendDistance");
+	defendDistanceSquared = defendDistance*defendDistance;
+	closeDefendDistanceSquared = Get_Float_Parameter("CloseDefendDistance");
+	closeDefendDistanceSquared *= closeDefendDistanceSquared;
+	chooseFarDefendChance = Get_Float_Parameter("ChooseFarDefendChance");
+	attackSpeed = Get_Float_Parameter("AttackSpeed");
+	attackDistance = Get_Float_Parameter("AttackDistance");
+	randomAttackDistance = Get_Float_Parameter("RandomAttackDistance");
+	attackDistractFromCaptureChance = Get_Float_Parameter("AttackDistractFromCaptureChance");
+	chanceToInvestigateLastSeenLocation = Get_Float_Parameter("ChanceToInvestigateLastSeenLocation");
+	attackCheckBlocked = Get_Int_Parameter("AttackCheckBlocked") ? true : false;
+	canSeeStealth = Get_Int_Parameter("CanSeeStealth");
+	shutdownEngineOnArrival = Get_Int_Parameter("ShutdownEngineOnArrival") ? true : false;
+	changeDefendSpeedCustom = Get_Int_Parameter("ChangeDefendSpeedCustom");
+	changeCaptureSpeedCustom = Get_Int_Parameter("ChangeCaptureSpeedCustom");
+	changeAttackSpeedCustom = Get_Int_Parameter("ChangeAttackSpeedCustom");
+
+	const AmmoDefinitionClass *ammo = Get_Weapon_Ammo_Definition(Get_Current_Weapon(obj),true);
+	if (ammo)
+	{
+		weaponRange = ammo->Range;
+		weaponEffectiveRange = ammo->Range < ammo->EffectiveRange ? ammo->Range : ammo->EffectiveRange;
+	}
+	attackArriveDistance = attackDistance >= 0 ? attackDistance : weaponEffectiveRange;
+	Commands->Enable_Enemy_Seen(obj,true);
+	Commands->Start_Timer(obj,this,1.0f,1);
+	Commands->Start_Timer(obj,this,1.0f,2);
+	if (randomAttackDistance)
+		Commands->Start_Timer(obj,this,0.0f,3);
+	Commands->Start_Timer(obj,this,10.0f,4);
+}
+void JMG_Utility_AI_Control_Point::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (changeDefendSpeedCustom != 0 && changeDefendSpeedCustom == message)
+	{
+		defendSpeed = param/100.0f;
+		if (state == CONTROL_POINT_DEFENSE)
+			Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,defendSpeed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+	}
+	if (changeCaptureSpeedCustom != 0 && changeCaptureSpeedCustom == message)
+	{
+		captureSpeed = param/100.0f;
+		if (state == CONTROL_POINT_ATTACK)
+			Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,captureSpeed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+	}
+	if (changeAttackSpeedCustom != 0 && changeAttackSpeedCustom == message)
+	{
+		attackSpeed = param/100.0f;
+		if (state == ATTACKING_TARGET)
+			Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,attackSpeed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+	}
+}
+void JMG_Utility_AI_Control_Point::Enemy_Seen(GameObject *obj,GameObject *seen)
+{
+	if (!Commands->Get_Health(seen))
+		return;
+	if (Is_Script_Attached(seen,"JMG_Utility_AI_Control_Point_Ignore_Object"))
+		return;
+	if (!_stricmp(Get_Skin(seen),"Blamo") || !_stricmp(Get_Shield_Type(seen),"Blamo"))
+		return;
+	if (canSeeStealth != 2 && seen->As_SmartGameObj() && seen->As_SmartGameObj()->Is_Stealthed())
+	{
+		if (!canSeeStealth)
+			return;
+		float dist = JmgUtility::SimpleDistance(Commands->Get_Position(obj),Commands->Get_Position(seen));
+		if (seen->As_SoldierGameObj() && dist > seen->As_SoldierGameObj()->Get_Stealth_Fade_Distance()*seen->As_SoldierGameObj()->Get_Stealth_Fade_Distance())
+			return;
+		else if (seen->As_VehicleGameObj() && dist > seen->As_VehicleGameObj()->Get_Stealth_Fade_Distance()*seen->As_VehicleGameObj()->Get_Stealth_Fade_Distance())
+			return;	
+		else if (dist > seen->As_SmartGameObj()->Get_Stealth_Fade_Distance()*seen->As_SmartGameObj()->Get_Stealth_Fade_Distance())
+			return;
+	}
+	if (!targetId || !lastSeenTime || Choose_Target(obj,seen))
+		TriggerAttack(obj,seen);
+	if (targetId == Commands->Get_ID(seen))
+		lastSeenTime = Commands->Get_Random_Int(30,60);
+}
+void JMG_Utility_AI_Control_Point::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1 && !The_Game()->Is_Game_Over())
+	{
+		if ((state == CONTROL_POINT_ATTACK || state == CONTROL_POINT_DEFENSE || state == CHECKING_LOCATION) && !lastWanderPoint)
+			state = IDLE;
+		Vector3 targetPos = Commands->Get_Position(obj);
+		if (lastSeenTime)
+		{
+			lastSeenTime--;
+			if (!lastSeenTime)
+			{
+				if (state == CONTROL_POINT_ATTACK && lastWanderPoint)
+					Attack_Move(obj,NULL,lastWanderPoint->position,captureSpeed,captureDistance,false,false);
+				else
+					SelectNextMission(obj,ValidLastLocation(targetId));
+				targetId = 0;
+			}
+		}
+		if (targetId)
+		{
+			GameObject *target = Commands->Find_Object(targetId);
+			targetPos = Commands->Get_Position(target);
+			if (!target || !Commands->Get_Health(target) || (Commands->Get_Player_Type(obj) != -2 && Commands->Get_Player_Type(target) == Commands->Get_Player_Type(obj)) || Is_Script_Attached(target,"JMG_Utility_AI_Control_Point_Ignore_Object"))
+			{
+				lastSeenTime = 0;
+				if (state == CONTROL_POINT_ATTACK && lastWanderPoint)
+					Attack_Move(obj,NULL,lastWanderPoint->position,captureSpeed,captureDistance,false,false);
+				else
+					SelectNextMission(obj,ValidLastLocation(targetId));
+				targetId = 0;
+			}
+		}
+		if (state == CONTROL_POINT_ATTACK && lastWanderPoint)
+		{
+			if (lastWanderPoint->value != captureCpGroupId)
+				SelectNextMission(obj,false);
+		}
+		if (state == CONTROL_POINT_DEFENSE && lastWanderPoint)
+		{
+			if (JmgUtility::SimpleDistance(lastWanderPoint->position,Commands->Get_Position(obj)) < defendDistanceSquared)
+				SelectNextMission(obj,false);
+		}
+		if (state == CHECKING_LOCATION && lastWanderPoint)
+		{
+			if (JmgUtility::SimpleDistance(lastWanderPoint->position,Commands->Get_Position(obj)) < (obj->As_VehicleGameObj() ? 25.0f : 1.0f))
+				SelectNextMission(obj,false);
+		}
+		if (state == IDLE)
+		{
+			SelectNextMission(obj,false);
+		}
+		if (state == CHECKING_LOCATION)
+			if (JmgUtility::SimpleDistance(lastAction.location,Commands->Get_Position(obj)) <= (obj->As_VehicleGameObj() ? 25.0f : 1.0f))
+				state = IDLE;
+		if (state == ACTION_BADPATH)
+			state = IDLE;
+		if (state != IDLE)
+			Stuck_Check(obj,targetPos);
+		Commands->Start_Timer(obj,this,0.1f,1);
+	}
+	if (number == 3)
+	{
+		attackArriveDistance = attackDistance >= 0 ? attackDistance : weaponEffectiveRange;
+		attackArriveDistance += Commands->Get_Random(randomAttackDistance,randomAttackDistance);
+	}
+	if (number == 4)
+	{
+		allowCaptureAttackDistract = Commands->Get_Random(0.0f,1.0f) < attackDistractFromCaptureChance;
+		Commands->Start_Timer(obj,this,10.0f,4);
+	}
+}
+void JMG_Utility_AI_Control_Point::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason reason)
+{
+	if (reason == ACTION_COMPLETE_PATH_BAD_DEST)
+	{
+		if (state == CONTROL_POINT_ATTACK)
+			state = ACTION_BADPATH;
+		if (state == CONTROL_POINT_DEFENSE)
+			state = ACTION_BADPATH;
+		else if (state == CHECKING_LOCATION)
+			state = ACTION_BADPATH;
+		else if (state == ATTACKING_TARGET)
+			state = ACTION_BADPATH;
+	}
+}
+void JMG_Utility_AI_Control_Point::Damaged(GameObject *obj,GameObject *damager,float damage)
+{
+	if (damage <= 0.0f || Commands->Get_Player_Type(damager) == Commands->Get_Player_Type(obj))
+		return;
+	if (!_stricmp(Get_Skin(damager),"Blamo") || !_stricmp(Get_Shield_Type(damager),"Blamo"))
+		return;
+	if (!targetId || !lastSeenTime || Choose_Target(obj,damager))
+		TriggerAttack(obj,damager);
+}
+void JMG_Utility_AI_Control_Point::Attack_Move(GameObject *obj,GameObject *target,Vector3 location,float speed,float distance,bool attack,bool overrideLocation)
+{
+	Commands->Action_Reset(obj,100);
+	lastAction = LastAction(targetId,location,speed,distance,attack,overrideLocation);
+	ActionParamsStruct params;
+	params.ObserverID = this->Get_ID();
+	if (target && !overrideLocation)
+	{
+		params.Set_Movement(target,speed,distance,false);
+		params.MoveFollow = true;
+	}
+	else
+	{
+		params.Set_Movement(location,speed,distance,false);
+		params.MoveFollow = false;
+	}
+	params.MoveBackup = moveBackward;
+	params.MovePathfind = true;
+	if (shutdownEngineOnArrival)
+		params.ShutdownEngineOnArrival = true;
+	Commands->Action_Goto(obj,params);
+	params.Set_Basic(this,100,100,AI_STATE_COMBAT);
+	params.AttackCheckBlocked = attackCheckBlocked;
+	if (target && attack)
+	{
+		params.Set_Attack(target,weaponRange,0.0f,true);
+		Commands->Action_Attack(obj,params);
+	}
+}
+void JMG_Utility_AI_Control_Point::SelectNextMission(GameObject *obj,ValidLastLocation goNearLastWanderPoint)
+{
+	state = IDLE;
+	Vector3 wanderPos;
+	if (goNearLastWanderPoint.valid && state != CONTROL_POINT_ATTACK && Commands->Get_Random(0.0f,1.0f) < chanceToInvestigateLastSeenLocation)
+	{
+		state = CHECKING_LOCATION;
+		Attack_Move(obj,NULL,goNearLastWanderPoint.location,attackSpeed,0.0f,false,false);
+		return;
+	}
+	GameObject *target = Commands->Find_Object(targetId);
+	if (Commands->Get_Random(0.0f,1.0f) < captureCpChance)
+	{
+		Rp2SimplePositionSystem::SimplePositionNode *node = Get_Capture_Point();
+		if (node)
+		{
+			state = CONTROL_POINT_ATTACK;
+			lastWanderPoint = node;
+			Attack_Move(obj,target,lastWanderPoint->position,captureSpeed,captureDistance,false,true);
+			return;
+		}
+	}
+	Rp2SimplePositionSystem::SimplePositionNode *node = Get_Defense_Point(obj);
+	if (node)
+	{
+		state = CONTROL_POINT_DEFENSE;
+		lastWanderPoint = node;
+		Attack_Move(obj,target,lastWanderPoint->position,captureSpeed,0.0f,false,true);
+		return;
+	}
+}
+void JMG_Utility_AI_Control_Point::Stuck_Check(GameObject *obj,Vector3 targetPos)
+{
+	if (!obj->As_VehicleGameObj())
+	{
+		Vector3 pos = Commands->Get_Position(obj);
+		if (JmgUtility::SimpleDistance(pos,lastPosition) < 1.0f)
+		{
+			if (state == ATTACKING_TARGET && targetId && JmgUtility::SimpleDistance(pos,Commands->Get_Position(Commands->Find_Object(targetId))) <= attackArriveDistance*attackArriveDistance)
+			{
+				stuckTime = 0;
+				return;
+			}
+			else if (state == CONTROL_POINT_ATTACK && lastWanderPoint &&JmgUtility::SimpleDistance(lastWanderPoint->position,pos) <= captureDistance)
+			{
+				stuckTime = 0;
+				return;
+			}
+			if (!reverseTime)
+			{
+				stuckTime++;
+				if (stuckTime > 30)
+				{
+					moveBackward = true;
+					Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+					reverseTime = Commands->Get_Random_Int(10,60);
+					stuckTime = 0;
+				}
+			}
+		}
+		else
+		{
+			stuckTime = 0;
+			lastPosition = pos;
+		}
+		if (reverseTime)
+		{
+			reverseTime--;
+			if (!reverseTime)
+			{
+				moveBackward = false;
+				Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+			}
+		}
+	}
+	else
+	{
+		Vector3 pos = Commands->Get_Position(obj);
+		if (JmgUtility::SimpleDistance(pos,lastPosition) < 1.0f)
+		{
+			if (state == ATTACKING_TARGET && targetId && JmgUtility::SimpleDistance(pos,Commands->Get_Position(Commands->Find_Object(targetId))) <= attackArriveDistance*attackArriveDistance)
+			{
+				stuckTime = 0;
+				return;
+			}
+			else if (state == CONTROL_POINT_ATTACK && lastWanderPoint && JmgUtility::SimpleDistance(lastWanderPoint->position,pos) <= captureDistance)
+			{
+				stuckTime = 0;
+				return;
+			}
+			stuckTime++;
+			if (stuckTime > 5)
+			{
+				Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+				stuckTime = 0;
+			}
+		}
+		else
+		{
+			stuckTime = 0;
+			lastPosition = pos;
+		}
+	}
+}
+bool JMG_Utility_AI_Control_Point::Choose_Target(GameObject *obj,GameObject *target)
+{
+	Vector3 pos = Commands->Get_Position(obj);
+	GameObject *currentTarget = Commands->Find_Object(targetId);
+	if (!currentTarget)
+		return true;
+	if (JmgUtility::SimpleDistance(pos,Commands->Get_Position(target)) < JmgUtility::SimpleDistance(pos,Commands->Get_Position(currentTarget)))
+		return true;
+	return false;
+}
+JMG_Utility_AI_Control_Point::ValidLastLocation::ValidLastLocation(int enemyId)
+{
+	GameObject *target = Commands->Find_Object(enemyId);
+	if (!target || !Commands->Get_Health(target))
+	{
+		this->valid = false;
+		return;
+	}
+	this->location = Commands->Get_Position(target);
+	this->valid = true;
+}
+void JMG_Utility_AI_Control_Point::TriggerAttack(GameObject *obj,GameObject *target)
+{
+	targetId = Commands->Get_ID(target);
+	lastSeenTime = Commands->Get_Random_Int(30,60);
+	if ((state == CONTROL_POINT_ATTACK && !allowCaptureAttackDistract))
+		Attack_Move(obj,target,lastWanderPoint->position,captureSpeed,captureDistance,true,true);
+	else
+	{
+		state = ATTACKING_TARGET;
+		Attack_Move(obj,target,Vector3(),attackSpeed,attackArriveDistance,true,false);
+	}
+}
+void JMG_Utility_Objective_System_Set_Infantry_Attach_Bone::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,1.0f,1);
+}
+void JMG_Utility_Objective_System_Set_Infantry_Attach_Bone::Timer_Expired(GameObject *obj,int number)
+{
+	if (1 == number)
+	{
+		sprintf(BasicObjectiveSystem.infantryAttachBone,"%s",Get_Parameter("InfantryAttachBone"));
+	}
+}
+void JMG_Utility_Security_System_Fixed_NumberPad_Control::Created(GameObject *obj)
+{
+	char presetName[220],boneName[220],params[225];
+	const char *realPresetName = Commands->Get_Preset_Name(obj);
+	for (int x = 0;x < 10;x++)
+	{
+		sprintf(presetName,"%s_Key_%0d",realPresetName,x);
+		sprintf(boneName,"Number%0d",x);
+		GameObject *button = Commands->Create_Object(presetName,Commands->Get_Position(obj));
+		Commands->Attach_To_Object_Bone(button,obj,boneName);
+		sprintf(params,"%d,4356341,%0d,null",Commands->Get_ID(obj),x);
+		Commands->Attach_Script(button,"JMG_Utility_Custom_Combination_Lock_Key",params);
+		buttonIds[x] = Commands->Get_ID(button);
+	}
+	sprintf(presetName,"%s_Key_Clear",realPresetName);
+	GameObject *button = Commands->Create_Object(presetName,Commands->Get_Position(obj));
+	Commands->Attach_To_Object_Bone(button,obj,"Clear");
+	sprintf(params,"%d,4356340,0,null",Commands->Get_ID(obj));
+	Commands->Attach_Script(button,"JMG_Utility_Custom_Combination_Lock_Key",params);
+	buttonIds[10] = Commands->Get_ID(button);
+
+	sprintf(presetName,"%s_Key_Enter",realPresetName);
+	button = Commands->Create_Object(presetName,Commands->Get_Position(obj));
+	Commands->Attach_To_Object_Bone(button,obj,"Enter");
+	sprintf(params,"%d,4356342,0,null",Commands->Get_ID(obj));
+	Commands->Attach_Script(button,"JMG_Utility_Custom_Combination_Lock_Key",params);
+	buttonIds[11] = Commands->Get_ID(button);
+
+	sprintf(params,"%d,%s,4356341,4356342,4356340,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s",Commands->Get_ID(obj),Get_Parameter("KeyCode"),Get_Int_Parameter("Success_Custom"),Get_Int_Parameter("Partial_Failure_Custom"),Get_Int_Parameter("Failure_Custom"),Get_Int_Parameter("Disable_On_Success"),Get_Int_Parameter("Disable_On_Failure"),Get_Int_Parameter("Starts_Enabled"),Get_Int_Parameter("Enable_Custom"),Get_Int_Parameter("Failure_Safty"),Get_Int_Parameter("Max_Failures"),Get_Parameter("Sound_Name_Base"));
+	Commands->Attach_Script(obj,"JMG_Utility_Custom_Combination_Lock",params);
+}
+void JMG_Utility_Security_System_Fixed_NumberPad_Control::Destroyed(GameObject *obj)
+{
+	for (int x = 0;x < 12;x++)
+	{
+		GameObject *button = Commands->Find_Object(buttonIds[x]);
+		if (button)
+			Commands->Destroy_Object(button);
+	}
+}
+void JMG_Utility_Custom_Teleport_Sender_Wanderpoint::Created(GameObject *obj)
+{
+	customMsg = Get_Int_Parameter("Custom");
+	retryOnFailure = Get_Int_Parameter("RetryOnFailure") ? true : false;
+	safeTeleportDistance = Get_Float_Parameter("SafeTeleportDistance");
+	wanderPointGroup = Get_Int_Parameter("WanderingAIGroupID");
+}
+void JMG_Utility_Custom_Teleport_Sender_Wanderpoint::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == customMsg)
+	{
+		Grab_Teleport_Spot(sender,5);
+	}
+}
+bool JMG_Utility_Custom_Teleport_Sender_Wanderpoint::Grab_Teleport_Spot(GameObject *enter,int attempts)
+{
+	if (The_Game()->Get_Game_Duration_S() < 1.0f)
+	{
+		char params[220];
+		sprintf(params,"%d,%.2f",wanderPointGroup,safeTeleportDistance);
+		Commands->Attach_Script(enter,"JMG_Utility_Zone_Teleport_To_Random_Wander_Point_Attach",params);
+		return false;
+	}
+	if (!attempts)
+	{
+		if (retryOnFailure)
+		{
+			char params[220];
+			sprintf(params,"%d,%.2f",wanderPointGroup,safeTeleportDistance);
+			Commands->Attach_Script(enter,"JMG_Utility_Zone_Teleport_To_Random_Wander_Point_Attach",params);
+		}
+		return false;
+	}
+	attempts--;
+	Vector3 targetPos;
+	float facing;
+	if (!Get_A_Defense_Point(&targetPos,&facing))
+	{
+		char errormsg[220];
+		sprintf(errormsg,"msg JMG_Utility_Zone_Teleport_To_Random_Wander_Point ERROR: No wander points found for group %d!",wanderPointGroup);
+		Console_Input(errormsg);
+		return false;
+	}
+	MoveablePhysClass *mphys = enter->As_PhysicalGameObj() ? enter->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
+	if (mphys && mphys->Find_Teleport_Location(targetPos,safeTeleportDistance,&targetPos))
+	{
+		Toggle_Fly_Mode(enter);
+		Commands->Set_Position(enter,targetPos);
+		Force_Position_Update(enter);
+		Toggle_Fly_Mode(enter);
+		char params[220];
+		sprintf(params,"0.1,%.2f",facing);
+		Commands->Attach_Script(enter,"JMG_Utility_Delay_Then_Rotate_Camera",params);
+		return true;
+	}
+	else
+	{
+		Commands->Set_Position(enter,targetPos);
+		return Grab_Teleport_Spot(enter,attempts);
+	}
+}
+void JMG_Utility_Create_Set_Random_Model::Created(GameObject *obj)
+{
+	char model[32];
+	sprintf(model,"%s%0d",Get_Parameter("BaseName"),Commands->Get_Random_Int(0,Get_Int_Parameter("FinalModelNumber")+1));
+	Commands->Set_Model(obj,model);
+}
+void JMG_Utility_Custom_Destroy_Sender::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+}
+void JMG_Utility_Custom_Destroy_Sender::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		Commands->Destroy_Object(sender);
+	}
+}
+void JMG_Utility_Custom_Grant_Weapon_Destroy_Sender::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	sprintf(weapon,"%s",Get_Parameter("Weapon"));
+	sprintf(fullAmmoString,"%s",Get_Parameter("FullAmmoString"));
+}
+void JMG_Utility_Custom_Grant_Weapon_Destroy_Sender::Custom(GameObject *obj,int message,int cparam,GameObject *sender)
+{
+	if (message == custom)
+	{
+		if (Has_Weapon(obj,weapon) && Get_Max_Total_Bullets(obj,weapon) == Get_Total_Bullets(obj,weapon))
+		{
+			Set_HUD_Help_Text_Player(obj,Get_String_ID_By_Desc(fullAmmoString),Vector3(0.0f,1.0f,0.0f));
+			return;
+		}
+		Grant_Weapon(obj,weapon,true,1,true);
+		Commands->Destroy_Object(sender);
+	}
+}
+void JMG_Utility_Remove_Script_While_Has_Weapon::Created(GameObject *obj)
+{
+	sprintf(weaponName,"%s",Get_Parameter("WeaponName"));
+	rate = Get_Float_Parameter("Rate");
+	sprintf(script,"%s",Get_Parameter("Script"));
+	const char *parameters = Get_Parameter("Params");
+	params = newstr(parameters);
+	char delim = Get_Parameter("Delim")[0];
+	unsigned int length = strlen(parameters);
+	for (unsigned int x = 0;x < length;x++)
+		if (params[x] == delim)
+			params[x] = ',';
+	Commands->Start_Timer(obj,this,rate,1);
+}
+void JMG_Utility_Remove_Script_While_Has_Weapon::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		if (!Has_Weapon(obj,weaponName))
+			Attach_Script_Once(obj,script,params);
+		else if (Is_Script_Attached(obj,script))
+			Remove_Script(obj,script);
+		Commands->Start_Timer(obj,this,rate,1);
+	}
+}
+void JMG_Utility_Swimming_Infantry_AI::Created(GameObject *obj)
+{
+	if (Commands->Is_A_Star(obj))
+	{
+		Destroy_Script();
+		return;
+	}
+	lastWaterZoneId = 0;
+	heartBeatSoundId = 0;
+	pantSoundId = 0;
+	underwater = false;
+	waterZoneCount = 0;
+	startedFadeRed = false;
+	drownTime = 0.0f;
+	defaultSpeed = obj->As_SoldierGameObj()->Get_Max_Speed();
+	waterDamageDelayTime = remainingWaterDamageDelay = Get_Int_Parameter("WaterDamageDelayTime");
+	waterDamageDelayTimeRecover = Get_Int_Parameter("WaterDamageDelayTimeRecover");
+	sprintf(originalSkin,"");
+	sprintf(originalArmor,"");
+	sprintf(originalModel,"");
+	for (SLNode<ScriptZoneGameObj>* node = GameObjManager::ScriptZoneGameObjList.Head();node;node = node->Next())
+	{
+		GameObject *zone = (GameObject *)node->Data();
+		if (Is_Script_Attached(zone,"JMG_Utility_Swimming_Zone") && IsInsideZone(zone,obj))
+			Commands->Send_Custom_Event(obj,obj,347341,347341,0.25f);
+	}
+	Commands->Start_Timer(obj,this,0.1f,1);
+}
+void JMG_Utility_Swimming_Infantry_AI::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1 && Commands->Get_Health(obj))
+	{
+		if (obj->As_SoldierGameObj()->Is_Crouched() && !obj->As_SoldierGameObj()->Is_Airborne() && waterZoneCount)
+		{
+			if (!underwater)
+			{
+				underwater = true;
+				isUnderwater = true;
+				HideSoundEmitter(&pantSoundId);
+			}
+			drownTime += 0.1f;
+			if (!startedFadeRed && drownTime >= Get_Float_Parameter("DrownTime")-Get_Float_Parameter("StartDrownSequence"))
+			{
+				startedFadeRed = true;
+				CreateSoundEmitter(obj,Get_Parameter("HeartBeatSoundEmitterModel"),&heartBeatSoundId);
+			}
+			if (drownTime >= Get_Float_Parameter("DrownTime"))
+				Commands->Apply_Damage(obj,Get_Float_Parameter("DrownDamageRate"),"None",obj);
+		}
+		else
+		{
+			if (underwater)
+			{
+				underwater = false;
+				isUnderwater = false;
+				HideSoundEmitter(&heartBeatSoundId);
+				if (drownTime > 1.0f)
+					CreateSoundEmitter(obj,Get_Parameter("PantingSoundEmitterModel"),&pantSoundId);
+				if (drownTime > Get_Float_Parameter("DrownTime"))
+					Commands->Create_3D_Sound_At_Bone(Get_Parameter("GaspForBreath"),obj,"c head");
+			}
+			if (drownTime)
+			{
+				drownTime -= Get_Float_Parameter("CatchBreathRate");
+				if (startedFadeRed && drownTime < Get_Float_Parameter("DrownTime")-Get_Float_Parameter("StartDrownSequence"))
+					startedFadeRed = false;
+				if (drownTime <= 0)
+				{
+					drownTime = 0.0f;
+					HideSoundEmitter(&pantSoundId);
+				}
+			}
+		}
+		if (waterZoneCount)
+		{
+			const char *weap = Get_Current_Weapon(obj);
+			if (Has_Weapon(obj,Get_Parameter("WeaponPreset")) && (!weap || _stricmp(weap,Get_Parameter("WeaponPreset"))))
+				Commands->Select_Weapon(obj,Get_Parameter("WeaponPreset"));
+			if (remainingWaterDamageDelay)
+				remainingWaterDamageDelay--;
+			if (!remainingWaterDamageDelay && Get_Float_Parameter("WaterDamageAmount"))
+				Commands->Apply_Damage(obj,Get_Float_Parameter("WaterDamageAmount"),Get_Parameter("WaterDamageWarhead"),Commands->Find_Object(lastWaterZoneId));
+		}
+		else if (!waterZoneCount && remainingWaterDamageDelay < waterDamageDelayTime)
+		{
+			remainingWaterDamageDelay += waterDamageDelayTimeRecover;
+			if (remainingWaterDamageDelay > waterDamageDelayTime)
+				remainingWaterDamageDelay = waterDamageDelayTime;
+		}
+		Commands->Start_Timer(obj,this,0.1f,1);
+	}
+}
+void JMG_Utility_Swimming_Infantry_AI::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == 347340)
+	{
+		Commands->Send_Custom_Event(sender,obj,347342,param,0.25f);
+	}
+	if (message == 347342)
+	{
+		if (obj->As_SoldierGameObj()->Is_Airborne())
+		{
+			Commands->Send_Custom_Event(sender,obj,message,param,0.25f);
+			return;
+		}
+		waterZoneCount--;
+		if (!waterZoneCount)
+		{
+			obj->As_SoldierGameObj()->Set_Can_Play_Damage_Animations(true);
+			obj->As_SoldierGameObj()->Set_Movement_Loiters_Allowed(true);
+			if (Has_Weapon(obj,enterWeapon))
+				Commands->Select_Weapon(obj,enterWeapon);
+			if (Has_Weapon(obj,Get_Parameter("WeaponPreset")))
+				Remove_Weapon(obj,Get_Parameter("WeaponPreset"));
+			obj->As_SoldierGameObj()->Set_Max_Speed(defaultSpeed);
+			if (_stricmp(Get_Parameter("SwimmingSkin"),""))
+				Set_Skin(obj,originalSkin);
+			if (_stricmp(Get_Parameter("SwimmingArmor"),""))
+				Commands->Set_Shield_Type(obj,originalArmor);
+			if (_stricmp(Get_Parameter("SwimmingModel"),""))
+				Commands->Set_Model(obj,originalModel);
+		}
+	}
+	if (message == 347341)
+	{
+		lastWaterZoneId = Commands->Get_ID(sender);
+		if (!waterZoneCount)
+		{
+			sprintf(enterWeapon,"%s",Get_Current_Weapon(obj) ? Get_Current_Weapon(obj) : "");
+			Grant_Weapon(obj,Get_Parameter("WeaponPreset"),true,-1,1);
+			obj->As_SoldierGameObj()->Set_Can_Play_Damage_Animations(false);
+			obj->As_SoldierGameObj()->Set_Movement_Loiters_Allowed(false);
+			Commands->Set_Loiters_Allowed(obj,false);
+			if (_stricmp(Get_Parameter("SwimmingSkin"),""))
+			{
+				sprintf(originalSkin,"%s",Get_Skin(obj));
+				Set_Skin(obj,Get_Parameter("SwimmingSkin"));
+			}
+			if (_stricmp(Get_Parameter("SwimmingArmor"),""))
+			{
+				sprintf(originalArmor,"%s",Get_Shield_Type(obj));
+				Commands->Set_Shield_Type(obj,Get_Parameter("SwimmingArmor"));
+			}
+			if (_stricmp(Get_Parameter("SwimmingModel"),""))
+			{
+				sprintf(originalModel,"%s",Get_Model(obj));
+				Commands->Set_Model(obj,Get_Parameter("SwimmingModel"));
+			}
+		}
+		waterZoneCount++;
+	}
+}
+void JMG_Utility_Swimming_Infantry_AI::Killed(GameObject *obj,GameObject *killer)
+{
+	DestroySoundEmitter(&heartBeatSoundId);
+	DestroySoundEmitter(&pantSoundId);
+}
+void JMG_Utility_Swimming_Infantry_AI::Destroyed(GameObject *obj)
+{
+}
+void JMG_Utility_Swimming_Infantry_AI::Detach(GameObject *obj)
+{
+	if (Exe == 4)
+		return;
+	Destroyed(obj);
+}
+void JMG_Utility_Swimming_Infantry_AI::CreateSoundEmitter(GameObject *obj,const char *model,int *soundId)
+{
+	GameObject *soundEmitter = Commands->Find_Object(*soundId);
+	if (!soundEmitter)
+	{
+		soundEmitter = Commands->Create_Object("Daves Arrow",Commands->Get_Position(obj));
+		*soundId = Commands->Get_ID(soundEmitter);
+		Commands->Attach_To_Object_Bone(soundEmitter,obj,"c head");
+	}
+	Commands->Set_Model(soundEmitter,model);
+}
+void JMG_Utility_Swimming_Infantry_AI::HideSoundEmitter(int *soundId)
+{
+	GameObject *soundEmitter = Commands->Find_Object(*soundId);
+	if (soundEmitter)
+		Commands->Set_Model(soundEmitter,"null");
+}
+void JMG_Utility_Swimming_Infantry_AI::DestroySoundEmitter(int *soundId)
+{
+	GameObject *soundEmitter = Commands->Find_Object(*soundId);
+	if (soundEmitter)
+		Commands->Destroy_Object(soundEmitter);
+	*soundId = 0;
+}
+void JMG_Utility_Damaged_Refund_Damage::Created(GameObject *obj)
+{
+	warhead = ArmorWarheadManager::Get_Warhead_Type(Get_Parameter("WarheadName"));
+}
+void JMG_Utility_Damaged_Refund_Damage::Damaged(GameObject *obj,GameObject *damager,float damage)
+{
+	if (Get_Damage_Warhead() != warhead)
+		return;
+	float healthDiff = Commands->Get_Max_Health(obj)-Commands->Get_Health(obj);
+	Commands->Set_Health(obj,JmgUtility::MathClamp(Commands->Get_Health(obj)+damage,0.0f,Commands->Get_Max_Health(obj)));
+	damage -= healthDiff;
+	if (damage > 0)
+		Commands->Set_Shield_Strength(obj,JmgUtility::MathClamp(Commands->Get_Shield_Strength(obj)+damage,0.0f,Commands->Get_Max_Shield_Strength(obj)));
+}
+bool JMG_Utility_Turret_Spawn_Global_Flag_Controller::AllowAttach = true;
+void JMG_Utility_Turret_Spawn_Global_Flag_Controller::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+}
+void JMG_Utility_Turret_Spawn_Global_Flag_Controller::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		AllowAttach = param ? true : false;
+	}
+}
+void JMG_Utility_Turret_Spawn_Global_Flag::Created(GameObject *obj)
+{
+	if (!JMG_Utility_Turret_Spawn_Global_Flag_Controller::AllowAttach)
+	{
+		Destroy_Script();
+		return;
+	}
+	GameObject *turret = Commands->Create_Object(Get_Parameter("Turret_Preset"),Vector3());
+	Commands->Attach_To_Object_Bone(turret,obj,Get_Parameter("Bone_Name"));
+	turretId = Commands->Get_ID(turret);
+	if (turret->As_VehicleGameObj())
+		turret->As_VehicleGameObj()->Set_Is_Scripts_Visible(false);
+	hasDriver = false;
+}
+void JMG_Utility_Turret_Spawn_Global_Flag::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == CUSTOM_EVENT_VEHICLE_ENTERED)
+	{
+		if (!hasDriver)
+		{
+			hasDriver = true;
+			GameObject *turret = Commands->Find_Object(turretId);
+			if (turret)
+			{
+				Commands->Set_Player_Type(turret,Commands->Get_Player_Type(sender));
+				Commands->Action_Reset(turret,100);
+			}
+		}
+	}
+	if (message == CUSTOM_EVENT_VEHICLE_EXITED)
+	{
+		if (hasDriver && obj->As_VehicleGameObj() && !Get_Vehicle_Occupant_Count(obj))
+		{
+			hasDriver = false;
+			GameObject *turret = Commands->Find_Object(turretId);
+			if (turret)
+			{
+				Commands->Set_Player_Type(turret,Commands->Get_Player_Type(obj));
+				Commands->Action_Reset(turret,100);
+			}
+		}
+	}
+}
+void JMG_Utility_Turret_Spawn_Global_Flag::Killed(GameObject *obj,GameObject *killer)
+{
+	Destroyed(obj);
+}
+void JMG_Utility_Turret_Spawn_Global_Flag::Destroyed(GameObject *obj)
+{
+	GameObject *turret = Commands->Find_Object(turretId);
+	if (turret)
+		Commands->Destroy_Object(turret);
+}
+void JMG_Utility_Turret_Spawn_Global_Flag::Detach(GameObject *obj)
+{
+	if (Exe == 4)
+		return;
+	Destroyed(obj);
+}
+void JMG_Utility_Timer_Death_If_Not_Damaged_Over_Peroid::Created(GameObject *obj)
+{
+	time = originalTime = Get_Int_Parameter("Time");
+	giveDamage = Get_Float_Parameter("Damage");
+	sprintf(warhead,"%s",Get_Parameter("Warhead"));
+	Timer_Expired(obj,1);
+}
+void JMG_Utility_Timer_Death_If_Not_Damaged_Over_Peroid::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		if (time)
+		{
+			time--;
+			if (!time)
+				Commands->Apply_Damage(obj,giveDamage,warhead,obj);
+		}
+		Commands->Start_Timer(obj,this,1.0f,1);
+	}
+}
+void JMG_Utility_Timer_Death_If_Not_Damaged_Over_Peroid::Damaged(GameObject *obj,GameObject *damager,float damage)
+{
+	if (damage <= 0.0f)
+		return;
+	time = originalTime;
+}
+int JMG_Utility_Global_Attach_Script_On_Flag_Controller::globalFlag = -1;
+void JMG_Utility_Global_Attach_Script_On_Flag_Controller::Created(GameObject *obj)
+{
+	globalFlag = Get_Int_Parameter("GlobalFlag");
+}
+void JMG_Utility_Global_Attach_Script_On_Flag_Custom::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	globalFlag = Get_Int_Parameter("GlobalFlag");
+}
+void JMG_Utility_Global_Attach_Script_On_Flag_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		JMG_Utility_Global_Attach_Script_On_Flag_Controller::globalFlag = globalFlag;
+	}
+}
+void JMG_Utility_Global_Attach_Script_On_Flag::Created(GameObject *obj)
+{
+	if (JMG_Utility_Global_Attach_Script_On_Flag_Controller::globalFlag != Get_Int_Parameter("GlobalFlag"))
+	{
+		Destroy_Script();
+		return;
+	}
+	char script[128];
+	sprintf(script,"%s",Get_Parameter("Script"));
+	const char *parameters = Get_Parameter("Params");
+	char *params = newstr(parameters);
+	char delim = Get_Parameter("Delim")[0];
+	unsigned int length = strlen(parameters);
+	for (unsigned int x = 0;x < length;x++)
+		if (params[x] == delim)
+			params[x] = ',';
+	Attach_Script_Once(obj,script,params);
+}
+void JMG_Utility_Custom_Attach_Script_To_Presets::Created(GameObject *obj)
+{
+	sprintf(preset,"%s",Get_Parameter("Preset"));
+	sprintf(script,"%s",Get_Parameter("Script"));
+	const char *parameters = Get_Parameter("Params");
+	params = newstr(parameters);
+	char delim = Get_Parameter("Delim")[0];
+	unsigned int length = strlen(parameters);
+	for (unsigned int x = 0;x < length;x++)
+		if (params[x] == delim)
+			params[x] = ',';
+	custom = Get_Int_Parameter("Custom");
+}
+void JMG_Utility_Custom_Attach_Script_To_Presets::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		for (SLNode<BaseGameObj> *current = GameObjManager::GameObjList.Head();current;current = current->Next())
+		{
+			GameObject *target = current->Data()->As_ScriptableGameObj();
+			if (target && target->As_ScriptableGameObj() && !_stricmp(preset,Commands->Get_Preset_Name(target))) 
+				Commands->Attach_Script(target,script,params);
+		}
+	}
+}
+void JMG_Utility_Custom_Send_Custom_On_Player_Count_Animation::Created(GameObject *obj)
+{
+	controllerId = Get_Int_Parameter("ControllingID");
+	sprintf(animation,"%s",Get_Parameter("Animation"));
+	maxFrame = Get_Float_Parameter("MaxFrame");
+	lastCalculation = -1;
+	Timer_Expired(obj,1);
+}
+void JMG_Utility_Custom_Send_Custom_On_Player_Count_Animation::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1 && controllerId)
+	{
+		GameObject *controller =  Commands->Find_Object(controllerId);
+		if (controller)
+		{
+			JMG_Utility_Custom_Send_Custom_On_Player_Count_HUD *script = (JMG_Utility_Custom_Send_Custom_On_Player_Count_HUD*)Find_Script_On_Object(controller,"JMG_Utility_Custom_Send_Custom_On_Player_Count_HUD");
+			if (script)
+			{
+				int requiredCount = script->baseCount+script->playerCount*Get_Player_Count();
+				if (requiredCount)
+				{
+					float frame = JmgUtility::MathClamp((float)script->runningCount/(float)requiredCount*maxFrame,0.0f,maxFrame);
+					if (frame != lastCalculation && requiredCount)
+					{
+						Commands->Set_Animation(obj,animation,false,0,frame,frame,true);
+						lastCalculation = frame;
+					}
+				}
+			}
+		}
+		Commands->Start_Timer(obj,this,0.1f,1);
+	}
+}
+void JMG_Utility_Created_Destroy_If_Not_In_Pathfind::Created(GameObject *obj)
+{
+	Vector3 out;
+	if (!Get_Random_Pathfind_Spot(Commands->Get_Position(obj),0.0f,&out))
+		Commands->Destroy_Object(obj);
+}
+void JMG_Utility_Teleport_If_Not_Moving_To_Location::Created(GameObject *obj)
+{
+	time = originalTime = (Get_Int_Parameter("Time")*10);
+	location = Get_Vector3_Parameter("Location");
+	lastSpot = Commands->Get_Position(obj);
+	Commands->Start_Timer(obj,this,0.1f,1);
+}
+void JMG_Utility_Teleport_If_Not_Moving_To_Location::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		Vector3 pos = Commands->Get_Position(obj);
+		if (JmgUtility::SimpleDistance(pos,lastSpot) <= 0.0f)
+		{
+			time--;
+			if (!time)
+			{
+				time = originalTime;
+				MoveablePhysClass *mphys = obj->As_PhysicalGameObj() ? obj->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
+				if (mphys && mphys->Find_Teleport_Location(location,0.75f,&pos))
+					Commands->Set_Position(obj,pos);
+			}
+		}
+		else
+		{
+			time = originalTime;
+			lastSpot = pos;
+		}
+		Commands->Start_Timer(obj,this,0.1f,1);
+	}
+}
+char JMG_Utility_Global_Set_Random_Model_Controller::extension[16];
+void JMG_Utility_Global_Set_Random_Model_Controller::Created(GameObject *obj)
+{
+	sprintf(JMG_Utility_Global_Set_Random_Model_Controller::extension,Get_Parameter("DefaultExtension"));
+}
+void JMG_Utility_Global_Set_Random_Model_Custom::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	sprintf(extension,"%s",Get_Parameter("Extension"));
+}
+void JMG_Utility_Global_Set_Random_Model_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		sprintf(JMG_Utility_Global_Set_Random_Model_Controller::extension,extension);
+		for (SLNode<BaseGameObj> *current = GameObjManager::GameObjList.Head();current;current = current->Next())
+		{
+			GameObject *target = current->Data()->As_ScriptableGameObj();
+			if (!target || !target->As_ScriptableGameObj())
+				continue;
+			JMG_Utility_Global_Set_Random_Model *script = (JMG_Utility_Global_Set_Random_Model*)Find_Script_On_Object(target,"JMG_Utility_Global_Set_Random_Model");
+			if (!script)
+				continue;
+			script->UpdateModel(target);
+		}
+	}
+}
+void JMG_Utility_Global_Set_Random_Model::Created(GameObject *obj)
+{
+	sprintf(baseName,"%s",Get_Parameter("BaseName"));
+	randomValue = Commands->Get_Random_Int(0,Get_Int_Parameter("FinalModelNumber")+1);
+	UpdateModel(obj);
+}
+void JMG_Utility_Global_Set_Random_Model::UpdateModel(GameObject *obj)
+{
+	char model[32];
+	sprintf(model,"%s%0d%s",baseName,randomValue,JMG_Utility_Global_Set_Random_Model_Controller::extension);
+	Commands->Set_Model(obj,model);
+}
+void JMG_Utility_Swimming_Infantry_Advanced_AI::Created(GameObject *obj)
+{
+	if (Commands->Is_A_Star(obj))
+	{
+		Destroy_Script();
+		return;
+	}
+	lastWaterZoneId = 0;
+	heartBeatSoundId = 0;
+	pantSoundId = 0;
+	underwater = false;
+	waterZoneCount = 0;
+	startedFadeRed = false;
+	drownTime = 0.0f;
+	defaultSpeed = obj->As_SoldierGameObj()->Get_Max_Speed();
+	defaultHoldStyle = Get_Int_Parameter("DefaultHoldStyle");
+	defaultSwimSpeedMultiplier = Get_Float_Parameter("DefaultSwimSpeed");
+	waterDamageDelayTime = remainingWaterDamageDelay = Get_Int_Parameter("WaterDamageDelayTime");
+	waterDamageDelayTimeRecover = Get_Int_Parameter("WaterDamageDelayTimeRecover");
+	sprintf(originalSkin,"");
+	sprintf(originalArmor,"");
+	sprintf(originalModel,"");
+	waterSpeedMultiplier = 1.0f;
+	sprintf(defaultWeaponPreset,"%s",Get_Parameter("WeaponPreset"));
+	defaultDrownTime = Get_Float_Parameter("DrownTime");
+	startDrownSequence = Get_Float_Parameter("StartDrownSequence");
+	waterDamageAmount = Get_Float_Parameter("WaterDamageAmount");
+	sprintf(waterDamageWarhead,"%s",Get_Parameter("WaterDamageWarhead"));
+	sprintf(swimmingSkin,"%s",Get_Parameter("SwimmingSkin"));
+	sprintf(swimmingArmor,"%s",Get_Parameter("SwimmingArmor"));
+	sprintf(swimmingModel,"%s",Get_Parameter("SwimmingModel"));
+	sprintf(heartBeatSoundEmitterModel,"%s",Get_Parameter("HeartBeatSoundEmitterModel"));
+	sprintf(pantingSoundEmitterModel,"%s",Get_Parameter("PantingSoundEmitterModel"));
+	sprintf(gaspForBreath,"%s",Get_Parameter("GaspForBreath"));
+	catchBreathRate = Get_Float_Parameter("CatchBreathRate");
+	forceDefinedWeapons = Get_Int_Parameter("ForceDefinedWeapons") ? true : false;
+	weaponGroupId = Get_Int_Parameter("WeaponsGroupID");
+	swimmingHeightScale = Get_Float_Parameter("SwimmingHeightScale");
+	swimmingWidthScale = Get_Float_Parameter("SwimmingWidthScale");
+	originalHeightScale = 0.0f;
+	originalWidthScale = 0.0f;
+	drownDamageRate = drownDamageRate;
+	weaponSwitchForward = true;
+	for (SLNode<ScriptZoneGameObj> *node = GameObjManager::ScriptZoneGameObjList.Head();node;node = node->Next())
+	{
+		GameObject *zone = (GameObject *)node->Data();
+		if (Is_Script_Attached(zone,"JMG_Utility_Swimming_Zone") && IsInsideZone(zone,obj))
+			Commands->Send_Custom_Event(obj,obj,347341,347341,0.25f);
+	}
+	Commands->Start_Timer(obj,this,0.1f,1);
+}
+void JMG_Utility_Swimming_Infantry_Advanced_AI::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1 && Commands->Get_Health(obj) && !The_Game()->Is_Game_Over())
+	{
+		if (obj->As_SoldierGameObj()->Is_Crouched() && !obj->As_SoldierGameObj()->Is_Airborne() && waterZoneCount)
+		{
+			if (!underwater)
+			{
+				underwater = true;
+				HideSoundEmitter(&pantSoundId);
+			}
+			drownTime += 0.1f;
+			if (!startedFadeRed && drownTime >= defaultDrownTime-startDrownSequence)
+			{
+				startedFadeRed = true;
+				CreateSoundEmitter(obj,heartBeatSoundEmitterModel,&heartBeatSoundId);
+			}
+			if (drownTime >= defaultDrownTime)
+				Commands->Apply_Damage(obj,drownDamageRate,"None",obj);
+		}
+		else
+		{
+			if (underwater)
+			{
+				underwater = false;
+				HideSoundEmitter(&heartBeatSoundId);
+				if (drownTime > 1.0f)
+					CreateSoundEmitter(obj,pantingSoundEmitterModel,&pantSoundId);
+				if (drownTime > defaultDrownTime)
+					Commands->Create_3D_Sound_At_Bone(gaspForBreath,obj,"c head");
+			}
+			if (drownTime)
+			{
+				drownTime -= catchBreathRate;
+				if (startedFadeRed && drownTime < defaultDrownTime-startDrownSequence)
+					startedFadeRed = false;
+				if (drownTime <= 0)
+				{
+					drownTime = 0.0f;
+					HideSoundEmitter(&pantSoundId);
+				}
+			}
+		}
+		if (waterZoneCount)
+		{
+			SwitchWeapon(obj);
+			if (remainingWaterDamageDelay)
+				remainingWaterDamageDelay--;
+			if (!remainingWaterDamageDelay && waterDamageAmount)
+				Commands->Apply_Damage(obj,waterDamageAmount,waterDamageWarhead,Commands->Find_Object(lastWaterZoneId));
+		}
+		else if (!waterZoneCount && remainingWaterDamageDelay < waterDamageDelayTime)
+		{
+			remainingWaterDamageDelay += waterDamageDelayTimeRecover;
+			if (remainingWaterDamageDelay > waterDamageDelayTime)
+				remainingWaterDamageDelay = waterDamageDelayTime;
+		}
+		Commands->Start_Timer(obj,this,0.1f,1);
+	}
+}
+void JMG_Utility_Swimming_Infantry_Advanced_AI::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == 347340)
+	{
+		Commands->Send_Custom_Event(sender,obj,347342,param,0.25f);
+	}
+	if (message == 347342)
+	{
+		if (obj->As_SoldierGameObj()->Is_Airborne())
+		{
+			Commands->Send_Custom_Event(sender,obj,message,param,0.25f);
+			return;
+		}
+		waterZoneCount--;
+		if (!waterZoneCount)
+		{
+			obj->As_SoldierGameObj()->Set_Can_Play_Damage_Animations(true);
+			obj->As_SoldierGameObj()->Set_Movement_Loiters_Allowed(true);
+			obj->As_SoldierGameObj()->Set_Human_Anim_Override(true);
+			obj->As_SoldierGameObj()->Set_Override_Weapon_Hold_Style(-1);
+			if (forceDefinedWeapons && Has_Weapon(obj,enterWeapon))
+				Commands->Select_Weapon(obj,enterWeapon);
+			if (Has_Weapon(obj,defaultWeaponPreset))
+				Remove_Weapon(obj,defaultWeaponPreset);
+			obj->As_SoldierGameObj()->Set_Max_Speed(defaultSpeed);
+			if (_stricmp(swimmingSkin,""))
+				Set_Skin(obj,originalSkin);
+			if (_stricmp(swimmingArmor,""))
+				Commands->Set_Shield_Type(obj,originalArmor);
+			if (_stricmp(swimmingModel,""))
+				Commands->Set_Model(obj,originalModel);
+			if (abs(swimmingHeightScale-999.99f) > 0.1f)
+				obj->As_SoldierGameObj()->Set_Skeleton_Height(originalHeightScale);
+			if (abs(swimmingWidthScale-999.99f) > 0.1f)
+				obj->As_SoldierGameObj()->Set_Skeleton_Width(originalWidthScale);
+		}
+	}
+	if (message == 347341)
+	{
+		lastWaterZoneId = Commands->Get_ID(sender);
+		if (!waterZoneCount)
+		{
+			if (abs(swimmingHeightScale-999.99f) > 0.1f)
+			{
+				originalHeightScale = obj->As_SoldierGameObj()->Get_Skeleton_Heigth();
+				obj->As_SoldierGameObj()->Set_Skeleton_Height(swimmingHeightScale);
+			}
+			if (abs(swimmingWidthScale-999.99f) > 0.1f)
+			{
+				originalWidthScale = obj->As_SoldierGameObj()->Get_Skeleton_Width();
+				obj->As_SoldierGameObj()->Set_Skeleton_Width(swimmingWidthScale);
+			}
+			defaultSpeed = obj->As_SoldierGameObj()->Get_Max_Speed();
+			waterSpeedMultiplier = (param/100.0f);
+			sprintf(enterWeapon,"%s",Get_Current_Weapon(obj) ? Get_Current_Weapon(obj) : "");
+			if (forceDefinedWeapons)
+				Grant_Weapon(obj,defaultWeaponPreset,true,-1,1);
+			obj->As_SoldierGameObj()->Set_Can_Play_Damage_Animations(false);
+			obj->As_SoldierGameObj()->Set_Movement_Loiters_Allowed(false);
+			obj->As_SoldierGameObj()->Set_Human_Anim_Override(false);
+			currentWeaponId = 1;
+			SwitchWeapon(obj);
+			Commands->Set_Loiters_Allowed(obj,false);
+			if (_stricmp(swimmingSkin,""))
+			{
+				sprintf(originalSkin,"%s",Get_Skin(obj));
+				Set_Skin(obj,swimmingSkin);
+			}
+			if (_stricmp(swimmingArmor,""))
+			{
+				sprintf(originalArmor,"%s",Get_Shield_Type(obj));
+				Commands->Set_Shield_Type(obj,swimmingArmor);
+			}
+			if (_stricmp(swimmingModel,""))
+			{
+				sprintf(originalModel,"%s",Get_Model(obj));
+				Commands->Set_Model(obj,swimmingModel);
+			}
+		}
+		waterZoneCount++;
+	}
+}
+void JMG_Utility_Swimming_Infantry_Advanced_AI::Killed(GameObject *obj,GameObject *killer)
+{
+	DestroySoundEmitter(&heartBeatSoundId);
+	DestroySoundEmitter(&pantSoundId);
+}
+void JMG_Utility_Swimming_Infantry_Advanced_AI::Destroyed(GameObject *obj)
+{
+	DestroySoundEmitter(&heartBeatSoundId);
+	DestroySoundEmitter(&pantSoundId);
+}
+void JMG_Utility_Swimming_Infantry_Advanced_AI::Detach(GameObject *obj)
+{
+	if (Exe == 4)
+		return;
+	Destroyed(obj);
+}
+void JMG_Utility_Swimming_Infantry_Advanced_AI::CreateSoundEmitter(GameObject *obj,const char *model,int *soundId)
+{
+	GameObject *soundEmitter = Commands->Find_Object(*soundId);
+	if (!soundEmitter)
+	{
+		soundEmitter = Commands->Create_Object("Daves Arrow",Commands->Get_Position(obj));
+		*soundId = Commands->Get_ID(soundEmitter);
+		Commands->Attach_To_Object_Bone(soundEmitter,obj,"c head");
+	}
+	Commands->Set_Model(soundEmitter,model);
+}
+void JMG_Utility_Swimming_Infantry_Advanced_AI::HideSoundEmitter(int *soundId)
+{
+	GameObject *soundEmitter = Commands->Find_Object(*soundId);
+	if (soundEmitter)
+		Commands->Set_Model(soundEmitter,"null");
+}
+void JMG_Utility_Swimming_Infantry_Advanced_AI::DestroySoundEmitter(int *soundId)
+{
+	GameObject *soundEmitter = Commands->Find_Object(*soundId);
+	if (soundEmitter)
+		Commands->Destroy_Object(soundEmitter);
+	*soundId = 0;
+}
+void JMG_Utility_Swimming_Infantry_Advanced_AI::SwitchWeapon(GameObject *obj)
+{
+	const WeaponDefinitionClass *weaponDef = Get_Current_Weapon_Definition(obj);
+	if ((weaponDef && currentWeaponId != weaponDef->Get_ID()) || (!weaponDef && currentWeaponId != 1))
+	{
+		int currentPosition = GetWeaponPosition(obj,currentWeaponId);
+		GetWeaponId(weaponDef);
+		if (forceDefinedWeapons)
+		{
+			int newPosition = GetWeaponPosition(obj,currentWeaponId);
+			bool forward = newPosition > currentPosition;
+			int diff = abs(newPosition-currentPosition);
+			if ((diff <= 1 && forward) || (diff > 1 && weaponSwitchForward))
+				currentWeapon = JMG_Utility_Swimming_Infantry_Advanced_Controller::getNext(obj,weaponGroupId,currentWeapon);
+			else
+				currentWeapon = JMG_Utility_Swimming_Infantry_Advanced_Controller::getPrev(obj,weaponGroupId,currentWeapon);
+			weaponSwitchForward = forward;
+			if (currentWeapon)
+			{
+				Commands->Select_Weapon(obj,currentWeapon->weaponName);
+				GetWeaponId(Get_Current_Weapon_Definition(obj));
+			}
+		}
+		else
+			currentWeapon = JMG_Utility_Swimming_Infantry_Advanced_Controller::getWeapon(weaponGroupId,currentWeaponId);
+		if (currentWeapon)
+		{
+			obj->As_SoldierGameObj()->Set_Override_Weapon_Hold_Style(currentWeapon->holdStyle);
+			obj->As_SoldierGameObj()->Set_Max_Speed(defaultSpeed*currentWeapon->speed*waterSpeedMultiplier);
+		}
+		else
+		{
+			obj->As_SoldierGameObj()->Set_Override_Weapon_Hold_Style(defaultHoldStyle);
+			obj->As_SoldierGameObj()->Set_Max_Speed(defaultSpeed*defaultSwimSpeedMultiplier*waterSpeedMultiplier);
+		}
+	}
+}
+void JMG_Utility_Swimming_Infantry_Advanced_AI::GetWeaponId(const WeaponDefinitionClass *weaponDef)
+{
+	if (weaponDef)
+		currentWeaponId = weaponDef->Get_ID();
+	else
+		currentWeaponId = 1;
+}
+int JMG_Utility_Swimming_Infantry_Advanced_AI::GetWeaponPosition(GameObject *obj,int weaponId)
+{
+	if (ArmedGameObj *armedGameObj = obj->As_PhysicalGameObj()->As_ArmedGameObj())
+	{
+		WeaponBagClass *weaponBagClass = armedGameObj->Get_Weapon_Bag();
+		int x = weaponBagClass->Get_Count();
+		for (int i = 0;i < x;i++)
+			if (weaponBagClass->Peek_Weapon(i))
+				if (weaponBagClass->Peek_Weapon(i)->Get_ID() == weaponId)
+					return i;
+	}
+	return -1;
+}
+int JMG_Utility_Global_Custom_Send_Custom_Flag_Controller::globalFlag = -1;
+void JMG_Utility_Global_Custom_Send_Custom_Flag_Controller::Created(GameObject *obj)
+{
+	globalFlag = Get_Int_Parameter("GlobalFlag");
+}
+void JMG_Utility_Global_Custom_Send_Custom_Flag_Custom::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	globalFlag = Get_Int_Parameter("GlobalFlag");
+}
+void JMG_Utility_Global_Custom_Send_Custom_Flag_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		JMG_Utility_Global_Custom_Send_Custom_Flag_Controller::globalFlag = globalFlag;
+	}
+}
+void JMG_Utility_Global_Custom_Send_Custom_Flag::Created(GameObject *obj)
+{
+	globalFlag = Get_Int_Parameter("GlobalFlag");
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+	randomDelay = Get_Float_Parameter("RandomDelay");
+	randomChance = Get_Float_Parameter("RandomChance");
+}
+void JMG_Utility_Global_Custom_Send_Custom_Flag::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage && JMG_Utility_Global_Custom_Send_Custom_Flag_Controller::globalFlag == globalFlag)
+	{
+		if (randomChance && randomChance < Commands->Get_Random(0.0f,1.0f))
+			return;
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,custom,Param == -1 ? param : Param,delay+(randomDelay > 0 ? Commands->Get_Random(0.0f,randomDelay) : 0.0f));
+	}
+}
+void JMG_Utility_AI_Goto_Location_While_Player_Nearby::Created(GameObject *obj)
+{
+	const char *weap = Get_Current_Weapon(obj);
+	if (weap)
+	{
+		primary = DefineAmmo(Get_Weapon_Ammo_Definition(weap,true));
+		secondary = DefineAmmo(Get_Weapon_Ammo_Definition(weap,true));
+	}
+	gotoObjectId = Get_Int_Parameter("GotoObjectId");
+	gotoLocation = Get_Vector3_Parameter("GotoLocation");
+	maxPlayerDistance = Get_Float_Parameter("MaxPlayerDistance")*Get_Float_Parameter("MaxPlayerDistance");
+	minDistanceSquared = Get_Float_Parameter("MinAttackRange")*Get_Float_Parameter("MinAttackRange");
+	lastHealth = 0;
+	moving = false;
+	attacking = false;
+	reverseTime = 0;
+	stuckCount = 0;
+	drivingBackward = false;
+	badDestAttempt = 0;
+	doNotUsePathfind = 0;
+	currentAction.position = homepos = Commands->Get_Position(obj);
+	myteam = Commands->Get_Player_Type(obj);
+	Commands->Enable_Enemy_Seen(obj,true);
+	Commands->Innate_Disable(obj);
+	Commands->Enable_Hibernation(obj,false);
+	minAttackRange = Get_Float_Parameter("MinAttackRange");
+	definedWeaponError = Get_Float_Parameter("WeaponError");
+	forceFire = Get_Int_Parameter("ForceFire");
+	vtolHover = Get_Float_Parameter("VTOLHover");
+	vsSoldier = Get_Int_Parameter("vsSoldier");
+	vsAircraft = Get_Int_Parameter("vsAircraft");
+	vsVehicle = Get_Int_Parameter("vsVehicle");
+	overrideSpeed = Get_Float_Parameter("OverrideSpeed");
+	playerType = Get_Int_Parameter("PlayerType");
+	if (obj->As_VehicleGameObj()) 
+	{
+		Commands->Enable_Vehicle_Transitions(obj,false);
+		Commands->Enable_Engine(obj,true);
+	}
+	if (Get_Int_Parameter("OverrideFireMode"))
+	{
+		overrideFireMode = true;
+		overridePrimary = Get_Int_Parameter("OverrideFireMode") == 1 ? true : false;
+	}
+	Commands->Start_Timer(obj,this,1.0,1);
+	Commands->Start_Timer(obj,this,1.0,2);
+	Commands->Start_Timer(obj,this,0.1f,8);
+}
+void JMG_Utility_AI_Goto_Location_While_Player_Nearby::Action_Complete(GameObject *obj,int action,ActionCompleteReason reason)
+{
+	if (reason == ACTION_COMPLETE_PATH_BAD_START)
+	{
+		bool refreshAction = false;
+		if (!doNotUsePathfind)
+			refreshAction = true;
+		doNotUsePathfind = 3;
+		if (refreshAction)
+			Commands->Start_Timer(obj,this,0.1f,7);
+	}
+	if (reason == ACTION_COMPLETE_PATH_BAD_DEST)
+	{
+		if (!badDestAttempt)
+			Commands->Start_Timer(obj,this,0.25f,5);
+		else
+			Commands->Start_Timer(obj,this,0.25f,6);
+	}
+	Commands->Action_Reset(obj,action*1.0f);
+	Commands->Action_Reset(obj,100*1.0f);
+}
+void JMG_Utility_AI_Goto_Location_While_Player_Nearby::Damaged(GameObject *obj,GameObject *damager,float damage)
+{
+	if (damage <= 0 || Commands->Get_Player_Type(damager) == Commands->Get_Player_Type(obj))
+		return;
+	if (Is_Script_Attached(damager,"JMG_Utility_AI_Goto_Location_While_Player_Nearby_Ignored"))
+		return;
+	if (!_stricmp(Get_Skin(damager),"Blamo") || !_stricmp(Get_Shield_Type(damager),"Blamo"))
+		return;
+	if(!attacking)
+		RunAttack(obj,SetTarget(damager));
+	else 
+		RunAttack(obj,SelectTarget(obj,damager));
+	lastSeenCount = Commands->Get_Random_Int(6,15);
+}
+void JMG_Utility_AI_Goto_Location_While_Player_Nearby::Enemy_Seen(GameObject *obj,GameObject *seen)
+{
+	if (Is_Script_Attached(seen,"JMG_Utility_AI_Goto_Location_While_Player_Nearby_Ignored"))
+		return;
+	Vector3 enemyPos = Commands->Get_Position(seen);
+	float dist = JmgUtility::SimpleDistance(Commands->Get_Position(obj),enemyPos);
+	if (!_stricmp(Get_Skin(seen),"Blamo") || !_stricmp(Get_Shield_Type(seen),"Blamo"))
+		return;
+	if (minAttackRange && dist < minDistanceSquared)
+		return;
+	if (!Commands->Get_Health(seen))
+		return;
+	if (seen->As_SmartGameObj() && seen->As_SmartGameObj()->Is_Stealthed())
+		if (seen->As_SoldierGameObj() && dist > seen->As_SoldierGameObj()->Get_Stealth_Fade_Distance()*seen->As_SoldierGameObj()->Get_Stealth_Fade_Distance())
+			return;
+		else if (seen->As_VehicleGameObj() && dist > seen->As_VehicleGameObj()->Get_Stealth_Fade_Distance()*seen->As_VehicleGameObj()->Get_Stealth_Fade_Distance())
+			return;	
+		else if (dist > seen->As_SmartGameObj()->Get_Stealth_Fade_Distance()*seen->As_SmartGameObj()->Get_Stealth_Fade_Distance())
+			return;
+	if (Commands->Get_ID(seen) == currentAction.targetId)
+		lastSeenCount = Commands->Get_Random_Int(3,16);
+	if(!attacking)
+		RunAttack(obj,SetTarget(seen));
+	else
+		RunAttack(obj,SelectTarget(obj,seen));
+}
+void JMG_Utility_AI_Goto_Location_While_Player_Nearby::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1) 
+	{
+		StuckCheck(obj);
+		if (lastSeenCount)
+		{
+			lastSeenCount--;
+			if (!lastSeenCount)
+				currentAction.targetId = -1;
+		}
+		if (doNotUsePathfind)
+			doNotUsePathfind--;
+		Commands->Start_Timer(obj,this,1.0,1);
+	}
+	if (number == 2)
+	{
+		Vector3 targetSpot = gotoLocation;
+		if (gotoObjectId)
+			targetSpot = Commands->Get_Position(Commands->Find_Object(gotoObjectId));
+		Vector3 myPos = Commands->Get_Position(obj);
+		GameObject *player = Commands->Get_A_Star(myPos);
+		if (player && JmgUtility::SimpleDistance(Commands->Get_Position(player),myPos) <= maxPlayerDistance && !CheckPlayerType(player,playerType) && JmgUtility::SimpleDistance(myPos,targetSpot) > 6.25f && Commands->Get_Player_Type(player) != -4)
+		{
+			if (!moving)
+			{
+				moving = true;
+				AttackMove(obj,Commands->Find_Object(lastAction.targetId),gotoObjectId ? true : false,gotoLocation,useAmmo,0.0f,true,2.5f);
+			}
+		}
+		else if (moving)
+		{
+			moving = false;
+			AttackMove(obj,Commands->Find_Object(lastAction.targetId),false,myPos,useAmmo,0.0f,true,1000.0f);
+		}
+		Commands->Start_Timer(obj,this,0.25f,2);
+	}
+	if (number == 3) 
+	{
+		if(attacking)
+		{
+			attacking = false;
+			if (!lastSeenCount && currentAction.targetId)
+				currentAction.targetId = 0;
+			GameObject *target = Commands->Find_Object(currentAction.targetId);
+			if(target && Commands->Get_Health(target))
+				RunAttack(obj,SetTarget(target));
+			else 
+			{
+				currentAction.useAmmo = 1;
+				currentAction.targetId = 0;
+				AttackMove(obj,NULL,currentAction.following,currentAction.position,currentAction.useAmmo,0.0f,false,currentAction.arriveDistance);
+			}
+		} 
+		else
+			AttackMove(obj,Commands->Find_Object(currentAction.targetId),currentAction.following,currentAction.position,currentAction.useAmmo,0.0f,false,currentAction.arriveDistance);
+	}
+	if (number == 4)
+	{
+		if (Get_Vehicle_Occupant_Count(obj))
+			Force_Occupants_Exit(obj);
+	}
+	if (number == 5) 
+	{
+		badDestAttempt = 1;
+		AttackMove(obj,Commands->Find_Object(currentAction.targetId),currentAction.following,Commands->Get_Position(obj),currentAction.useAmmo,0.0f,false,currentAction.arriveDistance);
+	}
+	if (number == 6) 
+	{
+		badDestAttempt = 0;
+		AttackMove(obj,Commands->Find_Object(currentAction.targetId),currentAction.following,homepos,currentAction.useAmmo,0.0f,false,currentAction.arriveDistance);
+	}
+	if (number == 7) 
+	{
+		AttackMove(obj,Commands->Find_Object(currentAction.targetId),currentAction.following,currentAction.position,currentAction.useAmmo,0.0f,true,currentAction.arriveDistance);
+	}
+}
+void JMG_Utility_AI_Goto_Location_While_Player_Nearby::RunAttack(GameObject *obj,GameObject *target) 
+{
+	if (target) 	
+	{
+		int ammo = SelectAmmo(target);
+		if (ammo == -1) 
+		{
+			attacking = false;
+			useAmmo = 1;
+			currentAction.targetId = 0;
+			return;
+		}
+		if (ammo == 2) 
+		{
+			if (lastHealth == Commands->Get_Health(target))
+				useAmmo = useAmmo == 1 ? 0 : 1;
+			ammo = useAmmo;
+		}
+		useAmmo = ammo;
+		lastHealth = Commands->Get_Health(target);
+		attacking = true;
+		AttackMove(obj,target,currentAction.following,currentAction.position,useAmmo,0.0f,false,currentAction.arriveDistance);
+		Commands->Start_Timer(obj,this,1.0f,3);
+	}
+}
+int JMG_Utility_AI_Goto_Location_While_Player_Nearby::GetThreatRating(GameObject * obj) 
+{
+	if (obj == NULL)
+		return 0;
+	int rating=0;
+	if(Commands->Is_A_Star(obj)) 
+	{ 
+		rating += 1;
+		GameObject *vehicle = Get_Vehicle(obj);
+		if (vehicle) 
+			rating += 3; 
+	}
+	if (obj->As_SoldierGameObj()) 
+		rating += 1; 
+	if (obj->As_VehicleGameObj()) 
+		rating += 3; 
+	return rating;
+}
+GameObject * JMG_Utility_AI_Goto_Location_While_Player_Nearby::GetAttackObject(GameObject * obj) 
+{
+	if (obj == NULL)
+		return NULL;
+	if(Commands->Is_A_Star(obj)) 
+	{
+		GameObject *vehicle = Get_Vehicle(obj); 
+		if(vehicle)
+			return vehicle;
+		else 
+			return obj;
+	}
+	return obj;
+}
+GameObject *JMG_Utility_AI_Goto_Location_While_Player_Nearby::SelectTarget(GameObject *obj,GameObject *target)
+{
+	GameObject *old = currentAction.targetId ? Commands->Find_Object(currentAction.targetId) : NULL;
+	if (!target || !Commands->Get_ID(target))
+		return GetAttackObject(old);
+	if (!old) 
+	{
+		currentAction.targetId = Commands->Get_ID(target);
+		return GetAttackObject(target);
+	}
+	int trOld = GetThreatRating(old);
+	int trNew = GetThreatRating(target);
+	if (trOld > trNew)
+		return GetAttackObject(old);
+	if (trNew > trOld) 
+	{
+		currentAction.targetId = Commands->Get_ID(target);
+		return GetAttackObject(target);
+	}
+	GameObject * closest = GetClosest(obj,target,old);
+	currentAction.targetId = Commands->Get_ID(closest);
+	return GetAttackObject(closest);
+}
+GameObject *JMG_Utility_AI_Goto_Location_While_Player_Nearby::SetTarget(GameObject *target)
+{
+	currentAction.targetId = Commands->Get_ID(target);
+	if(!attacking)
+		return GetAttackObject(target);
+	return 0;
+}
+GameObject *JMG_Utility_AI_Goto_Location_While_Player_Nearby::GetClosest(GameObject *obj,GameObject *new_target,GameObject *old_target)
+{
+	Vector3 objPos = Commands->Get_Position(obj);
+	if(JmgUtility::SimpleDistance(objPos,Commands->Get_Position(new_target)) < JmgUtility::SimpleDistance(objPos,Commands->Get_Position(old_target)))
+		return new_target;
+	else
+		return old_target;
+}
+int JMG_Utility_AI_Goto_Location_While_Player_Nearby::SelectAmmo(GameObject *target)
+{
+	if (target)
+	{
+		if (target->As_SoldierGameObj())
+			return vsSoldier;
+		if (target->As_VehicleGameObj()) 
+		{
+			if (Is_VTOL(target))
+				return vsAircraft;
+			return vsVehicle;
+		}
+	}
+	return -1;
+}
+void JMG_Utility_AI_Goto_Location_While_Player_Nearby::StuckCheck(GameObject *obj)
+{
+	Vector3 current = Commands->Get_Position(obj);
+	if (reverseTime)
+	{
+		reverseTime--;
+		stuckCount = 0;
+		lastPos = current;
+		drivingBackward = false;
+		AttackMove(obj,Commands->Find_Object(lastAction.targetId),lastAction.following,lastAction.position,lastAction.useAmmo,0.0f,true,0.0f);
+		return;
+	}
+	if (!moving)
+	{
+		drivingBackward = false;
+		return;
+	}
+	if(JmgUtility::SimpleDistance(lastPos,current) < 1.0f)
+	{
+		if(stuckCount > 2)
+		{
+			reverseTime = Commands->Get_Random_Int(2,6);
+			stuckCount = 0;
+			drivingBackward = true;
+			AttackMove(obj,Commands->Find_Object(lastAction.targetId),lastAction.following,lastAction.position,lastAction.useAmmo,0.0f,true,currentAction.arriveDistance);
+		}
+		stuckCount++;
+	}
+	else
+	{
+		stuckCount = 0;
+		lastPos = current;
+	}
+}
+void JMG_Utility_AI_Goto_Location_While_Player_Nearby::AttackMove(GameObject *obj,GameObject *target,bool gotoObject,Vector3 targetLocation,int fireMode,float weaponError,bool forceUpdate,float arriveDistance)
+{
+	Vector3 myPos = Commands->Get_Position(obj);
+	float dist = 9999.9f;
+	GameObject *followingObject = Commands->Find_Object(gotoObjectId);
+	if (gotoObject && followingObject)
+		dist = JmgUtility::SimpleDistance(Commands->Get_Position(followingObject),myPos);
+	else
+		dist = JmgUtility::SimpleDistance(currentAction.position,myPos);
+	if (!gotoObject)
+		currentAction.position = targetLocation;
+	currentAction.useAmmo = fireMode;
+	currentAction.following = gotoObject;
+	currentAction.backward = drivingBackward;
+	currentAction.arriveDistance = arriveDistance;
+	if (lastAction == currentAction && !forceUpdate)
+		return;
+	lastAction = currentAction;
+	Commands->Action_Reset(obj,10.0f);
+	ActionParamsStruct params;
+	if (target)
+	{
+		JMGVehicleAmmo ammo = (fireMode ? primary : secondary);
+		weaponError = 0.0f;
+		if (definedWeaponError != -1.00f)
+			weaponError = definedWeaponError;
+		else if (ammo.allowError)
+			weaponError = JmgUtility::SimpleDistance(Commands->Get_Position(target),myPos)/ammo.speed*5.0f;
+		params.Set_Attack(target,ammo.range,weaponError,!overrideFireMode ? (fireMode ? true : false) : overridePrimary);
+		if (forceFire)	
+		{
+			params.AttackCheckBlocked = false;
+			params.AttackForceFire = true;
+		}
+	}
+	if (Is_VTOL(obj) && vtolHover)
+		targetLocation.Z += vtolHover;
+	if (gotoObject)
+		params.Set_Movement(followingObject,overrideSpeed == -1.0 ? JmgUtility::MathClamp(dist,1.0f,100.0f) : overrideSpeed,arriveDistance,false);
+	else
+		params.Set_Movement(targetLocation,overrideSpeed == -1.0 ? JmgUtility::MathClamp(dist,1.0f,100.0f) : overrideSpeed,arriveDistance,false);
+	params.MoveBackup = currentAction.backward;
+	if (Is_VTOL(obj))
+		params.MovePathfind = false;
+	else
+	{
+		params.ShutdownEngineOnArrival = true;
+		params.MovePathfind = !doNotUsePathfind ? true : false;
+	}
+	if (!target)
+		params.Set_Basic(this,10,10);
+	Commands->Action_Goto(obj,params);
+	if (target)
+	{
+		params.Set_Basic(this,10,10);
+		Commands->Action_Attack(obj,params);
+	}
+}
+JMG_Utility_AI_Goto_Location_While_Player_Nearby::JMGVehicleAmmo JMG_Utility_AI_Goto_Location_While_Player_Nearby::DefineAmmo(const AmmoDefinitionClass *ammo)
+{
+	JMGVehicleAmmo theammo;
+	if (ammo)
+	{
+		theammo.range = ammo->Range;
+		if (ammo->Velocity >= 400.0f || (ammo->IsTracking && ammo->TurnRate))
+			theammo.allowError = false;
+		else
+			theammo.allowError = true;
+		theammo.speed = ammo->Velocity*ammo->Velocity;
+	}
+	return theammo;
+}
+void JMG_Utility_AI_Goto_Location_While_Player_Nearby_Ignored::Created(GameObject *obj)
+{
+}
+void JMG_Utility_Killed_Drop_Powerup_Become_Corpse::Killed(GameObject *obj,GameObject *killer)
+{
+	if (Get_Float_Parameter("Chance") >= 1.0f || Commands->Get_Random(0.0f,1.0f) < Get_Float_Parameter("Chance"))
+		Commands->Start_Timer(obj,this,0.0f,1);
+}
+void JMG_Utility_Killed_Drop_Powerup_Become_Corpse::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		if (_stricmp(Get_Parameter("RequiredWeaponPreset"),"") && !Has_Weapon(obj,Get_Parameter("RequiredWeaponPreset")))
+			return;
+		Vector3 pos = Commands->Get_Position(obj);
+		GameObject *powerup = Commands->Create_Object(Get_Parameter("PowerupName"),pos);
+		Commands->Set_Facing(powerup,Commands->Get_Facing(obj));
+		Commands->Set_Model(powerup,Get_Model(obj));
+		if (!obj->As_SmartGameObj())
+			return;
+		AnimControlClass *control = obj->As_SmartGameObj()->Get_Anim_Control();
+		if (!control || control->Get_Animation_Name() == NULL || !_stricmp(control->Get_Animation_Name(),""))
+			return;
+		Commands->Set_Animation(powerup,control->Get_Animation_Name(),false,0,control->Get_Current_Frame(),-1,true);
+		Commands->Destroy_Object(obj);
+	}
+}
+void JMG_Utility_Objective_System_Objectives_Complete_Send_Custom::Created(GameObject *obj)
+{
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+	randomDelay = Get_Float_Parameter("RandomDelay");
+	char completedObjectives[256];
+	sprintf(completedObjectives,"%s",Get_Parameter("CompletedObjectives"));
+	char delim[2];
+	int count = 0;
+	sprintf(delim,"%s",Get_Parameter("Delim"));
+	char *token = strtok(completedObjectives, delim);
+	while(token != NULL)
+	{
+		objectiveIds[count] = atoi(token);
+		token = strtok(NULL,delim);
+		count++;
+	}
+	objectiveCount = count;
+	repeat = Get_Int_Parameter("Repeat") ? true : false;
+	Commands->Start_Timer(obj,this,0.25f,1);
+}
+void JMG_Utility_Objective_System_Objectives_Complete_Send_Custom::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		if (BasicObjectiveSystem.Check_If_All_Objectives_Are_Complete(objectiveIds,objectiveCount))
+		{
+			GameObject *object = id ? Commands->Find_Object(id) : obj;
+ 			Commands->Send_Custom_Event(obj,object,custom,Param,delay+(randomDelay > 0 ? Commands->Get_Random(0.0f,randomDelay) : 0.0f));
+			if (!repeat)
+			{
+				Destroy_Script();
+				return;
+			}
+		}
+		Commands->Start_Timer(obj,this,0.25f,1);
+	}
+}
+void JMG_Utility_Damage_Update_Animation_Frame::Created(GameObject *obj)
+{
+	if (_stricmp(Get_Parameter("Model"),""))
+		Commands->Set_Model(obj,Get_Parameter("Model"));
+	sprintf(animation,"%s",Get_Parameter("Animation"));
+	maxFrame = Get_Float_Parameter("MaxFrame");
+	lastCalculation = -1;
+	Damaged(obj,NULL,0);
+}
+void JMG_Utility_Damage_Update_Animation_Frame::Damaged(GameObject *obj,GameObject *damager,float damage)
+{
+	float percent = Get_Hitpoints(obj)/Get_Max_Hitpoints(obj);
+	float frame = JmgUtility::MathClamp(percent*maxFrame,0.0f,maxFrame);
+	if (frame != lastCalculation)
+	{
+		Commands->Set_Animation(obj,animation,false,0,frame,frame,true);
+		lastCalculation = frame;
+	}
+}
+void JMG_Utility_Security_System_Sync_Model_Random_NumberPad_Control::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,0.1f,1);
+}
+void JMG_Utility_Security_System_Sync_Model_Random_NumberPad_Control::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		GameObject *keypad = Commands->Find_Object(Get_Int_Parameter("KeypadID"));
+		JMG_Utility_Security_System_Random_NumberPad_Control *script = (JMG_Utility_Security_System_Random_NumberPad_Control*)Find_Script_On_Object(keypad,"JMG_Utility_Security_System_Random_NumberPad_Control");
+		if (!script)
+			return;
+		char theModel[16];
+		sprintf(theModel,"%s%c",Get_Parameter("BaseModel"),script->combination[Get_Int_Parameter("Index")]);
+		Commands->Set_Model(obj,theModel);
+	}
+}
+void JMG_Utility_AI_Goto_Target_Script::Created(GameObject *obj)
+{
+	state = IDLE;
+	moveBackward = false;
+	lastPosition = homeLocation = Commands->Get_Position(obj);
+	targetId = 0;
+	lastSeenTime = 0;
+	huntingEnemyId = 0;
+	stuckTime = 0;
+	reverseTime = 0;
+	huntStealth = Get_Int_Parameter("HuntStealth") ? true : false;
+	removeIgnoreTime = 0;
+	ignoreEnemyId = 0;
+	wanderingAiGroupId = Get_Int_Parameter("WanderingAIGroupID");
+	wanderSpeed = Get_Float_Parameter("WanderSpeed");
+	huntSpeed = Get_Float_Parameter("HuntSpeed");
+	attackSpeed = Get_Float_Parameter("AttackSpeed");
+	returnHomeSpeed = Get_Float_Parameter("ReturnHomeSpeed");
+	changeWanderGroupCustom = Get_Int_Parameter("ChangeWanderGroupCustom");
+	changeWanderSpeedCustom = Get_Int_Parameter("ChangeWanderSpeedCustom");
+	changeHuntDistanceCustom = Get_Int_Parameter("ChangeHuntDistanceCustom");
+	changeHuntSpeedCustom = Get_Int_Parameter("ChangeHuntSpeedCustom");
+	changeReturnHomeSpeedCustom = Get_Int_Parameter("ChangeReturnHomeSpeedCustom");
+	changeMaxSightFromHomeLocationCustom = Get_Int_Parameter("ChangeMaxSightFromHomeLocationCustom");
+	changeAttackSpeedCustom = Get_Int_Parameter("ChangeAttackSpeedCustom");
+	maxSightFromHomeLocation = Get_Float_Parameter("MaxSightRangeFromHome");
+	maxSightFromHomeLocation *= maxSightFromHomeLocation;
+	huntSearchDistance = Get_Float_Parameter("HuntSearchDistance") < 0.0f ? Get_Float_Parameter("HuntSearchDistance") : Get_Float_Parameter("HuntSearchDistance")*Get_Float_Parameter("HuntSearchDistance");
+	const AmmoDefinitionClass *ammo = Get_Weapon_Ammo_Definition(Get_Current_Weapon(obj),true);
+	if (ammo)
+	{
+		weaponRange = ammo->Range;
+		weaponEffectiveRange = ammo->Range < ammo->EffectiveRange ? ammo->Range : ammo->EffectiveRange;
+	}
+	attackArriveDistance = Get_Float_Parameter("AttackDistance") >= 0 ? Get_Float_Parameter("AttackDistance") : weaponEffectiveRange;
+	huntArriveDistance = Get_Float_Parameter("HuntArriveDistance");
+	wanderDistanceOverride = Get_Float_Parameter("WanderDistanceOverride");
+	wanderDistanceOverride *= wanderDistanceOverride;
+	Commands->Enable_Enemy_Seen(obj,true);
+	Commands->Start_Timer(obj,this,1.0f,1);
+	Commands->Start_Timer(obj,this,1.0f,2);
+	if (Get_Float_Parameter("RandomAttackDistance"))
+		Commands->Start_Timer(obj,this,0.0f,3);
+	if (Get_Float_Parameter("RandomHuntArriveDistance"))
+		Commands->Start_Timer(obj,this,0.0f,4);
+}
+void JMG_Utility_AI_Goto_Target_Script::Enemy_Seen(GameObject *obj,GameObject *seen)
+{
+	if (!Commands->Get_Health(seen))
+		return;
+	if (Is_Script_Attached(seen,"JMG_Utility_AI_Goto_Target_Script_Ignore_Object"))
+		return;
+	if (!_stricmp(Get_Skin(seen),"Blamo") || !_stricmp(Get_Shield_Type(seen),"Blamo"))
+		return;
+	if (Get_Int_Parameter("CanSeeStealth") != 2 && seen->As_SmartGameObj() && seen->As_SmartGameObj()->Is_Stealthed())
+	{
+		if (!Get_Int_Parameter("CanSeeStealth"))
+			return;
+		float dist = JmgUtility::SimpleDistance(Commands->Get_Position(obj),Commands->Get_Position(seen));
+		if (seen->As_SoldierGameObj() && dist > seen->As_SoldierGameObj()->Get_Stealth_Fade_Distance()*seen->As_SoldierGameObj()->Get_Stealth_Fade_Distance())
+			return;
+		else if (seen->As_VehicleGameObj() && dist > seen->As_VehicleGameObj()->Get_Stealth_Fade_Distance()*seen->As_VehicleGameObj()->Get_Stealth_Fade_Distance())
+			return;	
+		else if (dist > seen->As_SmartGameObj()->Get_Stealth_Fade_Distance()*seen->As_SmartGameObj()->Get_Stealth_Fade_Distance())
+			return;
+	}
+	if (maxSightFromHomeLocation > 0.0f && JmgUtility::SimpleDistance(homeLocation,Commands->Get_Position(seen)) > maxSightFromHomeLocation)
+		return;
+	if (!targetId || !lastSeenTime || Choose_Target(obj,seen))
+	{
+		targetId = Commands->Get_ID(seen);
+		lastSeenTime = Commands->Get_Random_Int(30,60);
+		state = ATTACKING_TARGET;
+		Attack_Move(obj,seen,Vector3(),attackSpeed,attackArriveDistance,true,false);
+	}
+	if (targetId == Commands->Get_ID(seen))
+		lastSeenTime = Commands->Get_Random_Int(30,60);
+}
+void JMG_Utility_AI_Goto_Target_Script::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (changeWanderGroupCustom != 0 && changeWanderGroupCustom == message)
+	{
+		wanderingAiGroupId = param;
+		if (state == WANDERING_GROUP)
+		{
+			Vector3 wanderPos = Vector3();
+			if (GetRandomPosition(&wanderPos))
+			{
+				homeLocation = wanderPos;
+				Attack_Move(obj,Commands->Find_Object(lastAction.targetId),homeLocation,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+			}
+		}
+	}
+	if (changeWanderSpeedCustom != 0 && changeWanderSpeedCustom == message)
+	{
+		wanderSpeed = param/100.0f;
+		if (state == WANDERING_GROUP)
+			Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,wanderSpeed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+	}
+	if (changeHuntDistanceCustom != 0 && changeHuntDistanceCustom == message)
+	{
+		huntSearchDistance = param/100.0f;
+		if (huntSearchDistance > 0)
+			huntSearchDistance *= huntSearchDistance;
+	}
+	if (changeHuntSpeedCustom != 0 && changeHuntSpeedCustom == message)
+	{
+		huntSpeed = param/100.0f;
+		if (state == HUNTING_STAR)
+			Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,huntSpeed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+	}
+	if (changeReturnHomeSpeedCustom != 0 && changeReturnHomeSpeedCustom == message)
+	{
+		returnHomeSpeed = param/100.0f;
+		if (state == RETURNING_HOME)
+			Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,returnHomeSpeed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+	}
+	if (changeMaxSightFromHomeLocationCustom != 0 && changeMaxSightFromHomeLocationCustom == message)
+	{
+		maxSightFromHomeLocation = param/100.0f;
+		maxSightFromHomeLocation *= maxSightFromHomeLocation;
+	}
+	if (changeAttackSpeedCustom != 0 && changeAttackSpeedCustom == message)
+	{
+		attackSpeed = param/100.0f;
+		if (state == ATTACKING_TARGET)
+			Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,attackSpeed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+	}
+}
+void JMG_Utility_AI_Goto_Target_Script::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		Vector3 targetPos = Commands->Get_Position(obj);
+		if (lastSeenTime)
+		{
+			lastSeenTime--;
+			if (!lastSeenTime)
+			{
+				Return_Home(obj,ValidLastLocation(targetId));
+				targetId = 0;
+			}
+		}
+		if (targetId)
+		{
+			GameObject *target = Commands->Find_Object(targetId);
+			targetPos = Commands->Get_Position(target);
+			if (!target || !Commands->Get_Health(target) || (Commands->Get_Player_Type(obj) != -2 && Commands->Get_Player_Type(target) == Commands->Get_Player_Type(obj)) || Is_Script_Attached(target,"JMG_Utility_AI_Goto_Target_Script_Ignore_Object"))
+			{
+				lastSeenTime = 0;
+				Return_Home(obj,ValidLastLocation(targetId));
+				targetId = 0;
+			}
+		}
+		if (state == HUNTING_STAR)
+		{
+			GameObject *star = Commands->Find_Object(huntingEnemyId);
+			if (!star || !Commands->Get_Health(star) || (huntSearchDistance >= 0.0f && JmgUtility::SimpleDistance(Commands->Get_Position(star),Commands->Get_Position(obj)) > huntSearchDistance) || Is_Script_Attached(star,"JMG_Utility_AI_Goto_Target_Script_Ignore_Object"))
+				Return_Home(obj,false);
+		}
+		if (state == IDLE || state == RETURNING_HOME || state == WANDERING_GROUP)
+		{
+			GameObject *star = findClosestStar(obj);
+			if (star)
+			{
+				state = HUNTING_STAR;
+				Attack_Move(obj,star,Vector3(),huntSpeed,huntArriveDistance,false,false);
+			}
+		}
+		if (state == IDLE && wanderingAiGroupId != -1)
+		{
+			Vector3 wanderPos = Vector3();
+			if (GetRandomPosition(&wanderPos))
+			{
+				state = WANDERING_GROUP;
+				homeLocation = wanderPos;
+				Attack_Move(obj,NULL,wanderPos,wanderSpeed,1.0f,false,false);
+			}
+		}
+		if (state == RETURNING_HOME || state == WANDERING_GROUP)
+			if (JmgUtility::SimpleDistance(lastAction.location,Commands->Get_Position(obj)) <= (wanderDistanceOverride != 0 ? wanderDistanceOverride : (obj->As_VehicleGameObj() ? 25.0f : 1.0f)))
+				state = IDLE;
+		if (state == ACTION_BADPATH)
+			Cant_Get_To_target(obj);
+		if (state != IDLE)
+			Stuck_Check(obj,targetPos);
+		Commands->Start_Timer(obj,this,0.1f,1);
+	}
+	if (number == 2)
+	{
+		if (removeIgnoreTime)
+		{
+			removeIgnoreTime--;
+			if (!removeIgnoreTime)
+				ignoreEnemyId = 0;
+		}
+		Commands->Start_Timer(obj,this,1.0f,2);
+	}
+	if (number == 3)
+	{
+		attackArriveDistance = Get_Float_Parameter("AttackDistance") >= 0 ? Get_Float_Parameter("AttackDistance") : weaponEffectiveRange;
+		attackArriveDistance += Commands->Get_Random(Get_Float_Parameter("RandomAttackDistance"),Get_Float_Parameter("RandomAttackDistance"));
+	}
+	if (number == 4)
+	{
+		huntArriveDistance = Get_Float_Parameter("HuntArriveDistance");
+		huntArriveDistance += Commands->Get_Random(Get_Float_Parameter("RandomHuntArriveDistance"),Get_Float_Parameter("RandomHuntArriveDistance"));
+	}
+}
+void JMG_Utility_AI_Goto_Target_Script::Action_Complete(GameObject *obj,int action_id,ActionCompleteReason reason)
+{
+	if (reason == ACTION_COMPLETE_PATH_BAD_DEST)
+	{
+		if (state == HUNTING_STAR)
+		{
+			ignoreEnemyId = huntingEnemyId;
+			removeIgnoreTime = 10;
+			state = ACTION_BADPATH;
+		}
+		else if (state == WANDERING_GROUP)
+			state = ACTION_BADPATH;
+		else if (state == ATTACKING_TARGET)
+			state = ACTION_BADPATH;
+	}
+}
+void JMG_Utility_AI_Goto_Target_Script::Damaged(GameObject *obj,GameObject *damager,float damage)
+{
+	if (damage <= 0.0f || Commands->Get_Player_Type(damager) == Commands->Get_Player_Type(obj))
+		return;
+	if (!_stricmp(Get_Skin(damager),"Blamo") || !_stricmp(Get_Shield_Type(damager),"Blamo"))
+		return;
+	if (!targetId || !lastSeenTime || Choose_Target(obj,damager))
+	{
+		targetId = Commands->Get_ID(damager);
+		lastSeenTime = Commands->Get_Random_Int(30,60);
+		state = ATTACKING_TARGET;
+		Attack_Move(obj,damager,Vector3(),attackSpeed,attackArriveDistance,true,false);
+	}
+}
+void JMG_Utility_AI_Goto_Target_Script::Attack_Move(GameObject *obj,GameObject *target,Vector3 location,float speed,float distance,bool attack,bool overrideLocation)
+{
+	lastAction.location = location;
+	Commands->Action_Reset(obj,100);
+	lastAction = LastAction(targetId,location,speed,distance,attack,overrideLocation);
+	ActionParamsStruct params;
+	params.ObserverID = this->Get_ID();
+	if (target && !overrideLocation)
+	{
+		params.Set_Movement(target,speed,distance,false);
+		params.MoveFollow = true;
+	}
+	else
+	{
+		params.Set_Movement(location,speed,distance,false);
+		params.MoveFollow = false;
+	}
+	params.MoveBackup = moveBackward;
+	params.MovePathfind = true;
+	if (Get_Int_Parameter("ShutdownEngineOnArrival"))
+		params.ShutdownEngineOnArrival = true;
+	Commands->Action_Goto(obj,params);
+	params.Set_Basic(this,100,100,AI_STATE_COMBAT);
+	params.AttackCheckBlocked = Get_Int_Parameter("AttackCheckBlocked") ? true : false;
+	if (target && attack)
+	{
+		params.Set_Attack(target,weaponRange,0.0f,true);
+		Commands->Action_Attack(obj,params);
+	}
+}
+GameObject *JMG_Utility_AI_Goto_Target_Script::findClosestStar(GameObject *obj)
+{
+	if (Commands->Get_Player_Type(obj) == -2)
+		return NULL;
+	GameObject *nearest = NULL;
+	float nearDist = -1.0f;
+	Vector3 pos = Commands->Get_Position(obj);
+	int myPlayerType = Commands->Get_Player_Type(obj);
+	for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+	{
+		SmartGameObj* o = current->Data();
+		int oPlayerType = Commands->Get_Player_Type(o);
+		int enemyId = Commands->Get_ID(o);
+		if (!Is_Script_Attached(o,"JMG_Utility_AI_Goto_Target_Script_Target"))
+			continue;
+		if (!(o->As_SoldierGameObj() || o->As_VehicleGameObj()))
+			continue;
+		if (!Commands->Get_Health(o) || oPlayerType == -4 || oPlayerType == -2 || oPlayerType == myPlayerType || enemyId == ignoreEnemyId)
+			continue;
+		if (!_stricmp(Get_Skin(o),"Blamo") || !_stricmp(Get_Shield_Type(o),"Blamo"))
+			continue;
+		if (!huntStealth)
+		{
+			GameObject *vehicle = Get_Vehicle(o);
+			if (vehicle && vehicle->As_SmartGameObj() && vehicle->As_SmartGameObj()->Is_Stealthed())
+				continue;
+			else if (o->As_SmartGameObj() && o->As_SmartGameObj()->Is_Stealthed())
+				continue;
+		}
+		if (maxSightFromHomeLocation > 0 && JmgUtility::SimpleDistance(homeLocation,Commands->Get_Position(o)) > maxSightFromHomeLocation)
+			continue;
+		float tempDist = JmgUtility::SimpleDistance(pos,Commands->Get_Position(o));
+		if (huntSearchDistance >= 0.0f && tempDist > huntSearchDistance)
+			continue;
+		if (!nearest || (tempDist < nearDist))
+		{
+			nearest = o;
+			nearDist = tempDist;
+			huntingEnemyId = enemyId;
+		}
+	}
+	return nearest;
+}
+void JMG_Utility_AI_Goto_Target_Script::Return_Home(GameObject *obj,ValidLastLocation goNearLastWanderPoint)
+{
+	Vector3 wanderPos;
+	if (goNearLastWanderPoint.valid && Commands->Get_Random(0.0f,1.0f) < Get_Float_Parameter("ChanceToInvestigateLastSeenLocation"))
+	{
+		state = WANDERING_GROUP;
+		Attack_Move(obj,NULL,goNearLastWanderPoint.location,wanderSpeed,1.0f,false,false);
+	}
+	else if (wanderingAiGroupId != -1 && GetRandomPosition(&wanderPos))
+	{
+		state = WANDERING_GROUP;
+		Attack_Move(obj,NULL,wanderPos,wanderSpeed,1.0f,false,false);
+	}
+	else if (Get_Int_Parameter("ReturnHome"))
+	{
+		state = RETURNING_HOME;
+		Attack_Move(obj,NULL,homeLocation,returnHomeSpeed,1.0f,false,false);
+	}
+	else
+	{
+		state = IDLE;
+		Attack_Move(obj,NULL,Commands->Get_Position(obj),1.0f,1.0f,false,false);
+	}
+}
+void JMG_Utility_AI_Goto_Target_Script::Stuck_Check(GameObject *obj,Vector3 targetPos)
+{
+	if (obj->As_VehicleGameObj())
+	{
+		Vector3 pos = Commands->Get_Position(obj);
+		if (JmgUtility::SimpleDistance(pos,lastPosition) < 1.0f)
+		{
+			if (targetId && JmgUtility::SimpleDistance(pos,targetPos) <= attackArriveDistance*attackArriveDistance)
+			{
+				stuckTime = 0;
+				return;
+			}
+			if (!reverseTime)
+			{
+				stuckTime++;
+				if (stuckTime > 30)
+				{
+					moveBackward = true;
+					Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+					reverseTime = Commands->Get_Random_Int(10,60);
+					stuckTime = 0;
+				}
+			}
+		}
+		else
+		{
+			stuckTime = 0;
+			lastPosition = pos;
+		}
+		if (reverseTime)
+		{
+			reverseTime--;
+			if (!reverseTime)
+			{
+				moveBackward = false;
+				Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+			}
+		}
+	}
+	else
+	{
+		Vector3 pos = Commands->Get_Position(obj);
+		if (JmgUtility::SimpleDistance(pos,lastPosition) < 1.0f)
+		{
+			if (targetId && JmgUtility::SimpleDistance(pos,targetPos) <= attackArriveDistance*attackArriveDistance)
+			{
+				stuckTime = 0;
+				return;
+			}
+			stuckTime++;
+			if (stuckTime > 30)
+				Attack_Move(obj,Commands->Find_Object(lastAction.targetId),lastAction.location,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+			if (stuckTime > 60)
+				Attack_Move(obj,NULL,homeLocation,lastAction.speed,lastAction.distance,lastAction.attack,lastAction.overrideLocation);
+		}
+		else
+		{
+			stuckTime = 0;
+			lastPosition = pos;
+		}
+	}
+}
+void JMG_Utility_AI_Goto_Target_Script::Cant_Get_To_target(GameObject *obj)
+{
+	Vector3 wanderPos = Vector3();
+	GameObject *star = findClosestStar(obj);
+	if (star && Commands->Get_ID(star) != ignoreEnemyId)
+	{
+		state = HUNTING_STAR;
+		Attack_Move(obj,Commands->Find_Object(lastAction.targetId),Commands->Get_Position(star),huntSpeed,huntArriveDistance,true,true);
+	}
+	else if (wanderingAiGroupId != -1 && GetRandomPosition(&wanderPos))
+	{
+		state = WANDERING_GROUP;
+		Attack_Move(obj,NULL,wanderPos,wanderSpeed,1.0f,true,true);
+	}
+	else
+	{
+		state = RETURNING_HOME;
+		Attack_Move(obj,NULL,homeLocation,returnHomeSpeed,1.0f,true,true);
+	}
+}
+bool JMG_Utility_AI_Goto_Target_Script::Choose_Target(GameObject *obj,GameObject *target)
+{
+	Vector3 pos = Commands->Get_Position(obj);
+	GameObject *currentTarget = Commands->Find_Object(targetId);
+	if (!currentTarget)
+		return true;
+	if (JmgUtility::SimpleDistance(pos,Commands->Get_Position(target)) < JmgUtility::SimpleDistance(pos,Commands->Get_Position(currentTarget)))
+		return true;
+	return false;
+}
+JMG_Utility_AI_Goto_Target_Script::ValidLastLocation::ValidLastLocation(int enemyId)
+{
+	GameObject *target = Commands->Find_Object(enemyId);
+	if (!target || !Commands->Get_Health(target))
+	{
+		this->valid = false;
+		return;
+	}
+	this->location = Commands->Get_Position(target);
+	this->valid = true;
+}
+void JMG_Utility_AI_Goto_Target_Script_Ignore_Object::Created(GameObject *obj)
+{
+}
+void JMG_Utility_AI_Goto_Target_Script_Target::Created(GameObject *obj)
+{
+}
+void JMG_Utility_Custom_Send_Custom_If_Script_Count::Created(GameObject *obj)
+{
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+	randomDelay = Get_Float_Parameter("RandomDelay");
+	randomChance = Get_Float_Parameter("RandomChance");
+	sprintf(script,"%s",Get_Parameter("Script"));
+	maxCount = Get_Int_Parameter("MaxCount");
+	playerAddMaxCount = Get_Float_Parameter("PlayerAddMaxCount");
+}
+void JMG_Utility_Custom_Send_Custom_If_Script_Count::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage)
+	{
+		int count = 0;
+		for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+		{
+			SmartGameObj *o = current->Data();
+			if (!o || !o->As_ScriptableGameObj() || !Is_Script_Attached(o,script))
+				continue;
+			count++;
+		}
+		if (count >= maxCount+((int)playerAddMaxCount*Get_Player_Count()))
+			return;
+		if (randomChance && randomChance < Commands->Get_Random(0.0f,1.0f))
+			return;
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,custom,Param == -1 ? param : Param,delay+(randomDelay > 0 ? Commands->Get_Random(0.0f,randomDelay) : 0.0f));
+	}
+}
+void JMG_Utility_Created_Trigger_Create_Vehicle::Created(GameObject *obj)
+{
+	int ownerId = Get_Int_Parameter("OwnerID");
+	GameObject *owner = ownerId ? (ownerId == -1 ? obj : Commands->Find_Object(ownerId)) : NULL;
+	Create_Vehicle(Get_Parameter("PresetName"),Get_Float_Parameter("Delay"),owner,Get_Int_Parameter("TeamID"));
+}
+void JMG_Utility_Custom_Remove_And_Attach_Script::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	const char *parameters = Get_Parameter("Params");
+	params = newstr(parameters);
+	char delim = Get_Parameter("Delim")[0];
+	unsigned int length = strlen(parameters);
+	for (unsigned int x = 0;x < length;x++)
+		if (params[x] == delim)
+			params[x] = ',';
+	attachScript = newstr(Get_Parameter("AttachScript"));
+	removeScript = newstr(Get_Parameter("RemoveScript"));
+	repeat = Get_Int_Parameter("Repeat") ? true : false;
+	requiresRemoveScript = Get_Int_Parameter("RequiresRemoveScript") ? true : false;
+}
+void JMG_Utility_Custom_Remove_And_Attach_Script::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		if (requiresRemoveScript && !Is_Script_Attached(obj,removeScript))
+			return;
+		Remove_Script(obj,removeScript);
+		Commands->Attach_Script(obj,attachScript,params);
+		if (!repeat)
+		{
+			Destroy_Script();
+			return;
+		}
+	}
+}
+void JMG_Utility_AI_Guardian_Aircraft_Ignored::Created(GameObject *obj)
+{
+}
+void JMG_Utility_AI_Guardian_Infantry_Ignored::Created(GameObject *obj)
+{
+}
+void JMG_Utility_AI_Guardian_Vehicle_Ignored::Created(GameObject *obj)
+{
+}
+void JMG_Utility_AI_Guardian_Generic_Ignored::Created(GameObject *obj)
+{
+}
+void JMG_Utility_Objective_System_Objective_Marker::Created(GameObject *obj)
+{
+	objectiveId = Get_Int_Parameter("ObjectiveID");
+}
+GameObject *NewObjectiveSystem::GetObjectiveMarker(int objectiveMarkerId,GameObject *sender,int objectiveId)
+{
+	if (objectiveMarkerId == -2)
+	{
+		for (SLNode<BaseGameObj> *current = GameObjManager::GameObjList.Head();current;current = current->Next())
+		{
+			GameObject* o = current->Data()->As_ScriptableGameObj();
+			if (!o || !o->As_ScriptableGameObj())
+				continue;
+			JMG_Utility_Objective_System_Objective_Marker *script = (JMG_Utility_Objective_System_Objective_Marker*)Find_Script_On_Object(o,"JMG_Utility_Objective_System_Objective_Marker");
+			if (!script)
+				continue;
+			if (script->objectiveId != objectiveId)
+				continue;
+			return o;		
+		}
+	}
+	return objectiveMarkerId == -1 ? sender : Commands->Find_Object(objectiveMarkerId);
+}
+void JMG_Utility_Remove_Script_If_Doesnt_Have_Weapon::Created(GameObject *obj)
+{
+	sprintf(weaponName,"%s",Get_Parameter("WeaponName"));
+	rate = Get_Float_Parameter("Rate");
+	sprintf(script,"%s",Get_Parameter("Script"));
+	const char *parameters = Get_Parameter("Params");
+	params = newstr(parameters);
+	char delim = Get_Parameter("Delim")[0];
+	unsigned int length = strlen(parameters);
+	for (unsigned int x = 0;x < length;x++)
+		if (params[x] == delim)
+			params[x] = ',';
+	Commands->Start_Timer(obj,this,rate,1);
+}
+void JMG_Utility_Remove_Script_If_Doesnt_Have_Weapon::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		if (Has_Weapon(obj,weaponName))
+			Attach_Script_Once(obj,script,params);
+		else if (!Is_Script_Attached(obj,script))
+			Remove_Script(obj,script);
+		Commands->Start_Timer(obj,this,rate,1);
+	}
+}
+void JMG_Utility_Spawn_With_Last_Selected_Gun_Ignore::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,0.25f,1);
+}
+void JMG_Utility_Spawn_With_Last_Selected_Gun_Ignore::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		JMG_Utility_Spawn_With_Last_Selected_Gun_Control::ignoredWeapons.Add_Tail(new JMG_Utility_Spawn_With_Last_Selected_Gun_Control::StringNode(Get_Parameter("WeaponPreset")));
+	}
+}
+void JMG_Utility_Objective_System_Override_Visible_Settings::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,0.25f,1);
+}
+void JMG_Utility_Objective_System_Override_Visible_Settings::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		NewObjectiveSystem::ObjectiveVisibleSettingOverride *overrideObject = new NewObjectiveSystem::ObjectiveVisibleSettingOverride(Get_Int_Parameter("ObjectiveID"),Get_Parameter("MarkerModel"),Get_Int_Parameter("MarkerColor"),Get_Parameter("AttachBone"),Get_Int_Parameter("OverrideTextColor") ? true : false,Get_Vector3_Parameter("TextColor"),Get_Int_Parameter("OverrideHudColor") ? true : false,Get_Vector3_Parameter("HudColor"));
+		BasicObjectiveSystem.overrideVisibleObjectiveSettings.Add_Tail(overrideObject);
+	}
+}
+void JMG_Utility_Custom_Create_Object_At_Bone::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	repeat = Get_Int_Parameter("Repeat") ? true : false;
+}
+void JMG_Utility_Custom_Create_Object_At_Bone::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		GameObject *object = Commands->Create_Object(Get_Parameter("Preset"),Commands->Get_Position(obj));
+		Commands->Attach_To_Object_Bone(object,obj,Get_Parameter("Bone"));
+		Vector3 targetPos = Commands->Get_Position(object);
+		MoveablePhysClass *mphys = object->As_PhysicalGameObj() ? object->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
+		Commands->Attach_To_Object_Bone(object,NULL,"");
+		if (mphys && mphys->Find_Teleport_Location(targetPos,Get_Float_Parameter("MaxDistance"),&targetPos))
+		{
+			Commands->Set_Position(object,targetPos);
+			Force_Position_Update(object);
+		}
+		if (!repeat)
+			Destroy_Script();
+	}
+}
+void JMG_Utility_Killed_Send_Custom_When_Killed_By_Nothing::Killed(GameObject *obj,GameObject *killer)
+{
+	if (killer != NULL)
+		return;
+	int id = Get_Int_Parameter("ID");
+	GameObject *object = id ? Commands->Find_Object(id) : obj;
+	Commands->Send_Custom_Event(obj,object,Get_Int_Parameter("Custom"),Get_Int_Parameter("Param"),Get_Float_Parameter("Delay"));
+	Destroy_Script();
+}
+void JMG_Utility_Custom_Drop_Corpse::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	repeat = Get_Int_Parameter("Repeat") ? true : false;
+	sprintf(powerupName,"%s",Get_Parameter("PowerupName"));
+}
+void JMG_Utility_Custom_Drop_Corpse::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		Commands->Start_Timer(obj,this,0.0f,1);
+	}
+}
+void JMG_Utility_Custom_Drop_Corpse::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		Vector3 pos = Commands->Get_Position(obj);
+		GameObject *powerup = Commands->Create_Object(powerupName,pos);
+		Commands->Set_Facing(powerup,Commands->Get_Facing(obj));
+		Commands->Set_Model(powerup,Get_Model(obj));
+		if (!obj->As_SmartGameObj())
+			return;
+		AnimControlClass *control = obj->As_SmartGameObj()->Get_Anim_Control();
+		if (!control || control->Get_Animation_Name() == NULL || !_stricmp(control->Get_Animation_Name(),""))
+			return;
+		Commands->Set_Animation(powerup,control->Get_Animation_Name(),false,0,control->Get_Current_Frame(),-1,true);
+		Commands->Destroy_Object(obj);
+		if (!repeat)
+			Destroy_Script();
+	}
+}
+void JMG_Utility_Custom_Send_Shuffled_Customs::Created(GameObject *obj)
+{
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+	char sendCustomsStr[256];
+	sprintf(sendCustomsStr,"%s",Get_Parameter("SendCustoms"));
+	char delim[2];
+	sprintf(delim,"%s",Get_Parameter("Delim"));
+	char *token = strtok(sendCustomsStr, delim);
+	while(token != NULL)
+	{
+		customs.Add_Tail(new int(atoi(token)));
+		token = strtok(NULL,delim);
+	}
+}
+void JMG_Utility_Custom_Send_Shuffled_Customs::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage)
+	{
+		if (customs.Get_Count() <= 0)
+		{
+			Console_Input("msg JMG_Utility_Custom_Send_Shuffled_Customs ERROR: All customs have already been sent!");
+			Destroy_Script();
+			return;
+		}
+		int random = customs.Get_Count() > 0 ? Commands->Get_Random_Int(0,customs.Get_Count()) : customs.Get_Count();
+		int randomCustom = -1;
+		for (SLNode<int> *current = customs.Head();current;current = current->Next())
+		{
+			if (!random)
+			{
+				randomCustom = *current->Data();
+				customs.Remove(current->Data());
+				break;
+			}
+			random--;
+		}
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,randomCustom,Param == -1 ? param : Param,delay);
+	}
+}
+void JMG_Utility_Custom_Send_Shuffled_Customs_And_Ids::Created(GameObject *obj)
+{
+	recieveMessage = Get_Int_Parameter("Custom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+	char sendCustomsStr[256];
+	sprintf(sendCustomsStr,"%s",Get_Parameter("SendCustoms"));
+	char delim[2];
+	sprintf(delim,"%s",Get_Parameter("Delim"));
+	char *token = strtok(sendCustomsStr, delim);
+	while(token != NULL)
+	{
+		customs.Add_Tail(new int(atoi(token)));
+		token = strtok(NULL,delim);
+	}
+	char sendIdsStr[256];
+	sprintf(sendIdsStr,"%s",Get_Parameter("IDs"));
+	token = strtok(sendIdsStr, delim);
+	while(token != NULL)
+	{
+		ids.Add_Tail(new int(atoi(token)));
+		token = strtok(NULL,delim);
+	}
+	if (customs.Get_Count() != ids.Get_Count())
+	{
+		Console_Input("msg JMG_Utility_Custom_Send_Shuffled_Customs_And_Ids ERROR: IDs and Customs must have the same count!");
+		Destroy_Script();
+		return;
+	}
+}
+void JMG_Utility_Custom_Send_Shuffled_Customs_And_Ids::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage)
+	{
+		if (customs.Get_Count() <= 0)
+		{
+			Console_Input("msg JMG_Utility_Custom_Send_Shuffled_Customs_And_Ids ERROR: All customs/IDs have already been sent!");
+			Destroy_Script();
+			return;
+		}
+		int random = customs.Get_Count() > 0 ? Commands->Get_Random_Int(0,customs.Get_Count()) : customs.Get_Count();
+		int randomCustom = -1;
+		for (SLNode<int> *current = customs.Head();current;current = current->Next())
+		{
+			if (!random)
+			{
+				randomCustom = *current->Data();
+				customs.Remove(current->Data());
+				break;
+			}
+			random--;
+		}
+		random = ids.Get_Count() > 0 ? Commands->Get_Random_Int(0,ids.Get_Count()) : ids.Get_Count();
+		int randomId = -1;
+		for (SLNode<int> *current = ids.Head();current;current = current->Next())
+		{
+			if (!random)
+			{
+				randomId = *current->Data();
+				ids.Remove(current->Data());
+				break;
+			}
+			random--;
+		}
+ 		Commands->Send_Custom_Event(obj,Commands->Find_Object(randomId),randomCustom,Param == -1 ? param : Param,delay);
+	}
+}
+void JMG_Utility_Custom_Force_All_Players_Into_Vehicle::Created(GameObject *obj)
+{
+	if (!obj->As_VehicleGameObj())
+	{
+		Console_Input("msg JMG_Utility_Custom_Force_All_Players_Into_Vehicle ERROR: Only works when attached to vehicles!");
+		Destroy_Script();
+		return;
+	}
+	custom = Get_Int_Parameter("Custom");
+	forceOutOfOtherVehicles = Get_Int_Parameter("ForceOutOfOtherVehicles") ? true : false;
+}
+void JMG_Utility_Custom_Force_All_Players_Into_Vehicle::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		if (param != this->Get_ID())
+		{
+			for (int x = 1;x < 128;x++)
+			{
+				GameObject *player = Get_GameObj(x);
+				if (!player || !Commands->Get_Health(player))
+					continue;
+				SuccessState successState = ForceIntoVehicle(obj,player);
+				if (successState == SuccessState::VEHICLE_FULL || successState == SuccessState::FAILED)
+					return;
+			}
+		}
+		else
+		{
+			ForceIntoVehicle(obj,sender);
+		}
+	}
+}
+JMG_Utility_Custom_Force_All_Players_Into_Vehicle::SuccessState JMG_Utility_Custom_Force_All_Players_Into_Vehicle::ForceIntoVehicle(GameObject *obj,GameObject *player)
+{
+	if (obj == Get_Vehicle(player))
+		return SuccessState::ALREADY_IN;
+	if (Get_Vehicle_Seat_Count(obj) <= Get_Vehicle_Occupant_Count(obj))
+		return SuccessState::VEHICLE_FULL;
+	if (Get_Vehicle(player))
+	{
+		if (!forceOutOfOtherVehicles)
+			return SuccessState::STUCK_IN_ANOTHER_VEHICLE;
+		Soldier_Transition_Vehicle(player);
+		Commands->Send_Custom_Event(player,obj,custom,this->Get_ID(),0.1f);
+		return SuccessState::RETRY;
+	}
+	Force_Vehicle_Entry(player,obj);
+	if (obj == Get_Vehicle(player))
+		return SuccessState::SUCCESS;
+	return SuccessState::FAILED;
+}
+void JMG_Utility_Custom_Force_Occupants_Out_And_Lock::Created(GameObject *obj)
+{
+	if (!obj->As_VehicleGameObj())
+	{
+		Console_Input("msg JMG_Utility_Custom_Force_Occupants_Out_And_Lock ERROR: Only works when attached to vehicles!");
+		Destroy_Script();
+		return;
+	}
+	custom = Get_Int_Parameter("Custom");
+}
+void JMG_Utility_Custom_Force_Occupants_Out_And_Lock::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		Timer_Expired(obj,1);
+	}
+}
+void JMG_Utility_Custom_Force_Occupants_Out_And_Lock::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		Force_Occupants_Exit(obj);
+		if (!Get_Vehicle_Occupant_Count(obj))
+		{
+			Commands->Enable_Vehicle_Transitions(obj,false);
+			Destroy_Script();
+			return;
+		}
+		Commands->Start_Timer(obj,this,0.1f,1);
+	}
+}
+void JMG_Utility_Custom_Send_Custom_If_Occupant_LorE::Created(GameObject *obj)
+{
+	if (!obj->As_VehicleGameObj())
+	{
+		Console_Input("msg JMG_Utility_Custom_Send_Custom_If_Vehicle_Occupant_Count_Less_Than ERROR: Only works when attached to vehicles!");
+		Destroy_Script();
+		return;
+	}
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+	occupants = Get_Int_Parameter("OccupantCount");
+	repeat = Get_Int_Parameter("Repeat") ? true : false;
+}
+void JMG_Utility_Custom_Send_Custom_If_Occupant_LorE::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage)
+	{
+		if (Get_Vehicle_Occupant_Count(obj) > occupants)
+			return;
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,custom,Param == -1 ? param : Param,delay);
+		if (!repeat)
+			Destroy_Script();
+	}
+}
+void JMG_Utility_Custom_Send_Custom_If_Occupant_GorE::Created(GameObject *obj)
+{
+	if (!obj->As_VehicleGameObj())
+	{
+		Console_Input("msg JMG_Utility_Custom_Send_Custom_If_Occupant_GorE ERROR: Only works when attached to vehicles!");
+		Destroy_Script();
+		return;
+	}
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+	occupants = Get_Int_Parameter("OccupantCount");
+	repeat = Get_Int_Parameter("Repeat") ? true : false;
+}
+void JMG_Utility_Custom_Send_Custom_If_Occupant_GorE::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage)
+	{
+		if (Get_Vehicle_Occupant_Count(obj) < occupants)
+			return;
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,custom,Param == -1 ? param : Param,delay);
+		if (!repeat)
+			Destroy_Script();
+	}
+}
+SList<JMG_Utility_Basic_Spawner_Wander_Point::SpawnObjectNode> JMG_Utility_Basic_Spawner_Wander_Point::spawnObjectNodeList;
+void JMG_Utility_Basic_Spawner_Wander_Point::Created(GameObject *obj)
+{
+	attachScriptsGroupId = Get_Int_Parameter("Attach_Scripts_Group_ID");
+	spawnedObjectScriptID = Get_Int_Parameter("Spawned_Object_Script_ID");
+	if (spawnedObjectScriptID == -1)
+		spawnedObjectScriptID = this->Get_ID();
+	spawnedObjects = 0;
+	spawnAtATime = Get_Int_Parameter("Spawn_At_A_Time");
+	maxTotalSpawned = Get_Int_Parameter("Max_Total_Spawned");
+	rate = Get_Float_Parameter("Spawn_Rate");
+	randomRate = Get_Float_Parameter("Random_Spawn_Rate");
+	changeSpawnCapCustom = Get_Int_Parameter("Change_Spawn_Cap_Custom");
+	sprintf(preset,"%s",Get_Parameter("Spawn_Preset"));
+	spawnCount = 0;
+	initialSpawn = Get_Int_Parameter("Initial_Spawn");
+	if (initialSpawn == -1)
+		initialSpawn = spawnAtATime;
+	spawnGroupId = Get_Int_Parameter("Spawn_Group_ID");
+	enabled = Get_Int_Parameter("Starts_Disabled") == 0 ? true : false;
+	enableDisableCustom = Get_Int_Parameter("Enable_Disable_Custom");
+	playersAddToSpawnAtATime = Get_Float_Parameter("PlayersAddToSpawnAtATime");
+	wanderPointGroup = Get_Int_Parameter("WanderingPointGroupID");
+	safeTeleportDistance = Get_Float_Parameter("SafeTeleportDistance");
+	if (The_Game()->Get_Game_Duration_S() < 1.5f)
+		Commands->Start_Timer(obj,this,1.5f,2);
+	else
+		Timer_Expired(obj,2);
+	lastPlayerCount = 0;
+	Commands->Start_Timer(obj,this,2.5f,3);
+}
+void JMG_Utility_Basic_Spawner_Wander_Point::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 2 && !The_Game()->Is_Game_Over())
+	{
+		if (enabled)
+			Initial_Spawn(obj);
+		Commands->Start_Timer(obj,this,rate+(randomRate ? Commands->Get_Random(-randomRate,randomRate) : 0.0f),1);
+	}
+	if (number == 1 && !The_Game()->Is_Game_Over())
+	{
+		if (enabled)
+		{
+			JMG_Utility_Basic_Spawner_Wander_Point::SpawnFailureTypes spawnResult = AttemptSpawn(obj);
+			if (spawnResult == SpawnFailureTypes::SUCCESS)
+				Commands->Start_Timer(obj,this,rate+(randomRate ? Commands->Get_Random(-randomRate,randomRate) : 0.0f),1);
+			else if (spawnResult == SpawnFailureTypes::SPAWN_BLOCKED)
+				Commands->Start_Timer(obj,this,0.1f,1);
+		}
+		else
+			Commands->Start_Timer(obj,this,0.1f,1);
+	}
+	if (number == 3 && !The_Game()->Is_Game_Over())
+	{
+		int change = GetPlayerLimitModifier()-lastPlayerCount;
+		lastPlayerCount = change;
+		for (int x = 0;x < change;x++)
+			Commands->Send_Custom_Event(obj,obj,6873525,spawnedObjectScriptID,0.1f);
+		Commands->Start_Timer(obj,this,2.5f,3);
+	}
+}
+void JMG_Utility_Basic_Spawner_Wander_Point::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (changeSpawnCapCustom && message == changeSpawnCapCustom)
+	{
+		int change = param-spawnAtATime;
+		spawnAtATime = param;
+		for (int x = 0;x < change;x++)
+			Commands->Send_Custom_Event(obj,obj,6873525,spawnedObjectScriptID,0.1f);
+	}
+	if (message == 6873523 && param == spawnedObjectScriptID)
+	{
+		spawnedObjects++;
+	}
+	if (message == 6873524 && param == spawnedObjectScriptID)
+	{
+		if (spawnedObjects > 0)
+			spawnedObjects--;
+		Commands->Send_Custom_Event(obj,obj,6873525,spawnedObjectScriptID,rate+(randomRate ? Commands->Get_Random(-randomRate,randomRate) : 0.0f));
+	}
+	if (message == 6873525 && param == spawnedObjectScriptID && !The_Game()->Is_Game_Over())
+	{
+		if (!enabled)
+			return;
+		if (AttemptSpawn(obj) == SpawnFailureTypes::SPAWN_BLOCKED)
+			Commands->Send_Custom_Event(obj,obj,6873525,spawnedObjectScriptID,0.1f);
+	}
+	if (enableDisableCustom && message == enableDisableCustom && !The_Game()->Is_Game_Over())
+	{
+		enabled = param != 0 ? true : false;
+		if (param == 1)
+			Initial_Spawn(obj);
+	}
+}
+JMG_Utility_Basic_Spawner_Wander_Point::SpawnFailureTypes JMG_Utility_Basic_Spawner_Wander_Point::AttemptSpawn(GameObject *obj)
+{
+	if (!(spawnedObjects < spawnAtATime+GetPlayerLimitModifier()))
+		return SpawnFailureTypes::LIMIT_REACHED;
+	if (!((maxTotalSpawned >= 0 && spawnCount < maxTotalSpawned) || maxTotalSpawned < 0))
+		return SpawnFailureTypes::LIMIT_REACHED;
+
+	GameObject *spawned = Commands->Create_Object(preset,Commands->Get_Position(obj));
+	if (Grab_Teleport_Spot(spawned,5))
+	{
+		char params[512];
+		sprintf(params,"%d,%d,%d",Commands->Get_ID(obj),spawnedObjectScriptID,spawnGroupId);
+		Commands->Attach_Script(spawned,"JMG_Utility_Basic_Spawner_In_Radius_Attached",params);
+		Commands->Send_Custom_Event(spawned,obj,6873522,attachScriptsGroupId,0.0f);
+		return SpawnFailureTypes::SUCCESS;
+	}
+	Commands->Destroy_Object(spawned);
+	return SpawnFailureTypes::SPAWN_BLOCKED;
+}
+void JMG_Utility_Basic_Spawner_Wander_Point::Initial_Spawn(GameObject *obj)
+{
+	int addSpawn = GetPlayerLimitModifier();
+	lastPlayerCount = addSpawn;
+	for (int x = spawnedObjects;x < initialSpawn+addSpawn;x++)
+	{
+		JMG_Utility_Basic_Spawner_Wander_Point::SpawnFailureTypes spawnResult;
+		for (int y = 0;y < 5;y++)
+		{
+			 spawnResult = AttemptSpawn(obj);
+			if (spawnResult == SpawnFailureTypes::SUCCESS)
+				break;
+			if (spawnResult == SpawnFailureTypes::LIMIT_REACHED)
+				x = initialSpawn+1+addSpawn;
+		}
+		if (spawnResult == SpawnFailureTypes::SPAWN_BLOCKED)
+			Commands->Send_Custom_Event(obj,obj,6873525,spawnedObjectScriptID,0.1f);
+		if (initialSpawn < spawnAtATime)
+		{
+			Stop_Timer(obj,1);
+			Commands->Start_Timer(obj,this,0.1f,1);
+		}
+	}
+}
+int JMG_Utility_Basic_Spawner_Wander_Point::GetPlayerLimitModifier()
+{
+	return (int)playersAddToSpawnAtATime*Get_Player_Count();
+}
+bool JMG_Utility_Basic_Spawner_Wander_Point::Grab_Teleport_Spot(GameObject *spawnedObject,int attempts)
+{
+	if (!attempts)
+		return false;
+	attempts--;
+	Vector3 targetPos;
+	float facing;
+	if (!Get_A_Defense_Point(&targetPos,&facing))
+	{
+		char errormsg[220];
+		sprintf(errormsg,"msg JMG_Utility_Basic_Spawner_Wander_Point ERROR: No wander points found for group %d!",wanderPointGroup);
+		Console_Input(errormsg);
+		return false;
+	}
+	MoveablePhysClass *mphys = spawnedObject->As_PhysicalGameObj() ? spawnedObject->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
+	if (mphys && mphys->Find_Teleport_Location(targetPos,safeTeleportDistance,&targetPos))
+	{
+		spawnCount++;
+		Toggle_Fly_Mode(spawnedObject);
+		Commands->Set_Position(spawnedObject,targetPos);
+		Force_Position_Update(spawnedObject);
+		Toggle_Fly_Mode(spawnedObject);
+		char params[220];
+		sprintf(params,"0.1,%.2f",facing);
+		Commands->Attach_Script(spawnedObject,"JMG_Utility_Delay_Then_Rotate_Camera",params);
+		return true;
+	}
+	else
+	{
+		Commands->Set_Position(spawnedObject,targetPos);
+		return Grab_Teleport_Spot(spawnedObject,attempts);
+	}
+}
+int JMG_Utility_Global_CSC_With_Global_Param_Controller::globalParam = -1;
+void JMG_Utility_Global_CSC_With_Global_Param_Controller::Created(GameObject *obj)
+{
+	globalParam = Get_Int_Parameter("GlobalParam");
+}
+void JMG_Utility_Global_CSC_With_Global_Param_Update_Custom::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	globalParam = Get_Int_Parameter("GlobalParam");
+}
+void JMG_Utility_Global_CSC_With_Global_Param_Update_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		JMG_Utility_Global_CSC_With_Global_Param_Controller::globalParam = globalParam;
+	}
+}
+void JMG_Utility_Global_CSC_With_Global_Param::Created(GameObject *obj)
+{
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	delay = Get_Float_Parameter("Delay");
+	randomDelay = Get_Float_Parameter("RandomDelay");
+	randomChance = Get_Float_Parameter("RandomChance");
+}
+void JMG_Utility_Global_CSC_With_Global_Param::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage)
+	{
+		if (randomChance && randomChance < Commands->Get_Random(0.0f,1.0f))
+			return;
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+		Commands->Send_Custom_Event(obj,object,custom,JMG_Utility_Global_CSC_With_Global_Param_Controller::globalParam,delay+(randomDelay > 0 ? Commands->Get_Random(0.0f,randomDelay) : 0.0f));
+	}
+}
+float JMG_Utility_Global_Armor_Scaled_Controller::scale = 100.0f;
+void JMG_Utility_Global_Armor_Scaled_Controller::Created(GameObject *obj)
+{
+	scale = Get_Float_Parameter("Scale")*0.01f;
+}
+void JMG_Utility_Global_Armor_Scaled_Custom::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	scale = Get_Float_Parameter("Scale");
+	if (scale > 0)
+		scale *= 0.01f;
+}
+void JMG_Utility_Global_Armor_Scaled_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		JMG_Utility_Global_Armor_Scaled_Controller::scale = scale == -1.0f ? param*0.01f : scale;
+	}
+}
+void JMG_Utility_Global_Armor_Scaled_Object::Created(GameObject *obj)
+{
+	Set_Max_Shield_Strength(obj,JMG_Utility_Global_Armor_Scaled_Controller::scale*Commands->Get_Max_Shield_Strength(obj));
+	Commands->Set_Shield_Strength(obj,JMG_Utility_Global_Armor_Scaled_Controller::scale*Commands->Get_Shield_Strength(obj));
+}
+float JMG_Utility_Global_Health_Scaled_Controller::scale = 100.0f;
+void JMG_Utility_Global_Health_Scaled_Controller::Created(GameObject *obj)
+{
+	scale = Get_Float_Parameter("Scale")*0.01f;
+}
+void JMG_Utility_Global_Health_Scaled_Custom::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	scale = Get_Float_Parameter("Scale");
+	if (scale > 0)
+		scale *= 0.01f;
+}
+void JMG_Utility_Global_Health_Scaled_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		JMG_Utility_Global_Health_Scaled_Controller::scale = scale == -1.0f ? param*0.01f : scale;
+	}
+}
+void JMG_Utility_Global_Health_Scaled_Object::Created(GameObject *obj)
+{
+	Set_Max_Health(obj,JMG_Utility_Global_Health_Scaled_Controller::scale*Commands->Get_Max_Health(obj));
+	Commands->Set_Health(obj,JMG_Utility_Global_Health_Scaled_Controller::scale*Commands->Get_Health(obj));
+}
+float JMG_Utility_Global_Infantry_Speed_Controller::speed = 6.0f;
+void JMG_Utility_Global_Infantry_Speed_Controller::Created(GameObject *obj)
+{
+	speed = Get_Float_Parameter("Speed");
+}
+void JMG_Utility_Global_Infantry_Speed_Custom::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	speed = Get_Float_Parameter("Scale");
+}
+void JMG_Utility_Global_Infantry_Speed_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		JMG_Utility_Global_Infantry_Speed_Controller::speed = speed == -1.0f ? param*0.01f : speed;
+	}
+}
+void JMG_Utility_Global_Infantry_Speed_Object::Created(GameObject *obj)
+{
+	if (!obj->As_SoldierGameObj())
+	{
+		Console_Input("msg JMG_Utility_Global_Infantry_Speed_Object ERROR: This script can only be attached to infantry");
+		Destroy_Script();
+		return;
+	}
+	obj->As_SoldierGameObj()->Set_Max_Speed(JMG_Utility_Global_Infantry_Speed_Controller::speed);
+}
+void JMG_Utility_AI_Control_Point_Ignore_Object::Created(GameObject *obj)
+{
+}
+void JMG_Utility_Custom_Send_Custom_No_Presets_Outside_Of_Vehicle::Created(GameObject *obj)
+{
+	if (!obj->As_VehicleGameObj())
+	{
+		Console_Input("msg JMG_Utility_Custom_Send_Custom_No_Presets_Outside_Of_Vehicle ERROR: Only works when attached to vehicles!");
+		Destroy_Script();
+		return;
+	}
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+	occupants = Get_Int_Parameter("OccupantCount");
+	sprintf(preset,"%s",Get_Parameter("Preset"));
+	repeat = Get_Int_Parameter("Repeat") ? true : false;
+}
+void JMG_Utility_Custom_Send_Custom_No_Presets_Outside_Of_Vehicle::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage)
+	{
+		for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+		{
+			SmartGameObj* o = current->Data();
+			if (o != obj && !_stricmp(Commands->Get_Preset_Name(o),preset) && Get_Vehicle(o) != obj)
+				return;
+		}
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,custom,Param == -1 ? param : Param,delay);
+		if (!repeat)
+			Destroy_Script();
+	}
+}
+void JMG_Utility_Custom_Send_Custom_No_Presets_Inside_Of_Vehicle::Created(GameObject *obj)
+{
+	if (!obj->As_VehicleGameObj())
+	{
+		Console_Input("msg JMG_Utility_Custom_Send_Custom_No_Presets_Inside_Of_Vehicle ERROR: Only works when attached to vehicles!");
+		Destroy_Script();
+		return;
+	}
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+	occupants = Get_Int_Parameter("OccupantCount");
+	sprintf(preset,"%s",Get_Parameter("Preset"));
+	repeat = Get_Int_Parameter("Repeat") ? true : false;
+}
+void JMG_Utility_Custom_Send_Custom_No_Presets_Inside_Of_Vehicle::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage)
+	{
+		for (int x = 0;x < Get_Vehicle_Seat_Count(obj);x++)
+		{
+			GameObject *occupant = Get_Vehicle_Occupant(obj,x);
+			if (occupant && !_stricmp(Commands->Get_Preset_Name(occupant),preset))
+				return;
+		}
+		GameObject *object = id ? (id == -1 ? sender : Commands->Find_Object(id)) : obj;
+ 		Commands->Send_Custom_Event(obj,object,custom,Param == -1 ? param : Param,delay);
+		if (!repeat)
+			Destroy_Script();
+	}
+}
+void JMG_Utility_Custom_Send_Custom_From_All_Players::Created(GameObject *obj)
+{
+	recieveMessage = Get_Int_Parameter("Custom");
+	id = Get_Int_Parameter("ID");
+	custom = Get_Int_Parameter("SendCustom");
+	Param = Get_Int_Parameter("Param");
+	delay = Get_Float_Parameter("Delay");
+}
+void JMG_Utility_Custom_Send_Custom_From_All_Players::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == recieveMessage)
+	{
+		for (int x = 1;x < 128;x++)
+		{
+			GameObject *player = Get_GameObj(x);
+			if (!player)
+				continue;
+			GameObject *object = id ? (id == -2 ? player : (id == -1 ? sender : Commands->Find_Object(id))) : obj;
+ 			Commands->Send_Custom_Event(player,object,custom,Param == -1 ? param : Param,delay);
+		}
+	}
+}
+void JMG_Utility_Killed_By_Player_Send_Custom_From_Player::Killed(GameObject *obj,GameObject *killer)
+{
+	if (!Commands->Is_A_Star(killer))
+		return;
+	int id = Get_Int_Parameter("ID");
+	GameObject *object = id ? (id == -1 ? killer : Commands->Find_Object(id)) : obj;
+	Commands->Send_Custom_Event(killer,object,Get_Int_Parameter("Custom"),Get_Int_Parameter("Param"),Get_Float_Parameter("Delay"));
+	Destroy_Script();
+}
+float JMG_Utility_Sync_Fog_Controller::min = 0.0f;
+float JMG_Utility_Sync_Fog_Controller::max = 300.0f;
+void JMG_Utility_Sync_Fog_Controller::Created(GameObject *obj)
+{
+	min = Get_Float_Parameter("MinRange");
+	max = Get_Float_Parameter("MaxRange");
+	for (int x = 1;x < 128;x++)
+		fogSynced[x] = false;
+	Commands->Start_Timer(obj,this,0.25,23453451);
+}
+void JMG_Utility_Sync_Fog_Controller::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 23453451) 
+	{
+		for (int x = 1;x < 128;x++)
+		{
+			GameObject *player = Get_GameObj(x);
+			if (player && !fogSynced[x])
+			{
+				fogSynced[x] = true;
+				Set_Fog_Enable_Player(player,true);
+				Set_Fog_Range_Player(player,min,max,0);
+			}
+			if (!player && fogSynced[x])
+				fogSynced[x] = false;
+		}
+		Commands->Start_Timer(obj,this,0.25,23453451);
+	}
+}
+void JMG_Utility_Sync_Fog_Custom_Update::Created(GameObject *obj)
+{
+	custom = Get_Int_Parameter("Custom");
+	min = Get_Float_Parameter("MinRange");
+	max = Get_Float_Parameter("MaxRange");
+	transition = Get_Float_Parameter("Transition");
+}
+void JMG_Utility_Sync_Fog_Custom_Update::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (message == custom)
+	{
+		Commands->Set_Fog_Range(min,max,transition);
+		JMG_Utility_Sync_Fog_Controller::min = min;
+		JMG_Utility_Sync_Fog_Controller::max = max;
+	}
+}
+void JMG_Utility_Sync_Animation_On_Join::Created(GameObject *obj)
+{
+	for (int x = 1;x < 128;x++)
+		synced[x] = false;
+	Commands->Start_Timer(obj,this,0.25,23453451);
+}
+void JMG_Utility_Sync_Animation_On_Join::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 23453451) 
+	{
+		for (int x = 1;x < 128;x++)
+		{
+			GameObject *player = Get_GameObj(x);
+			if (player && !synced[x])
+			{
+				synced[x] = true;
+				const char *anim = Get_Animation_Name(obj);
+				if (anim != NULL)
+					Set_Subobject_Animation_Player(player,obj,anim,false,NULL,Get_Animation_Frame(obj),Get_Animation_Target_Frame(obj),true);
+			}
+			if (!player && synced[x])
+				synced[x] = false;
+		}
+		Commands->Start_Timer(obj,this,0.25,23453451);
+	}
+}
 ScriptRegistrant<JMG_Utility_Check_If_Script_Is_In_Library> JMG_Utility_Check_If_Script_Is_In_Library_Registrant("JMG_Utility_Check_If_Script_Is_In_Library","ScriptName:string,CppName:string");
 ScriptRegistrant<JMG_Send_Custom_When_Custom_Sequence_Matched> JMG_Send_Custom_When_Custom_Sequence_Matched_Registrant("JMG_Send_Custom_When_Custom_Sequence_Matched","Success_Custom=0:int,Correct_Step_Custom=0:int,Partial_Failure_Custom=0:int,Failure_Custom=0:int,Send_To_ID=0:int,Custom_0=0:int,Custom_1=0:int,Custom_2=0:int,Custom_3=0:int,Custom_4=0:int,Custom_5=0:int,Custom_6=0:int,Custom_7=0:int,Custom_8=0:int,Custom_9=0:int,Disable_On_Success=1:int,Disable_On_Failure=0:int,Starts_Enabled=1:int,Enable_Custom=0:int,Correct_Step_Saftey=0:int,Failure_Saftey=1:int,Max_Failures=1:int");
 ScriptRegistrant<JMG_Utility_Change_Model_On_Timer> JMG_Utility_Change_Model_On_Timer_Registrant("JMG_Utility_Change_Model_On_Timer","Model=null:string,Time=0:float");
@@ -12223,7 +18242,7 @@ ScriptRegistrant<JMG_Utility_Objective_System_Objective_Update_Custom> JMG_Utili
 ScriptRegistrant<JMG_Utility_Destroyed_Apply_Damage> JMG_Utility_Destroyed_Apply_Damage_Registrant("JMG_Utility_Destroyed_Apply_Damage","ID:int,Damage:float,Warhead:string");
 ScriptRegistrant<JMG_Utility_Scale_Damage_By_Player_Count> JMG_Utility_Scale_Damage_By_Player_Count_Registrant("JMG_Utility_Scale_Damage_By_Player_Count","MaxPlayersToScaleFor=50:int,MaxScaleFactor=0.95:float");
 ScriptRegistrant<JMG_Utility_Scale_Damage_Square_By_Player_Count> JMG_Utility_Scale_Damage_Square_By_Player_Count_Registrant("JMG_Utility_Scale_Damage_Square_By_Player_Count","MaxPlayersToScaleFor=50:int,MaxScaleFactor=0.95:float");
-ScriptRegistrant<JMG_Utility_Regen_HitPoints> JMG_Utility_Regen_HitPoints_Registrant("JMG_Utility_Regen_HitPoints","RegenHealth=1:int,HealthAmount=1.0:float,HealthPerPlayer=0.0:float,RegenArmor=1:int,ArmorAmount=1.0:float,ArmorPerPlayer=0.0:float,Rate=1.0:float,DamageDelay=0.0:float");
+ScriptRegistrant<JMG_Utility_Regen_HitPoints> JMG_Utility_Regen_HitPoints_Registrant("JMG_Utility_Regen_HitPoints","RegenHealth=1:int,HealthAmount=1.0:float,HealthPerPlayer=0.0:float,RegenArmor=1:int,ArmorAmount=1.0:float,ArmorPerPlayer=0.0:float,Rate=1.0:float,DamageDelay=0.0:float,ScaleHealthPerHeal=0.0:float,ScaleArmorPerHeal=0.0:float");
 ScriptRegistrant<JMG_Utility_Toggle_Flight_On_Delay> JMG_Utility_Toggle_Flight_On_Delay_Registrant("JMG_Utility_Toggle_Flight_On_Delay","Delay:float");
 ScriptRegistrant<JMG_Utility_Fainting_Soldier> JMG_Utility_Fainting_Soldier_Registrant("JMG_Utility_Fainting_Soldier","FaintAnimation:string,LayAnimation:string,StandAnimation:string,FaintSound=null:string,StandSound=null:string,ChangeArmorTypeWhenKnockedOut=0:int,ArmorTypeWhileKnockedOut=Blamo:string,TeamWhileKnockedOut=-2:int");
 ScriptRegistrant<JMG_Utility_AI_Guardian_Infantry> JMG_Utility_AI_Guardian_Infantry_Registrant("JMG_Utility_AI_Guardian_Infantry","WanderingAIGroupID:int,WanderSpeed=1.0:float,FireRange=-1.0:float,FaceTarget=1:int,CheckBlocked=1:int,StealthModeOverride=0:int");
@@ -12261,7 +18280,7 @@ ScriptRegistrant<JMG_Utility_Zone_Send_Custom_No_Weapon> JMG_Utility_Zone_Send_C
 ScriptRegistrant<JMG_Utility_Custom_Display_Briefing_Message> JMG_Utility_Custom_Display_Briefing_Message_Registrant("JMG_Utility_Custom_Display_Briefing_Message","Custom=0:int,FileName=null:string,TextTag=[]:string,MessageColor=239.0 228.0 176.0:Vector3,LineDelayTime=10.0:float,UISound=null:string");
 ScriptRegistrant<JMG_Utility_Zone_Set_Player_Team> JMG_Utility_Zone_Set_Player_Team_Registrant("JMG_Utility_Zone_Set_Player_Team","SetPlayerTeam=0:int,RequiredPlayerTeam=2:int");
 ScriptRegistrant<JMG_Utility_Objective_System_Objective_Update_Create> JMG_Utility_Objective_System_Objective_Update_Create_Registrant("JMG_Utility_Objective_System_Objective_Update_Create","NewObjectiveID:int,NewObjectiveStringID:int,ObjectiveMarkerObjectID:int,CompleteObjectiveID:int,Delay:float,NewObjectivePriority=1:int");
-ScriptRegistrant<JMG_Utility_Objective_System_Objective_Remove_Custom> JMG_Utility_Objective_System_Objective_Remove_Custom_Registrant("JMG_Utility_Objective_System_Objective_Remove_Custom","Custom:int,ObjectiveID:int");
+ScriptRegistrant<JMG_Utility_Objective_System_Objective_Remove_Custom> JMG_Utility_Objective_System_Objective_Remove_Custom_Registrant("JMG_Utility_Objective_System_Objective_Remove_Custom","Custom:int,ObjectiveID:int,OnlyRemovePending=0:int");
 ScriptRegistrant<JMG_Utility_Delay_Then_Rotate_Camera> JMG_Utility_Delay_Then_Rotate_Camera_Registrant("JMG_Utility_Delay_Then_Rotate_Camera","Delay:float,Facing:float");
 ScriptRegistrant<JMG_Utility_Damage_SmartGameObjects_In_Range> JMG_Utility_Damage_SmartGameObjects_In_Range_Registrant("JMG_Utility_Damage_SmartGameObjects_In_Range","Range=1.0:float,Damage=1.0:float,Warhead=None:string,Rate=0.1:float");
 ScriptRegistrant<JMG_Utility_Unstick_Infantry_If_Stuck> JMG_Utility_Unstick_Infantry_If_Stuck_Registrant("JMG_Utility_Unstick_Infantry_If_Stuck","Rate=0.25:float,Distance=1.25:float");
@@ -12280,7 +18299,7 @@ ScriptRegistrant<JMG_Utility_Damage_Unoccupied_Vehicle> JMG_Utility_Damage_Unocc
 ScriptRegistrant<JMG_Utility_Custom_Damage_All_Soldiers_On_Team> JMG_Utility_Custom_Damage_All_Soldiers_On_Team_Registrant("JMG_Utility_Custom_Damage_All_Soldiers_On_Team","Custom:int,Team:int,Damage:float,Warhead=None:string");
 ScriptRegistrant<JMG_Utility_AI_Guardian_Vehicle> JMG_Utility_AI_Guardian_Vehicle_Registrant("JMG_Utility_AI_Guardian_Vehicle","WanderingAIGroupID:int,WanderSpeed=1.0:float,FireRange=-1.0:float,FaceTarget=1:int,CheckBlocked=1:int,AimAtFeet=1:int,TurnOffEngineOnArrival=1:int,StealthModeOverride=0:int");
 ScriptRegistrant<JMG_Utility_Custom_Destroy_Closest_Model_To_Position> JMG_Utility_Custom_Destroy_Closest_Model_To_Position_Registrant("JMG_Utility_Custom_Destroy_Closest_Model_To_Position","Custom:int,Model:string,Position:Vector3,MaxDistance=0.0:float");
-ScriptRegistrant<JMG_Utility_Send_Custom_On_Deaths_Controller> JMG_Utility_Send_Custom_On_Deaths_Controller_Registrant("JMG_Utility_Send_Custom_On_Deaths_Controller","MaxDeaths=15:int,DeathReminder=5:int,UrgentDeathReminder=5:int,StringID=12628:int,ReminderMessage=%d %s^ only %d more %s allowed!:string,Delim=^:string,ReminderMessageOrder=0:int,DeathSingular=casualty:string,DeathPlural=casualties:string,RemainingSingular=death:string,RemainingPlural=deaths:string,ReminderColor=1.0 0.0 0.0:Vector3,ID=0:int,Custom=0:int,Param=0:int,Delay=0:int,ReminderCustom=0:int,AddDeathsWhenNoPlayers=10.0:float,NoPlayersAddDeathSaftyTime=150:int,RequiresADeathToStartNoPlayerAdd=1:int,AnnounceOnFirstDeath=1:int,OnlyTrackPlayerDeaths=1:int");
+ScriptRegistrant<JMG_Utility_Send_Custom_On_Deaths_Controller> JMG_Utility_Send_Custom_On_Deaths_Controller_Registrant("JMG_Utility_Send_Custom_On_Deaths_Controller","MaxDeaths=15:int,DeathReminder=5:int,UrgentDeathReminder=5:int,StringID=12628:int,ReminderMessage=%d %s^ only %d more %s allowed!:string,Delim=^:string,ReminderMessageOrder=0:int,DeathSingular=casualty:string,DeathPlural=casualties:string,RemainingSingular=death:string,RemainingPlural=deaths:string,ReminderColor=1.0 0.0 0.0:Vector3,ID=0:int,Custom=0:int,Param=0:int,Delay=0:int,ReminderCustom=0:int,AddDeathsWhenNoPlayers=10.0:float,NoPlayersAddDeathSaftyTime=150:int,RequiresADeathToStartNoPlayerAdd=1:int,AnnounceOnFirstDeath=1:int,OnlyTrackPlayerDeaths=1:int,RecordAIDeaths=0:int");
 ScriptRegistrant<JMG_Utility_Send_Custom_On_Deaths_Reporter> JMG_Utility_Send_Custom_On_Deaths_Reporter_Registrant("JMG_Utility_Send_Custom_On_Deaths_Reporter","");
 ScriptRegistrant<JMG_Utility_AI_Goto_Player_Ignore_Object> JMG_Utility_AI_Goto_Player_Ignore_Object_Registrant("JMG_Utility_AI_Goto_Player_Ignore_Object","");
 ScriptRegistrant<JMG_Utility_AI_Goto_Enemy_Ignore_Object> JMG_Utility_AI_Goto_Enemy_Ignore_Object_Registrant("JMG_Utility_AI_Goto_Enemy_Ignore_Object","");
@@ -12328,7 +18347,7 @@ ScriptRegistrant<JMG_Utility_Custom_Remove_Weapon_From_All_Players> JMG_Utility_
 ScriptRegistrant<JMG_Utility_Custom_Destroy_All_Presets_By_Name> JMG_Utility_Custom_Destroy_All_Presets_By_Name_Registrant("JMG_Utility_Custom_Destroy_All_Presets_By_Name","Custom:int,PresetName:string");
 ScriptRegistrant<JMG_Utility_Send_Custom_When_Damage_Exceedes_Threshold> JMG_Utility_Send_Custom_When_Damage_Exceedes_Threshold_Registrant("JMG_Utility_Send_Custom_When_Damage_Exceedes_Threshold","DamageThreshold:float,LockoutTime:float,ID:int,Custom:int,Param:int,Delay:float");
 ScriptRegistrant<JMG_Utility_Custom_Send_Translated_String_To_All_Players> JMG_Utility_Custom_Send_Translated_String_To_All_Players_Registrant("JMG_Utility_Custom_Send_Translated_String_To_All_Players","Custom:int,StringID:string,ColorRGB:Vector3,Repeatable=1:int");
-ScriptRegistrant<JMG_Utility_Destroyed_Drop_Powerup> JMG_Utility_Destroyed_Drop_Powerup_Registrant("JMG_Utility_Destroyed_Drop_Powerup","WeaponPreset:string,PowerupName:string,HeightAdjust=0.0:float");
+ScriptRegistrant<JMG_Utility_Destroyed_Drop_Powerup> JMG_Utility_Destroyed_Drop_Powerup_Registrant("JMG_Utility_Destroyed_Drop_Powerup","RequiredWeaponPreset:string,PowerupName:string,HeightAdjust=0.0:float");
 ScriptRegistrant<JMG_Utility_Pickup_Attach_Script> JMG_Utility_Pickup_Attach_Script_Registrant("JMG_Utility_Pickup_Attach_Script","Script:string,Params:string,Delim=@:string");
 ScriptRegistrant<JMG_Utility_Objective_System_Objective_Status_Update_Custom> JMG_Utility_Objective_System_Objective_Status_Update_Custom_Registrant("JMG_Utility_Objective_System_Objective_Status_Update_Custom","Custom:int,ObjectiveID:int,NewObjectiveStringID:int,NewObjectiveMarkerObjectID:int");
 ScriptRegistrant<JMG_Utility_Objective_System_Objective_Failed_Custom> JMG_Utility_Objective_System_Objective_Failed_Custom_Registrant("JMG_Utility_Objective_System_Objective_Failed_Custom","Custom:int,ObjectiveID:int");
@@ -12340,7 +18359,7 @@ ScriptRegistrant<JMG_Utility_Custom_Damage_All_Vehicles_On_Team> JMG_Utility_Cus
 ScriptRegistrant<JMG_Utility_Kill_Unit_If_Not_Moving_Enough> JMG_Utility_Kill_Unit_If_Not_Moving_Enough_Registrant("JMG_Utility_Kill_Unit_If_Not_Moving_Enough","Time=60.0:float,Distance=1.0:float");
 ScriptRegistrant<JMG_Utility_Custom_Display_Briefing_Message_StringID> JMG_Utility_Custom_Display_Briefing_Message_StringID_Registrant("JMG_Utility_Custom_Display_Briefing_Message_StringID","Custom=0:int,StringID:string,MessageColor=239.0 228.0 176.0:Vector3,LineDelayTime=10.0:float,UISound=null:string");
 ScriptRegistrant<JMG_Utility_Destroy_Objects_In_ID_Range_On_Killed> JMG_Utility_Destroy_Objects_In_ID_Range_On_Killed_Registrant("JMG_Utility_Destroy_Objects_In_ID_Range_On_Killed","StartID:int,EndID:int");
-ScriptRegistrant<JMG_Utility_Timer_Custom> JMG_Utility_Timer_Custom_Registrant("JMG_Utility_Timer_Custom","Time:float,ID:int,Message:int,Param=0:int,Repeat=0:int");
+ScriptRegistrant<JMG_Utility_Timer_Custom> JMG_Utility_Timer_Custom_Registrant("JMG_Utility_Timer_Custom","Time:float,ID:int,Message:int,Param=0:int,Repeat=0:int,EnableCustom=0:int");
 ScriptRegistrant<JMG_Utility_Zone_Change_Character_Model> JMG_Utility_Zone_Change_Character_Model_Registrant("JMG_Utility_Zone_Change_Character_Model","NewModel:string,PlayerType=2:int");
 ScriptRegistrant<JMG_Utility_Timer_Change_Character_Models_On_Team> JMG_Utility_Timer_Change_Character_Models_On_Team_Registrant("JMG_Utility_Timer_Change_Character_Models_On_Team","Time:float,NewModel:string,PlayerType=2:int,Repeat=0:int,StartsEnabled=1:int,EnableCustom=0:int");
 ScriptRegistrant<JMG_Utility_Timer_Change_Character_Models_On_HP> JMG_Utility_Timer_Change_Character_Models_On_HP_Registrant("JMG_Utility_Timer_Change_Character_Models_On_HP","Time:float,NewModel:string,MinHP:float,MaxHP:float,PlayerType=2:int,Repeat=0:int,StartsEnabled=1:int,EnableCustom=0:int");
@@ -12360,7 +18379,7 @@ ScriptRegistrant<JMG_Utility_Apply_Damage_On_Timer_Base> JMG_Utility_Apply_Damag
 ScriptRegistrant<JMG_Utility_Apply_Damage_On_Timer_Base> JMG_Utility_Apply_Damage_On_Timer_Registrant("JMG_Utility_Apply_Damage_On_Timer","Rate:float,DamageAmount:float,Warhead:string,DamagerId:int");
 ScriptRegistrant<JMG_Utility_Zone_Send_Custom_Exit> JMG_Utility_Zone_Send_Custom_Exit_Registrant("JMG_Utility_Zone_Send_Custom_Exit","ID=0:int,Custom=0:int,Param=0:int,Delay=0.0:float,PlayerType=2:int,TriggerOnce=1:int");
 ScriptRegistrant<JMG_Utility_Custom_Enable_Spawners_In_Range_Modular> JMG_Utility_Custom_Enable_Spawners_In_Range_Modular_Registrant("JMG_Utility_Custom_Enable_Spawners_In_Range_Modular","StartID:int,EndID:int,Custom:int,Enable=1:int,Mod=1:int");
-ScriptRegistrant<JMG_Utility_Custom_Create_Explosion_At_Bone> JMG_Utility_Custom_Create_Explosion_At_Bone_Registrant("JMG_Utility_Custom_Create_Explosion_At_Bone","Custom:int,Explosion:string,Bone:string,Owner:int");
+ScriptRegistrant<JMG_Utility_Custom_Create_Explosion_At_Bone> JMG_Utility_Custom_Create_Explosion_At_Bone_Registrant("JMG_Utility_Custom_Create_Explosion_At_Bone","Custom:int,Explosion:string,Bone:string,Owner:int,Alive:int");
 ScriptRegistrant<JMG_Utility_Custom_Send_Custom_Repeat_Ignore_Time> JMG_Utility_Custom_Send_Custom_Repeat_Ignore_Time_Registrant("JMG_Utility_Custom_Send_Custom_Repeat_Ignore_Time","Custom:int,ID:int,SendCustom:int,Param:int,Delay:float,IgnoreTime:float,StartsEnabled=1:int,EnableCustom=0:int");
 ScriptRegistrant<JMG_Utility_Damage_Send_Custom> JMG_Utility_Damage_Send_Custom_Registrant("JMG_Utility_Damage_Send_Custom","MinDamage:float,Custom:int,Param:int,Delay:int,ID:int,SenderID:int,StartsEnabled=1:int,EnableCustom=0:int,Repeat=1:int");
 ScriptRegistrant<JMG_Utility_Send_Custom_When_Player_Inside_Of_Range> JMG_Utility_Send_Custom_When_Player_Inside_Of_Range_Registrant("JMG_Utility_Send_Custom_When_Player_Inside_Of_Range","Distance:float,ID:int,Custom:int,Param:int,Delay:float,TriggerOnce=1:int,SleepTime=10:int");
@@ -12379,8 +18398,8 @@ ScriptRegistrant<JMG_Utility_Detect_AFK_Controller> JMG_Utility_Detect_AFK_Contr
 ScriptRegistrant<JMG_Utility_Credit_Trickle_When_Not_AFK> JMG_Utility_Credit_Trickle_When_Not_AFK_Registrant("JMG_Utility_Credit_Trickle_When_Not_AFK","Credits=1.0:float,Rate=1.0:float,TrickleCap=0.0:float,Team=2:int,Custom=0:int");
 ScriptRegistrant<JMG_Utility_Killed_Create_Object> JMG_Utility_Killed_Create_Object_Registrant("JMG_Utility_Killed_Create_Object","Preset:string");
 ScriptRegistrant<JMG_Utility_Damaged_Create_Object_When_Shield_Zero> JMG_Utility_Damaged_Create_Object_When_Shield_Zero_Registrant("JMG_Utility_Damaged_Create_Object_When_Shield_Zero","Preset:string");
-ScriptRegistrant<JMG_Utility_Basic_Spawner_In_Radius> JMG_Utility_Basic_Spawner_In_Radius_Registrant("JMG_Utility_Basic_Spawner_In_Radius","Spawn_Preset:string,Spawn_Rate:float,Random_Spawn_Rate:float,Spawn_At_A_Time:int,Min_Spawn_Radius:float,Max_Spawn_Radius:float,Initial_Spawn_Height=0.0:float,Spawn_Limit=-1:int,Spawn_Location=-1.0 -1.0 -1.0:Vector3,X_Multiplier=1.0:float,Y_Multiplier=1.0:float,Collision_Check=1:int,Collision_Retry_Attempts=3:int,Collision_Add_Height=1.0:float,Change_Spawn_Cap_Custom=-1:int,Initial_Spawn=-1:int,Script_ID=-1:int,Point_Must_Be_In_Pathfind=1:int,Manual_Facing=0:int,Face_Location=0.0 0.0 0.0:vector3,Face_Direction=0.0:float,Ignore_Ray_Cast_Failure=0:int,Min_Distance_Between_Objects=0.0:float,Spawn_Group_ID=0:int,Starts_Disabled=0:int,Enable_Disable_Custom=0:int,Raycast_Direction_Override[Bottom|Top|Unused]=0.0 0.0 0.0:Vector3,Attach_Scripts_Group_ID=-1:int,PlayersAddToSpawnAtATime=0.0:float");
-ScriptRegistrant<JMG_Utility_Basic_Spawner_In_Radius_Attached> JMG_Utility_Basic_Spawner_In_Radius_Attached_Registrant("JMG_Utility_Basic_Spawner_In_Radius_Attached","Controller_ID:int,Script_ID:int,Spawn_Group_ID:int");
+ScriptRegistrant<JMG_Utility_Basic_Spawner_In_Radius> JMG_Utility_Basic_Spawner_In_Radius_Registrant("JMG_Utility_Basic_Spawner_In_Radius","Spawn_Preset:string,Spawn_Rate:float,Random_Spawn_Rate:float,Spawn_At_A_Time:int,Min_Spawn_Radius:float,Max_Spawn_Radius:float,Initial_Spawn_Height=0.0:float,Max_Total_Spawned=-1:int,Spawn_Location=-1.0 -1.0 -1.0:Vector3,X_Multiplier=1.0:float,Y_Multiplier=1.0:float,Collision_Check=1:int,Collision_Retry_Attempts=3:int,Collision_Add_Height=1.0:float,Change_Spawn_Cap_Custom=-1:int,Initial_Spawn=-1:int,Spawned_Object_Script_ID=-1:int,Point_Must_Be_In_Pathfind=1:int,Manual_Facing=0:int,Face_Location=0.0 0.0 0.0:vector3,Face_Direction=0.0:float,Ignore_Ray_Cast_Failure=0:int,Min_Distance_Between_Objects=0.0:float,Spawn_Group_ID=0:int,Starts_Disabled=0:int,Enable_Disable_Custom=0:int,Raycast_Direction_Override[Bottom|Top|Unused]=0.0 0.0 0.0:Vector3,Attach_Scripts_Group_ID=-1:int,PlayersAddToSpawnAtATime=0.0:float");
+ScriptRegistrant<JMG_Utility_Basic_Spawner_In_Radius_Attached> JMG_Utility_Basic_Spawner_In_Radius_Attached_Registrant("JMG_Utility_Basic_Spawner_In_Radius_Attached","Controller_ID:int,Spawned_Object_Script_ID:int,Spawn_Group_ID:int");
 ScriptRegistrant<JMG_Utility_Flying_Vehicle_Crash_Apply_Damage> JMG_Utility_Flying_Vehicle_Crash_Apply_Damage_Registrant("JMG_Utility_Flying_Vehicle_Crash_Apply_Damage","Min_Collision_Speed=33.528:float,Max_Collision_Speed=42.4688:float,Collision_Sound=vehicle_collide_01:string,Explosion_Preset=Plane_Air_Collision:string,Subtract_Min_Speed=0:int");
 ScriptRegistrant<JMG_Utility_Enemy_Seen_Send_Custom> JMG_Utility_Enemy_Seen_Send_Custom_Registrant("JMG_Utility_Enemy_Seen_Send_Custom","Enemy_Preset_ID:int,ID:int,Visible_Message:int,Visible_Param:int,Not_Visible_Message:int,Not_Visible_Param:int,Max_Lost_Sight_Time=2.5:float,RepeatSendSeenCustom=0:int,AttackPriority[Car|Tank|Bike]=1.0 1.0 1.0:vector3,AttackPriority[Flying|Turret|Boat]=1.0 1.0 1.0:vector3,AttackPriority[Submarine|Infantry|Unused]=1.0 1.0 0.0:vector3");
 ScriptRegistrant<JMG_Utility_Custom_Send_Custom_If_Script_Attached> JMG_Utility_Custom_Send_Custom_If_Script_Attached_Registrant("JMG_Utility_Custom_Send_Custom_If_Script_Attached","Custom:int,Script:string,ID=0:int,SendCustom:int,Param:int,Delay:float");
@@ -12388,7 +18407,7 @@ ScriptRegistrant<JMG_Utility_Custom_Send_Custom_If_Script_Not_Attached> JMG_Util
 ScriptRegistrant<JMG_Utility_Basic_Spawner_In_Radius_Controller> JMG_Utility_Basic_Spawner_In_Radius_Controller_Registrant("JMG_Utility_Basic_Spawner_In_Radius_Controller","");
 ScriptRegistrant<JMG_Utility_Custom_Set_Engine> JMG_Utility_Custom_Set_Engine_Registrant("JMG_Utility_Custom_Set_Engine","Custom:int,Enable:int");
 ScriptRegistrant<JMG_Utility_Send_Custom_Player_Count_Matches_Preset_Count> JMG_Utility_Send_Custom_Player_Count_Matches_Preset_Count_Registrant("JMG_Utility_Send_Custom_Player_Count_Matches_Preset_Count","Preset_ID:int,ID:int,Message:int,Param:int,Delay:float,Min_Player_Count=1:int,Max_Player_Count=-1:int,Rate=0.1:float,Repeat=0:int");
-ScriptRegistrant<JMG_Utility_Custom_Set_Position> JMG_Utility_Custom_Set_Position_Registrant("JMG_Utility_Custom_Set_Position","Custom:int,Position:Vector3");
+ScriptRegistrant<JMG_Utility_Custom_Set_Position> JMG_Utility_Custom_Set_Position_Registrant("JMG_Utility_Custom_Set_Position","Custom:int,Position:Vector3,ID=0:int");
 ScriptRegistrant<JMG_Utility_Custom_Delay_Send_Custom> JMG_Utility_Custom_Delay_Send_Custom_Registrant("JMG_Utility_Custom_Delay_Send_Custom","Custom:int,ID=0:int,SendCustom:int,Param:int,Delay:float,RandomDelay:float,CancelCustom=0:int");
 ScriptRegistrant<JMG_Utility_Scale_HP_By_Player_Count> JMG_Utility_Scale_HP_By_Player_Count_Registrant("JMG_Utility_Scale_HP_By_Player_Count","Health_Multiplier=1.0:float,Armor_Multiplier=1.0:float,Max_Player_Count=-1:int,Repeat=1:int,UpdateScaleCustom=0:int");
 ScriptRegistrant<JMG_Utility_Custom_Send_Custom_To_All_Objects> JMG_Utility_Custom_Send_Custom_To_All_Objects_Registrant("JMG_Utility_Custom_Send_Custom_To_All_Objects","Custom:int,SendCustom:int,Param:int,Team=2:int,Delay=0.0:float");
@@ -12402,8 +18421,8 @@ ScriptRegistrant<JMG_Utility_AI_Skittish_Herd_Animal> JMG_Utility_AI_Skittish_He
 ScriptRegistrant<JMG_Utility_AI_Skittish_Herd_Animal_Ignore> JMG_Utility_AI_Skittish_Herd_Animal_Ignore_Registrant("JMG_Utility_AI_Skittish_Herd_Animal_Ignore","");
 ScriptRegistrant<JMG_Utility_AI_Skittish_Herd_Animal_Controller> JMG_Utility_AI_Skittish_Herd_Animal_Controller_Registrant("JMG_Utility_AI_Skittish_Herd_Animal_Controller","");
 ScriptRegistrant<JMG_Utility_Custom_Display_Dialog_Box> JMG_Utility_Custom_Display_Dialog_Box_Registrant("JMG_Utility_Custom_Display_Dialog_Box","Custom:int,Message:string,Delim=@:string");
-ScriptRegistrant<JMG_Utility_Custom_Send_Custom_On_Preset_Count> JMG_Utility_Custom_Send_Custom_On_Preset_Count_Registrant("JMG_Utility_Custom_Send_Custom_On_Preset_Count","Custom:int,PresetID:int,MinCount=1,MaxCount=-1:int,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float");
-ScriptRegistrant<JMG_Utility_Custom_Send_Custom_On_Script_Count> JMG_Utility_Custom_Send_Custom_On_Script_Count_Registrant("JMG_Utility_Custom_Send_Custom_On_Script_Count","Custom:int,Script:string,MinCount=1,MaxCount=-1:int,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float");
+ScriptRegistrant<JMG_Utility_Custom_Send_Custom_On_Preset_Count> JMG_Utility_Custom_Send_Custom_On_Preset_Count_Registrant("JMG_Utility_Custom_Send_Custom_On_Preset_Count","Custom:int,PresetID:int,MinCount=1:int,MaxCount=-1:int,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float");
+ScriptRegistrant<JMG_Utility_Custom_Send_Custom_On_Script_Count> JMG_Utility_Custom_Send_Custom_On_Script_Count_Registrant("JMG_Utility_Custom_Send_Custom_On_Script_Count","Custom:int,Script:string,MinCount=1:int,MaxCount=-1:int,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float");
 ScriptRegistrant<JMG_Utility_Poke_Send_Custom_From_Poker> JMG_Utility_Poke_Send_Custom_From_Poker_Registrant("JMG_Utility_Poke_Send_Custom_From_Poker","ID=0:int,Custom=0:int,Param=0:int,Delay=0.0:float,TriggerOnce=1:int,PlayerType=2:int");
 ScriptRegistrant<JMG_Utility_Custom_Grant_Scaled_Score> JMG_Utility_Custom_Grant_Scaled_Score_Registrant("JMG_Utility_Custom_Grant_Scaled_Score","GrantCustom:int,Score:float,ScoreMultiplier:float,EntireTeam=0:int,MaxPlayerCount=-1:int,Repeat=1:int,GrantToSender=0:int,UpdateScaleCustom=0:int,StopUpdateCustom=0:int");
 ScriptRegistrant<JMG_Utility_Custom_Set_Infantry_Height> JMG_Utility_Custom_Set_Infantry_Height_Registrant("JMG_Utility_Custom_Set_Infantry_Height","Custom:int,Height=-9999.0:float");
@@ -12436,3 +18455,154 @@ ScriptRegistrant<JMG_Utility_AI_Lobbed_Vehicle_Projectile_Custom> JMG_Utility_AI
 ScriptRegistrant<JMG_Utility_Vehicle_Enter_Send_Custom_From_Enterer> JMG_Utility_Vehicle_Enter_Send_Custom_From_Enterer_Registrant("JMG_Utility_Vehicle_Enter_Send_Custom_From_Enterer","PlayerType=2:int,ID:int,Custom:int,Param:int,Delay:float,TriggerOnce:int");
 ScriptRegistrant<JMG_Utility_Custom_Send_Custom_On_Count_From_Sender> JMG_Utility_Custom_Send_Custom_On_Count_From_Sender_Registrant("JMG_Utility_Custom_Send_Custom_On_Count_From_Sender","Custom:int,Count:int,ID=0:int,SendCustom:int,Param:int,Delay:float,ResetCustom:int");
 ScriptRegistrant<JMG_Utility_Player_Seen_Send_Custom> JMG_Utility_Player_Seen_Send_Custom_Registrant("JMG_Utility_Player_Seen_Send_Custom","ID:int,Custom:int,Param:int,Delay:float,TriggerOnce:int");
+ScriptRegistrant<JMG_Utility_Enter_Play_Animation_And_Relocate> JMG_Utility_Enter_Play_Animation_And_Relocate_Registrant("JMG_Utility_Enter_Play_Animation_And_Relocate","PresetName:string,Animation:string,AttachedModel:string,AttachedAnimation:string,CenterToZone:int,Custom:int,Param:int");
+ScriptRegistrant<JMG_Utility_Enter_Play_Animation_And_Relocate_Attached> JMG_Utility_Enter_Play_Animation_And_Relocate_Attached_Registrant("JMG_Utility_Enter_Play_Animation_And_Relocate_Attached","AttachedModel:string,AttachedAnimation:string,Facing:float,Custom:int,Param:int");
+ScriptRegistrant<JMG_Utility_Custom_Destroy_Closest_Object_To_Self> JMG_Utility_Custom_Destroy_Closest_Object_To_Self_Registrant("JMG_Utility_Custom_Destroy_Closest_Object_To_Self","Custom:int,PresetName:string,MaxDistance=0.0:float,TriggerOnce=0:int");
+ScriptRegistrant<JMG_Utility_Custom_Apply_Damage_Closest_Object_To_Self> JMG_Utility_Custom_Apply_Damage_Closest_Object_To_Self_Registrant("JMG_Utility_Custom_Apply_Damage_Closest_Object_To_Self","Custom:int,PresetName:string,Warhead:string,DamageAmount:float,MaxDistance=0.0:float,TriggerOnce=0:int");
+ScriptRegistrant<JMG_Utility_Custom_Restore_Building> JMG_Utility_Custom_Restore_Building_Registrant("JMG_Utility_Custom_Restore_Building","Custom:int,ID:int,TriggerOnce:int");
+ScriptRegistrant<JMG_Utility_Timer_Custom_Random> JMG_Utility_Timer_Custom_Random_Registrant("JMG_Utility_Timer_Custom_Random","Time:float,Random:float,ID:int,Message:int,Param=0:int,Repeat=0:int");
+ScriptRegistrant<JMG_Utility_Dynamic_Script_Controller> JMG_Utility_Dynamic_Script_Controller_Registrant("JMG_Utility_Dynamic_Script_Controller","");
+ScriptRegistrant<JMG_Utility_Dynamic_Script_Definition> JMG_Utility_Dynamic_Script_Definition_Registrant("JMG_Utility_Dynamic_Script_Definition","ScriptID:int,ScriptName:string");
+ScriptRegistrant<JMG_Utility_Dynamic_Script_Created_Add_Update_Parameter> JMG_Utility_Dynamic_Script_Created_Add_Update_Parameter_Registrant("JMG_Utility_Dynamic_Script_Created_Add_Update_Parameter","ScriptID:int,Index:int,Param:string,Delim:string");
+ScriptRegistrant<JMG_Utility_Dynamic_Script_Custom_Add_Update_Parameter> JMG_Utility_Dynamic_Script_Custom_Add_Update_Parameter_Registrant("JMG_Utility_Dynamic_Script_Custom_Add_Update_Parameter","Custom:int,ScriptID:int,Index:int,Param:string,Delim:string");
+ScriptRegistrant<JMG_Utility_Dynamic_Script_Custom_Attach> JMG_Utility_Dynamic_Script_Custom_Attach_Registrant("JMG_Utility_Dynamic_Script_Custom_Attach","Custom:int,ScriptID:int");
+ScriptRegistrant<JMG_Utility_Objective_System_Custom_Add_Objective_Send_Custom> JMG_Utility_Objective_System_Custom_Add_Objective_Send_Custom_Registrant("JMG_Utility_Objective_System_Custom_Add_Objective_Send_Custom","Custom:int,NewObjectiveID:int,NewObjectiveStringID:int,ObjectiveMarkerObjectID:int,CompleteObjectiveID:int,Delay:float,NewObjectivePriority=1:int,SendCustom:int,Param:int,CustomDelay:float");
+ScriptRegistrant<JMG_Utility_Objective_System_Custom_Send_Custom_Status> JMG_Utility_Objective_System_Custom_Send_Custom_Status_Registrant("JMG_Utility_Objective_System_Custom_Send_Custom_Status","Custom:int,ObjectiveID:int,Status:int,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float");
+ScriptRegistrant<JMG_Utility_Objective_System_Custom_Send_Custom_Does_Not_Exist> JMG_Utility_Objective_System_Custom_Send_Custom_Does_Not_Exist_Registrant("JMG_Utility_Objective_System_Custom_Send_Custom_Does_Not_Exist","Custom:int,ObjectiveID:int,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float");
+ScriptRegistrant<JMG_Utility_Objective_System_Send_Random_Objective_As_Custom> JMG_Utility_Objective_System_Send_Random_Objective_As_Custom_Registrant("JMG_Utility_Objective_System_Send_Random_Objective_As_Custom","Custom:int,ObjectiveID0=-999:int,ObjectiveID1=-999:int,ObjectiveID2=-999:int,ObjectiveID3=-999:int,ObjectiveID4=-999:int,ObjectiveID5=-999:int,ObjectiveID6=-999:int,ObjectiveID7=-999:int,ObjectiveID8=-999:int,ObjectiveID9=-999:int,ID=0:int,Param:int,Delay=0.0:float");
+ScriptRegistrant<JMG_Utility_Objective_System_Custom_Send_Custom_Not_Status> JMG_Utility_Objective_System_Custom_Send_Custom_Not_Status_Registrant("JMG_Utility_Objective_System_Custom_Send_Custom_Not_Status","Custom:int,ObjectiveID:int,Status:int,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float");
+ScriptRegistrant<JMG_Utility_Global_Keycard_System_Controller> JMG_Utility_Global_Keycard_System_Controller_Registrant("JMG_Utility_Global_Keycard_System_Controller","");
+ScriptRegistrant<JMG_Utility_Global_Keycard_System_Created_Add_Keycard> JMG_Utility_Global_Keycard_System_Created_Add_Keycard_Registrant("JMG_Utility_Global_Keycard_System_Created_Add_Keycard","KeycardID:int,GroupID:int");
+ScriptRegistrant<JMG_Utility_Global_Keycard_System_Custom_Add_Keycard> JMG_Utility_Global_Keycard_System_Custom_Add_Keycard_Registrant("JMG_Utility_Global_Keycard_System_Custom_Add_Keycard","Custom:int,KeycardID:int,GroupID:int");
+ScriptRegistrant<JMG_Utility_Global_Keycard_System_Custom_Remove_Keycard> JMG_Utility_Global_Keycard_System_Custom_Remove_Keycard_Registrant("JMG_Utility_Global_Keycard_System_Custom_Remove_Keycard","Custom:int,KeycardID:int,GroupID:int");
+ScriptRegistrant<JMG_Utility_Global_Keycard_System_Soldier> JMG_Utility_Global_Keycard_System_Soldier_Registrant("JMG_Utility_Global_Keycard_System_Soldier","GroupID:int");
+ScriptRegistrant<JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change> JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change_Registrant("JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change","OccupiedID:int,OccupiedCustom:int,OccupiedParam:int,OccupiedDelay:float,VacantID:int,VacantCustom:int,VacantParam:int,VacantDelay:float");
+ScriptRegistrant<JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change_Attached> JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change_Attached_Registrant("JMG_Utility_Zone_Send_Custom_On_Player_Occupation_Change_Attached","ID:int");
+ScriptRegistrant<JMG_Utility_Silent_Countdown_Controller> JMG_Utility_Silent_Countdown_Controller_Registrant("JMG_Utility_Silent_Countdown_Controller","");
+ScriptRegistrant<JMG_Utility_Silent_Countdown_Timer> JMG_Utility_Silent_Countdown_Timer_Registrant("JMG_Utility_Silent_Countdown_Timer","TimerID:int,Time:int,StartCustom:int,PausedCustom:int,CancelCustom:int");
+ScriptRegistrant<JMG_Utility_Silent_Countdown_Send_Custom> JMG_Utility_Silent_Countdown_Send_Custom_Registrant("JMG_Utility_Silent_Countdown_Send_Custom","TimerID:int,TriggerTime:int,ID:int,Custom:int,Param:int,Delay:float");
+ScriptRegistrant<JMG_Utility_Zone_Teleport_To_Random_WP_Boss> JMG_Utility_Zone_Teleport_To_Random_WP_Boss_Registrant("JMG_Utility_Zone_Teleport_To_Random_WP_Boss","WanderingAIGroupID=-1:int,SafeTeleportDistance=1.5:float,ChangeGroupIDCustom=0:int,PlayerType=2:int,RetryOnFailure=0:int,AiOnly=0:int,FaceBoss=1:int");
+ScriptRegistrant<JMG_Utility_Zone_Teleport_To_Random_WP_Boss_Object> JMG_Utility_Zone_Teleport_To_Random_WP_Boss_Object_Registrant("JMG_Utility_Zone_Teleport_To_Random_WP_Boss_Object","");
+ScriptRegistrant<JMG_Utility_Custom_Set_Soldier_Speed> JMG_Utility_Custom_Set_Soldier_Speed_Registrant("JMG_Utility_Custom_Set_Soldier_Speed","Custom:int,Speed:float");
+ScriptRegistrant<JMG_Utility_Control_Point_Controller> JMG_Utiliwty_Control_Point_Controller_Registrant("JMG_Utility_Control_Point_Controller","NeutralTeamName=Neutral:string,NeutralPlayerType=-2:int,NeutralRadarBlipColor=2:int,NeutralDefaultPointModel:string,NeutralDefaultAnimation:string,NeutralAnimationLength:float,NeutralCaptureSound:string,NeutralLostSound:string,NeutralLockedModel:string,NeutralLockedAnim:string,NeutralLockedAnimLength:float,NeutralDefenseMultiplier=0:int,NeutralCaptureMultiplier=0:int,NeutralUnoccupiedMultiplier=-1:int,NeutralCustomID=0:int,NeutralTeamMemberCaptureCustom=0:int,NeutralTeamMemberNeutralize=0:int,NeutralTeamMembmerLostCustom=0:int,NeutralTeamCaptureCustom=0:int,NeutralTeamLostCustom=0:int");
+ScriptRegistrant<JMG_Utility_Control_Point_Team_Setting> JMG_Utility_Control_Point_Team_Setting_Registrant("JMG_Utility_Control_Point_Team_Setting","TeamID:int,TeamName:string,PlayerType:int,RadarBlipColor:int,PointModel:string,Animation:string,AnimationLength:float,CaptureSound:string,LostSound:string,LockedModel:string,LockedAnim:string,LockedAnimLength:float,DefenseMultiplier=1:int,CaptureMultiplier=1:int,UnoccupiedMultiplier=1:int,CustomID=0:int,TeamMemberCaptureCustom=0:int,TeamMemberNeutralize=0:int,TeamMembmerLostCustom=0:int,TeamCaptureCustom=0:int,TeamLostCustom=0:int");
+ScriptRegistrant<JMG_Utility_Control_Point> JMG_Utility_Control_Point_Registrant("JMG_Utility_Control_Point","ControlPointName:string,ControllingTeamID:int,MaxCapturePoints=100:int,ControlDistance=15.0:float,ControlHeight[Min|Max]=0.0 0.0 0.0:Vector3,ZoneID=0:int,CaptureScore=1000.0:float,NeutralizeScore=1000.0:float,ControlGroupID=-1:int,StartsLocked=0:int,LockCustom=0:int");
+ScriptRegistrant<JMG_Utility_Control_Point_Setting_Override> JMG_Utility_Control_Point_Setting_Override_Registrant("JMG_Utility_Control_Point_Setting_Override","TeamID:int,ID:int,CaptureCustom:int,LostCustom:int,PointModelOverride:string,AnimationOverride:string,AnimationLength:float,LockedPointModelOverride:string,LockedAnimationOverride:string,LockedAnimationLength:float");
+ScriptRegistrant<JMG_Utility_Control_Point_Team_Member> JMG_Utility_Control_Point_Team_Member_Registrant("JMG_Utility_Control_Point_Team_Member","TeamID:int,Multiplier=1:int");
+ScriptRegistrant<JMG_Utility_Control_Point_Assault_Mode> JMG_Utility_Control_Point_Assault_Mode_Registrant("JMG_Utility_Control_Point_Assault_Mode","TeamID:int,ID:int,AdvanceCustom:int,PushBackCustom:int,ControlAllCustom:int,LostAllCustom:int");
+ScriptRegistrant<JMG_Utility_Control_Point_Wander_Point> JMG_Utility_Control_Point_Wander_Point_Registrant("JMG_Utility_Control_Point_Wander_Point","ControlPointID:int,TeamID:int,SpawnableGroupID=-999:int,UnspawnableGroupId=-999:int");
+ScriptRegistrant<JMG_Utility_Control_Point_Select_Spawn_System> JMG_Utility_Control_Point_Select_Spawn_System_Registrant("JMG_Utility_Control_Point_Select_Spawn_System","SpawnPreset:string,TeamID:int,SpawnCustom:int,GroupChangeCustom:int,UngroupedChangeCustom:int,SafeTeleportDistance=1.5:float,SpawnTime=10:int,MaxWanderRange=60.0:float,StringID=12628:int");
+ScriptRegistrant<JMG_Utility_Custom_And_Param_Send_Custom> JMG_Utility_Custom_And_Param_Send_Custom_Registrant("JMG_Utility_Custom_And_Param_Send_Custom","Custom:int,Param:int,ID=0:int,SendCustom:int,SendParam:int,Delay=0.0:float,RandomDelay=0.0:float,RandomChance=0.0:float");
+ScriptRegistrant<JMG_Utility_Create_Move_To_Nearest_Pathfind> JMG_Utility_Create_Move_To_Nearest_Pathfind_Registrant("JMG_Utility_Create_Move_To_Nearest_Pathfind","");
+ScriptRegistrant<JMG_Utility_Objective_System_Objective_GameObject> JMG_Utility_Objective_System_Objective_GameObject_Registrant("JMG_Utility_Objective_System_Objective_GameObject","ObjectivePriority=-2:int,ObjectiveID=-2:int,Preset:string,Attach=1:int");
+ScriptRegistrant<JMG_Utility_Objective_System_Objective_GameObject_Tracker> JMG_Utility_Objective_System_Objective_GameObject_Tracker_Registrant("JMG_Utility_Objective_System_Objective_GameObject_Tracker","GameObjectID:int,MarkerID:int");
+ScriptRegistrant<JMG_Utility_Attach_Script_To_Object_With_Weapon> JMG_Utility_Attach_Script_To_Object_With_Weapon_Registrant("JMG_Utility_Attach_Script_To_Object_With_Weapon","WeaponName:string,Script:string,Params:string,Delim=@:string,Rate=0.1:float,PlayerType=2:int");
+ScriptRegistrant<JMG_Utility_Drop_Object_On_Death_And_Attach_Script> JMG_Utility_Drop_Object_On_Death_And_Attach_Script_Registrant("JMG_Utility_Drop_Object_On_Death_And_Attach_Script","Drop_Object:string,Drop_Height=0.25:float,Probability=100.0:float,Script:string,Params:string,Delim=@:string");
+ScriptRegistrant<JMG_SinglePlayer_M04_Modifier> JMG_SinglePlayer_M04_Modifier_Registrant("JMG_SinglePlayer_M04_Modifier","");
+ScriptRegistrant<JMG_Utility_Custom_Send_Delayed_Ordered_Customs> JMG_Utility_Custom_Send_Delayed_Ordered_Customs_Registrant("JMG_Utility_Custom_Send_Delayed_Ordered_Customs","ID:int,Custom0:int,Time0:float,Custom1:int,Time1:float,Custom2:int,Time2:float,Custom3:int,Time3:float,Custom4:int,Time4:float,Custom5:int,Time5:float,Custom6:int,Time6:float,Custom7:int,Time7:float,Custom8:int,Time8:float,Custom9:int,Time9:float");
+ScriptRegistrant<JMG_Utility_Custom_Send_Custom_If_Model> JMG_Utility_Custom_Send_Custom_If_Model_Registrant("JMG_Utility_Custom_Send_Custom_If_Model","Model:string,Custom:int,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float,RandomDelay=0.0:float,RandomChance=0.0:float");
+ScriptRegistrant<JMG_Utility_Poke_Grant_Weapon_Destroy_Self> JMG_Utility_Poke_Grant_Weapon_Destroy_Self_Registrant("JMG_Utility_Poke_Grant_Weapon_Destroy_Self","Weapon:string,Rounds:int,Backpack:int");
+ScriptRegistrant<JMG_Utility_Killed_Drop_Object_If_Weapon_Present> JMG_Utility_Killed_Drop_Object_If_Weapon_Present_Registrant("JMG_Utility_Killed_Drop_Object_If_Weapon_Present","Weapon:string,DropPreset:string,Height=0.25:float");
+ScriptRegistrant<JMG_Utility_Poke_Send_Custom_If_Has_Weapon> JMG_Utility_Poke_Send_Custom_If_Has_Weapon_Registrant("JMG_Utility_Poke_Send_Custom_If_Has_Weapon","Weapon:string,ID:int,Custom:int,Param:int,Delay:float,RemoveWeapon:int,PlayerType=2:int,TriggerOnce=1:int,MustBeHeld=0:int");
+ScriptRegistrant<JMG_Utility_Send_Custom_If_Weapon_Held_In_Range> JMG_Utility_Send_Custom_If_Weapon_Held_In_Range_Registrant("JMG_Utility_Send_Custom_If_Weapon_Held_In_Range","Weapon:string,Range:float,ID:int,Custom:int,Param:int,Delay:float,RemoveWeapon:int,PlayerType=2:int,TriggerOnce=1:int,MustBeHeld=1:int");
+ScriptRegistrant<JMG_Utility_Custom_Refect_Custom_If_Model> JMG_Utility_Custom_Refect_Custom_If_Model_Registrant("JMG_Utility_Custom_Refect_Custom_If_Model","Model:string,SendFromSelf:int");
+ScriptRegistrant<JMG_Utility_Custom_Set_Team> JMG_Utility_Custom_Set_Team_Registrant("JMG_Utility_Custom_Set_Team","Custom:int,Team:int");
+ScriptRegistrant<JMG_Utility_Custom_Create_Object_At_Random_Wander_Point> JMG_Utility_Custom_Create_Object_At_Random_Wander_Point_Registrant("JMG_Utility_Custom_Create_Object_At_Random_Wander_Point","Custom:int,Preset:string,WanderingAIGroupID:int");
+ScriptRegistrant<JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point> JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point_Registrant("JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point","WanderingAIGroupID=-1:int,SafeTeleportDistance=1.5:float,ChangeGroupIDCustom=0:int,PlayerType=2:int,RetryOnFailure=0:int,AiOnly=0:int");
+ScriptRegistrant<JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point_Attach> JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point_Attach_Registrant("JMG_Utility_Zone_Teleport_To_Non_Visible_Wander_Point_Attach","WanderingAIGroupID=-1:int,SafeTeleportDistance=1.5:float");
+ScriptRegistrant<JMG_Utility_Security_System_Random_NumberPad_Control> JMG_Utility_Security_System_Random_NumberPad_Control_Registrant("JMG_Utility_Security_System_Random_NumberPad_Control","RandomCombinationDigits:int,ID:int,Success_Custom=0:int,Partial_Failure_Custom=0:int,Failure_Custom=0:int,Disable_On_Success=1:int,Disable_On_Failure=0:int,Starts_Enabled=1:int,Enable_Custom=0:int,Failure_Safty=1:int,Max_Failures=1:int,Sound_Name_Base:string");
+ScriptRegistrant<JMG_Utility_Custom_Combination_Lock> JMG_Utility_Custom_Combination_Lock_Registrant("JMG_Utility_Custom_Combination_Lock","ID:int,Combination:string,Input_Number_Custom:int,Input_Enter_Custom:int,Input_Clear_Custom:int,Success_Custom=0:int,Partial_Failure_Custom=0:int,Failure_Custom=0:int,Disable_On_Success=1:int,Disable_On_Failure=0:int,Starts_Enabled=1:int,Enable_Custom=0:int,Failure_Safty=1:int,Max_Failures=1:int,Sound_Name_Base:string");
+ScriptRegistrant<JMG_Utility_Custom_Combination_Lock_Key> JMG_Utility_Custom_Combination_Lock_Key_Registrant("JMG_Utility_Custom_Combination_Lock_Key","ID=0:int,Message:int,Param=0:int,Sound_Name=null:string");
+ScriptRegistrant<JMG_Utility_Security_System_Sync_String_Random_NumberPad_Control> JMG_Utility_Security_System_Sync_String_Random_NumberPad_Control_Registrant("JMG_Utility_Security_System_Sync_String_Random_NumberPad_Control","StringID:int,Delim=@:string");
+ScriptRegistrant<JMG_Utility_Created_Animate_SubObject_On_Join> JMG_Utility_Created_Animate_SubObject_On_Join_Registrant("JMG_Utility_Created_Animate_SubObject_On_Join","SubObject:string,Animation:string");
+ScriptRegistrant<JMG_Utility_Custom_Play_Animation_Send_Custom_When_Complete> JMG_Utility_Custom_Play_Animation_Send_Custom_When_Complete_Registrant("JMG_Utility_Custom_Play_Animation_Send_Custom_When_Complete","ReceivedCustom:int,Animation:string,StartFrame:float,EndFrame:float,ID:int,Custom:int,Param:int,Delay:float");
+ScriptRegistrant<JMG_Utility_Created_Play_Locked_Infantry_Animation> JMG_Utility_Created_Play_Locked_Infantry_Animation_Registrant("JMG_Utility_Created_Play_Locked_Infantry_Animation","Animation:string");
+ScriptRegistrant<JMG_Utility_Custom_Send_Custom_To_Preset> JMG_Utility_Custom_Send_Custom_To_Preset_Registrant("JMG_Utility_Custom_Send_Custom_To_Preset","ReceivedCustom:int,Preset:string,Custom:int,Param:int,Delay:float");
+ScriptRegistrant<JMG_Utility_Custom_Talk> JMG_Utility_Custom_Talk_Registrant("JMG_Utility_Custom_Talk","Custom:int,StringID:int");
+ScriptRegistrant<JMG_Utility_Zone_Send_Custom_Enter_Preset> JMG_Utility_Zone_Send_Custom_Enter_Preset_Registrant("JMG_Utility_Zone_Send_Custom_Enter_Preset","Preset:string,ID=0:int,Custom=0:int,Param=0:int,Delay=0.0:float,PlayerType=2:int,TriggerOnce=1:int");
+ScriptRegistrant<JMG_Utility_Global_Armor_Controller> JMG_Utility_Global_Armor_Controller_Registrant("JMG_Utility_Global_Armor_Controller","DefaultMaxArmor:float,DefaultArmor:float");
+ScriptRegistrant<JMG_Utility_Global_Armor_Custom> JMG_Utility_Global_Armor_Custom_Registrant("JMG_Utility_Global_Armor_Custom","Custom:int,MaxArmor:float,Armor:float,UpdateAllObjects=1:int");
+ScriptRegistrant<JMG_Utility_Global_Armor_Object> JMG_Utility_Global_Armor_Object_Registrant("JMG_Utility_Global_Armor_Object","");
+ScriptRegistrant<JMG_Utility_Global_Health_Controller> JMG_Utility_Global_Health_Controller_Registrant("JMG_Utility_Global_Health_Controller","DefaultMaxHealth:float,DefaultHealth:float");
+ScriptRegistrant<JMG_Utility_Global_Health_Custom> JMG_Utility_Global_Health_Custom_Registrant("JMG_Utility_Global_Health_Custom","Custom:int,MaxHealth:float,Health:float,UpdateAllObjects=1:int");
+ScriptRegistrant<JMG_Utility_Global_Health_Object> JMG_Utility_Global_Health_Object_Registrant("JMG_Utility_Global_Health_Object","");
+ScriptRegistrant<JMG_Utility_Custom_Create_Random_Explosions> JMG_Utility_Custom_Create_Random_Explosions_Registrant("JMG_Utility_Custom_Create_Random_Explosions","Custom:int,ExplosionPreset:string,Count:int,MaxDistance:float,KillerID:int");
+ScriptRegistrant<JMG_Utility_Custom_Enable_Spawners_Incrementally_In_Range> JMG_Utility_Custom_Enable_Incrementally_Spawners_In_Range_Registrant("JMG_Utility_Custom_Enable_Spawners_Incrementally_In_Range","StartID:int,EndID:int,Custom:int,Enable=1:int");
+ScriptRegistrant<JMG_Utility_Control_Point_Team_Target_Wander_Point> JMG_Utility_Control_Point_Team_Target_Wander_Point_Registrant("JMG_Utility_Control_Point_Team_Target_Wander_Point","ControlPointID:int,TeamID:int,TargetGroupID:int,NonTargetGroupId:int");
+ScriptRegistrant<JMG_Utility_AI_Control_Point> JMG_Utility_AI_Control_Point_Registrant("JMG_Utility_AI_Control_Point","CaptureCpGroupId:int,CaptureCpChance=0.33:float,CaptureSpeed=1.0:float,CaptureDistance=5.0:float,DefendCpGroupId:int,DefendSpeed=1.0:float,DefendDistance=1.0:float,CloseDefendDistance=25.0:float,ChooseFarDefendChance=0.1:float,AttackSpeed=1.0:float,AttackDistance=-1.0:float,RandomAttackDistance=0.0:float,AttackDistractFromCaptureChance=0.25:float,ChanceToInvestigateLastSeenLocation=0.66:float,AttackCheckBlocked=1:int,CanSeeStealth=1:int,ShutdownEngineOnArrival=0:int,ChangeDefendSpeedCustom=0:int,ChangeCaptureSpeedCustom=0:int,ChangeAttackSpeedCustom=0:int");
+ScriptRegistrant<JMG_Utility_Objective_System_Set_Infantry_Attach_Bone> JMG_Utility_Objective_System_Set_Infantry_Attach_Bone_Registrant("JMG_Utility_Objective_System_Set_Infantry_Attach_Bone","InfantryAttachBone:string");
+ScriptRegistrant<JMG_Utility_Security_System_Fixed_NumberPad_Control> JMG_Utility_Security_System_Fixed_NumberPad_Control_Registrant("JMG_Utility_Security_System_Fixed_NumberPad_Control","KeyCode:string,ID:int,Success_Custom=0:int,Partial_Failure_Custom=0:int,Failure_Custom=0:int,Disable_On_Success=1:int,Disable_On_Failure=0:int,Starts_Enabled=1:int,Enable_Custom=0:int,Failure_Safty=1:int,Max_Failures=1:int,Sound_Name_Base:string");
+ScriptRegistrant<JMG_Utility_Custom_Teleport_Sender_Wanderpoint> JMG_Utility_Custom_Teleport_Sender_Wanderpoint_Registrant("JMG_Utility_Custom_Teleport_Sender_Wanderpoint","Custom:int,WanderingAIGroupID=-1:int,SafeTeleportDistance=1.5:float,RetryOnFailure=0:int");
+ScriptRegistrant<JMG_Utility_Create_Set_Random_Model> JMG_Utility_Create_Set_Random_Model_Registrant("JMG_Utility_Create_Set_Random_Model","BaseName:string,FinalModelNumber:int");
+ScriptRegistrant<JMG_Utility_Custom_Destroy_Sender> JMG_Utility_Custom_Destroy_Sender_Registrant("JMG_Utility_Custom_Destroy_Sender","Custom:int");
+ScriptRegistrant<JMG_Utility_Custom_Grant_Weapon_Destroy_Sender> JMG_Utility_Custom_Grant_Weapon_Destroy_Sender_Registrant("JMG_Utility_Custom_Grant_Weapon_Destroy_Sender","Custom:int,Weapon:string,FullAmmoString=IDS_M00_AMMO_FULL:string");
+ScriptRegistrant<JMG_Utility_Remove_Script_While_Has_Weapon> JMG_Utility_Remove_Script_While_Has_Weapon_Registrant("JMG_Utility_Remove_Script_While_Has_Weapon","WeaponName:string,Script:string,Params:string,Delim=@:string,Rate=0.1:float");
+ScriptRegistrant<JMG_Utility_Swimming_Infantry_AI> JMG_Utility_Swimming_Infantry_AI_Registrant("JMG_Utility_Swimming_Infantry_AI","WeaponPreset=Weapon_Swimming_Animations:string,DrownTime=10.0:float,StartDrownSequence=3.0:float,GaspForBreath=SFX.SwimmingGaspForBreath:string,PantingSoundEmitterModel=s_panting:string,HeartBeatSoundEmitterModel=s_heartBeat:string,DrownDamageRate=2.5:float,CatchBreathRate=0.33:float,WaterDamageAmount=0.0:float,WaterDamageWarhead=None:string,WaterDamageDelayTime=0:int,WaterDamageDelayTimeRecover=0:int,SwimmingSkin:string,SwimmingArmor:string,SwimmingModel:string");
+ScriptRegistrant<JMG_Utility_Damaged_Refund_Damage> JMG_Utility_Damaged_Refund_Damage_Registrant("JMG_Utility_Damaged_Refund_Damage","WarheadName:string");
+ScriptRegistrant<JMG_Utility_Turret_Spawn_Global_Flag_Controller> JMG_Utility_Turret_Spawn_Global_Flag_Controller_Registrant("JMG_Utility_Turret_Spawn_Global_Flag_Controller","Custom:int");
+ScriptRegistrant<JMG_Utility_Turret_Spawn_Global_Flag> JMG_Utility_Turret_Spawn_Global_Flag_Registrant("JMG_Utility_Turret_Spawn_Global_Flag","Turret_Preset:string,Bone_Name=Tur_Mount:string");
+ScriptRegistrant<JMG_Utility_Timer_Death_If_Not_Damaged_Over_Peroid> JMG_Utility_Timer_Death_If_Not_Damaged_Over_Peroid_Registrant("JMG_Utility_Timer_Death_If_Not_Damaged_Over_Peroid","Time:int,Damage:float,Warhead:string");
+ScriptRegistrant<JMG_Utility_Global_Attach_Script_On_Flag_Controller> JMG_Utility_Global_Attach_Script_On_Flag_Controller_Registrant("JMG_Utility_Global_Attach_Script_On_Flag_Controller","GlobalFlag:int");
+ScriptRegistrant<JMG_Utility_Global_Attach_Script_On_Flag_Custom> JMG_Utility_Global_Attach_Script_On_Flag_Custom_Registrant("JMG_Utility_Global_Attach_Script_On_Flag_Custom","Custom:int,GlobalFlag:int");
+ScriptRegistrant<JMG_Utility_Global_Attach_Script_On_Flag> JMG_Utility_Global_Attach_Script_On_Flag_Registrant("JMG_Utility_Global_Attach_Script_On_Flag","GlobalFlag:int,Script:string,Params:string,Delim=@:string");
+ScriptRegistrant<JMG_Utility_Custom_Attach_Script_To_Presets> JMG_Utility_Custom_Attach_Script_To_Presets_Registrant("JMG_Utility_Custom_Attach_Script_To_Presets","Custom:int,Preset:string,Script:string,Params:string,Delim=@:string");
+ScriptRegistrant<JMG_Utility_Custom_Send_Custom_On_Player_Count_Animation> JMG_Utility_Custom_Send_Custom_On_Player_Count_Animation_Registrant("JMG_Utility_Custom_Send_Custom_On_Player_Count_Animation","ControllingID:int,Animation:string,MaxFrame:float");
+ScriptRegistrant<JMG_Utility_Created_Destroy_If_Not_In_Pathfind> JMG_Utility_Created_Destroy_If_Not_In_Pathfind_Registrant("JMG_Utility_Created_Destroy_If_Not_In_Pathfind","");
+ScriptRegistrant<JMG_Utility_Teleport_If_Not_Moving_To_Location> JMG_Utility_Teleport_If_Not_Moving_To_Location_Registrant("JMG_Utility_Teleport_If_Not_Moving_To_Location","Time:int,Location:vector3");
+ScriptRegistrant<JMG_Utility_Global_Set_Random_Model_Controller> JMG_Utility_Global_Set_Random_Model_Controller_Registrant("JMG_Utility_Global_Set_Random_Model_Controller","DefaultExtension:string");
+ScriptRegistrant<JMG_Utility_Global_Set_Random_Model_Custom> JMG_Utility_Global_Set_Random_Model_Custom_Registrant("JMG_Utility_Global_Set_Random_Model_Custom","Custom:int,Extension:string");
+ScriptRegistrant<JMG_Utility_Global_Set_Random_Model> JMG_Utility_Global_Set_Random_Model_Registrant("JMG_Utility_Global_Set_Random_Model","BaseName:string,FinalModelNumber:int");
+ScriptRegistrant<JMG_Utility_Swimming_Infantry_Advanced_AI> JMG_Utility_Swimming_Infantry_Advanced_AI_Registrant("JMG_Utility_Swimming_Infantry_Advanced_AI","WeaponsGroupID=0:int,WeaponPreset=Weapon_Swimming_Animations:string,ForceDefinedWeapons=0:int,DefaultHoldStyle=4:int,DefaultSwimSpeed=1.0:float,DrownTime=10.0:float,StartDrownSequence=3.0:float,GaspForBreath=SFX.SwimmingGaspForBreath:string,PantingSoundEmitterModel=s_panting:string,HeartBeatSoundEmitterModel=s_heartBeat:string,DrownDamageRate=2.5:float,CatchBreathRate=0.33:float,WaterDamageAmount=0.0:float,WaterDamageDelayTime=0:int,WaterDamageDelayTimeRecover=0:int,WaterDamageWarhead=None:string,SwimmingSkin:string,SwimmingArmor:string,SwimmingModel:string,SwimmingHeightScale=999.99:float,SwimmingWidthScale=999.99:float");
+ScriptRegistrant<JMG_Utility_Global_Custom_Send_Custom_Flag_Controller> JMG_Utility_Global_Custom_Send_Custom_Flag_Controller_Registrant("JMG_Utility_Global_Custom_Send_Custom_Flag_Controller","GlobalFlag:int");
+ScriptRegistrant<JMG_Utility_Global_Custom_Send_Custom_Flag_Custom> JMG_Utility_Global_Custom_Send_Custom_Flag_Custom_Registrant("JMG_Utility_Global_Custom_Send_Custom_Flag_Custom","Custom:int,GlobalFlag:int");
+ScriptRegistrant<JMG_Utility_Global_Custom_Send_Custom_Flag> JMG_Utility_Global_Custom_Send_Custom_Registrant("JMG_Utility_Global_Custom_Send_Custom_Flag","GlobalFlag:int,Custom:int,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float,RandomDelay=0.0:float,RandomChance=0.0:float");
+ScriptRegistrant<JMG_Utility_AI_Goto_Location_While_Player_Nearby> JMG_Utility_AI_Goto_Location_While_Player_Nearby_Registrant("JMG_Utility_AI_Goto_Location_While_Player_Nearby","GotoObjectId:int,GotoLocation:Vector3,MaxPlayerDistance:float,MinAttackRange=0.0:float,ForceFire=0:int,VTOLHover=0.0:float,vsSoldier=1:int,vsVehicle=1:int,vsAircraft=1:int,WeaponError=-1.0:float,OverrideFireMode=0:int,OverrideSpeed=-1.0:float,PlayerType=2:int");
+ScriptRegistrant<JMG_Utility_AI_Goto_Location_While_Player_Nearby_Ignored> JMG_Utility_AI_Goto_Location_While_Player_Nearby_Ignored_Registrant("JMG_Utility_AI_Goto_Location_While_Player_Nearby_Ignored","");
+ScriptRegistrant<JMG_Utility_Killed_Drop_Powerup_Become_Corpse> JMG_Utility_Killed_Drop_Powerup_Become_Corpse_Registrant("JMG_Utility_Killed_Drop_Powerup_Become_Corpse","PowerupName:string,RequiredWeaponPreset:string,Chance=1.0:float");
+ScriptRegistrant<JMG_Utility_Objective_System_Objectives_Complete_Send_Custom> JMG_Utility_Objective_System_Objectives_Complete_Send_Custom_Registrant("JMG_Utility_Objective_System_Objectives_Complete_Send_Custom","CompletedObjectives:string,Delim=@:string,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float,RandomDelay=0.0:float,Repeat=0:int");
+ScriptRegistrant<JMG_Utility_Damage_Update_Animation_Frame> JMG_Utility_Damage_Update_Animation_Frame_Registrant("JMG_Utility_Damage_Update_Animation_Frame","Animation:string,MaxFrame:float,Model:string");
+ScriptRegistrant<JMG_Utility_Security_System_Sync_Model_Random_NumberPad_Control> JMG_Utility_Security_System_Sync_Model_Random_NumberPad_Control_Registrant("JMG_Utility_Security_System_Sync_Model_Random_NumberPad_Control","KeypadID:int,BaseModel:string,Index:int");
+ScriptRegistrant<JMG_Utility_AI_Goto_Target_Script> JMG_Utility_AI_Goto_Target_Script_Registrant("JMG_Utility_AI_Goto_Target_Script","HuntSearchDistance=-1.0:float,HuntSpeed=1.0:float,HuntArriveDistance=1.0:float,RandomHuntArriveDistance=0.0:float,HuntStealth=0:int,AttackSpeed=1.0:float,AttackDistance=-1.0:float,RandomAttackDistance=0.0:float,ReturnHome=1:int,ReturnHomeSpeed=1.0:float,WanderingAIGroupID=-1:int,WanderSpeed=1.0:float,CanSeeStealth=1:int,ShutdownEngineOnArrival=0:int,AttackCheckBlocked=1:int,MaxSightRangeFromHome=0.0:float,WanderDistanceOverride=0.0:float,ChangeWanderGroupCustom=0:int,ChangeWanderSpeedCustom=0:int,ChangeHuntDistanceCustom=0:int,ChangeHuntSpeedCustom=0:int,ChangeReturnHomeSpeedCustom=0:int,ChangeMaxSightFromHomeLocationCustom=0:int,ChangeAttackSpeedCustom=0:int,ChanceToInvestigateLastSeenLocation=0.66:float");
+ScriptRegistrant<JMG_Utility_AI_Goto_Target_Script_Ignore_Object> JMG_Utility_AI_Goto_Target_Script_Ignore_Object_Registrant("JMG_Utility_AI_Goto_Target_Script_Ignore_Object","");
+ScriptRegistrant<JMG_Utility_AI_Goto_Target_Script_Target> JMG_Utility_AI_Goto_Target_Script_Target_Registrant("JMG_Utility_AI_Goto_Target_Script_Target","");
+ScriptRegistrant<JMG_Utility_Custom_Send_Custom_If_Script_Count> JMG_Utility_Custom_Send_Custom_If_Script_Count_Registrant("JMG_Utility_Custom_Send_Custom_If_Script_Count","Custom:int,Script:string,MaxCount:int,PlayerAddMaxCount:float,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float,RandomDelay=0.0:float,RandomChance=0.0:float");
+ScriptRegistrant<JMG_Utility_Created_Trigger_Create_Vehicle> JMG_Utility_Created_Trigger_Create_Vehicle_Registrant("JMG_Utility_Created_Trigger_Create_Vehicle","PresetName:string,Delay:float,OwnerID:int,TeamID:int");
+ScriptRegistrant<JMG_Utility_Custom_Remove_And_Attach_Script> JMG_Utility_Custom_Remove_And_Attach_Script_Registrant("JMG_Utility_Custom_Remove_And_Attach_Script","Custom:int,RemoveScript:string,AttachScript:string,Params:string,Delim:string,Repeat:int,RequiresRemoveScript:int");
+ScriptRegistrant<JMG_Utility_AI_Guardian_Aircraft_Ignored> JMG_Utility_AI_Guardian_Aircraft_Ignored_Registrant("JMG_Utility_AI_Guardian_Aircraft_Ignored","");
+ScriptRegistrant<JMG_Utility_AI_Guardian_Infantry_Ignored> JMG_Utility_AI_Guardian_Infantry_Ignored_Registrant("JMG_Utility_AI_Guardian_Infantry_Ignored","");
+ScriptRegistrant<JMG_Utility_AI_Guardian_Vehicle_Ignored> JMG_Utility_AI_Guardian_Vehicle_Ignored_Registrant("JMG_Utility_AI_Guardian_Vehicle_Ignored","");
+ScriptRegistrant<JMG_Utility_AI_Guardian_Generic_Ignored> JMG_Utility_AI_Guardian_Generic_Ignored_Registrant("JMG_Utility_AI_Guardian_Generic_Ignored","");
+ScriptRegistrant<JMG_Utility_Objective_System_Objective_Marker> JMG_Utility_Objective_System_Objective_Marker_Registrant("JMG_Utility_Objective_System_Objective_Marker","ObjectiveID:int");
+ScriptRegistrant<JMG_Utility_Remove_Script_If_Doesnt_Have_Weapon> JMG_Utility_Remove_Script_If_Doesnt_Have_Weapon_Registrant("JMG_Utility_Remove_Script_If_Doesnt_Have_Weapon","WeaponName:string,Script:string,Params:string,Delim=@:string,Rate=0.1:float");
+ScriptRegistrant<JMG_Utility_Spawn_With_Last_Selected_Gun_Ignore> JMG_Utility_Spawn_With_Last_Selected_Gun_Ignore_Registrant("JMG_Utility_Spawn_With_Last_Selected_Gun_Ignore","WeaponPreset:string");
+ScriptRegistrant<JMG_Utility_Objective_System_Override_Visible_Settings> JMG_Utility_Objective_System_Override_Visible_Settings_Registrant("JMG_Utility_Objective_System_Override_Visible_Settings","ObjectiveID:int,MarkerModel:string,MarkerColor=-1:int,AttachBone:string,OverrideTextColor=0:int,TextColor:vector3,OverrideHudColor=0:int,HudColor:vector3");
+ScriptRegistrant<JMG_Utility_Custom_Create_Object_At_Bone> JMG_Utility_Custom_Create_Object_At_Bone_Registrant("JMG_Utility_Custom_Create_Object_At_Bone","Custom:int,Preset:string,Bone:string,MaxDistance=1.5:float,Repeat=0:int");
+ScriptRegistrant<JMG_Utility_Killed_Send_Custom_When_Killed_By_Nothing> JMG_Utility_Killed_Send_Custom_When_Killed_By_Nothing_Registrant("JMG_Utility_Killed_Send_Custom_When_Killed_By_Nothing","ID:int,Custom:int,Param:int,Delay:float");
+ScriptRegistrant<JMG_Utility_Custom_Drop_Corpse> JMG_Utility_Custom_Drop_Corpse_Registrant("JMG_Utility_Custom_Drop_Corpse","Custom:int,PowerupName:string,Repeat=0:int");
+ScriptRegistrant<JMG_Utility_Custom_Send_Shuffled_Customs> JMG_Utility_Custom_Send_Shuffled_Customs_Registrant("JMG_Utility_Custom_Send_Shuffled_Customs","Custom:int,ID=0:int,SendCustoms:string,Delim=@:string,Param:int,Delay=0.0:float");
+ScriptRegistrant<JMG_Utility_Custom_Send_Shuffled_Customs_And_Ids> JMG_Utility_Custom_Send_Shuffled_Customs_And_Ids_Registrant("JMG_Utility_Custom_Send_Shuffled_Customs_And_Ids","Custom:int,IDs=0:string,SendCustoms:string,Delim=@:string,Param:int,Delay=0.0:float");
+ScriptRegistrant<JMG_Utility_Custom_Force_All_Players_Into_Vehicle> JMG_Utility_Custom_Force_All_Players_Into_Vehicle_Registrant("JMG_Utility_Custom_Force_All_Players_Into_Vehicle","Custom:int,ForceOutOfOtherVehicles=1:int");
+ScriptRegistrant<JMG_Utility_Custom_Force_Occupants_Out_And_Lock> JMG_Utility_Custom_Force_Occupants_Out_And_Lock_Registrant("JMG_Utility_Custom_Force_Occupants_Out_And_Lock","Custom:int");
+ScriptRegistrant<JMG_Utility_Custom_Send_Custom_If_Occupant_LorE> JMG_Utility_Custom_Send_Custom_If_Occupant_LorE_Registrant("JMG_Utility_Custom_Send_Custom_If_Occupant_LorE","Custom:int,OccupantCount:int,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float,Repeat=0:int");
+ScriptRegistrant<JMG_Utility_Custom_Send_Custom_If_Occupant_GorE> JMG_Utility_Custom_Send_Custom_If_Occupant_GorE_Registrant("JMG_Utility_Custom_Send_Custom_If_Occupant_GorE","Custom:int,OccupantCount:int,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float,Repeat=0:int");
+ScriptRegistrant<JMG_Utility_Basic_Spawner_Wander_Point> JMG_Utility_Basic_Spawner_Wander_Point_Registrant("JMG_Utility_Basic_Spawner_Wander_Point","Spawn_Preset:string,WanderingPointGroupID:int,SafeTeleportDistance=1.5:float,Spawn_Rate:float,Random_Spawn_Rate:float,Spawn_At_A_Time:int,Max_Total_Spawned=-1:int,Change_Spawn_Cap_Custom=-1:int,Initial_Spawn=-1:int,Spawned_Object_Script_ID=-1:int,Spawn_Group_ID=0:int,Starts_Disabled=0:int,Enable_Disable_Custom=0:int,Attach_Scripts_Group_ID=-1:int,PlayersAddToSpawnAtATime=0.0:float");
+ScriptRegistrant<JMG_Utility_Global_CSC_With_Global_Param_Controller> JMG_Utility_Global_CSC_With_Global_Param_Controller_Registrant("JMG_Utility_Global_CSC_With_Global_Param_Controller","GlobalParam:int");
+ScriptRegistrant<JMG_Utility_Global_CSC_With_Global_Param_Update_Custom> JMG_Utility_Global_CSC_With_Global_Param_Update_Custom_Registrant("JMG_Utility_Global_CSC_With_Global_Param_Update_Custom","Custom:int,GlobalParam:int");
+ScriptRegistrant<JMG_Utility_Global_CSC_With_Global_Param> JMG_Utility_Global_CSC_With_Global_Param_Registrant("JMG_Utility_Global_CSC_With_Global_Param","Custom:int,ID=0:int,SendCustom:int,Delay=0.0:float,RandomDelay=0.0:float,RandomChance=0.0:float");
+ScriptRegistrant<JMG_Utility_Global_Armor_Scaled_Controller> JMG_Utility_Global_Armor_Scaled_Controller_Registrant("JMG_Utility_Global_Armor_Scaled_Controller","Scale=100.0:float");
+ScriptRegistrant<JMG_Utility_Global_Armor_Scaled_Custom> JMG_Utility_Global_Armor_Scaled_Custom_Registrant("JMG_Utility_Global_Armor_Scaled_Custom","Custom:int,Scale=100.0:float");
+ScriptRegistrant<JMG_Utility_Global_Armor_Scaled_Object> JMG_Utility_Global_Armor_Scaled_Object_Registrant("JMG_Utility_Global_Armor_Scaled_Object","");
+ScriptRegistrant<JMG_Utility_Global_Health_Scaled_Controller> JMG_Utility_Global_Health_Scaled_Controller_Registrant("JMG_Utility_Global_Health_Scaled_Controller","Scale=100.0:float");
+ScriptRegistrant<JMG_Utility_Global_Health_Scaled_Custom> JMG_Utility_Global_Health_Scaled_Custom_Registrant("JMG_Utility_Global_Health_Scaled_Custom","Custom:int,Scale=100.0:float");
+ScriptRegistrant<JMG_Utility_Global_Health_Scaled_Object> JMG_Utility_Global_Health_Scaled_Object_Registrant("JMG_Utility_Global_Health_Scaled_Object","");
+ScriptRegistrant<JMG_Utility_Global_Infantry_Speed_Controller> JMG_Utility_Global_Infantry_Speed_Controller_Registrant("JMG_Utility_Global_Infantry_Speed_Controller","Speed=6.0:float");
+ScriptRegistrant<JMG_Utility_Global_Infantry_Speed_Custom> JMG_Utility_Global_Infantry_Speed_Custom_Registrant("JMG_Utility_Global_Infantry_Speed_Custom","Custom:int,Speed=6.0:float");
+ScriptRegistrant<JMG_Utility_Global_Infantry_Speed_Object> JMG_Utility_Global_Infantry_Speed_Object_Registrant("JMG_Utility_Global_Infantry_Speed_Object","");
+ScriptRegistrant<JMG_Utility_AI_Control_Point_Ignore_Object> JMG_Utility_AI_Control_Point_Ignore_Object_Registrant("JMG_Utility_AI_Control_Point_Ignore_Object","");
+ScriptRegistrant<JMG_Utility_Custom_Send_Custom_No_Presets_Outside_Of_Vehicle> JMG_Utility_Custom_Send_Custom_No_Presets_Outside_Of_Vehicle_Registrant("JMG_Utility_Custom_Send_Custom_No_Presets_Outside_Of_Vehicle","Custom:int,Preset:string,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float,Repeat=0:int");
+ScriptRegistrant<JMG_Utility_Custom_Send_Custom_No_Presets_Inside_Of_Vehicle> JMG_Utility_Custom_Send_Custom_No_Presets_Inside_Of_Vehicle_Registrant("JMG_Utility_Custom_Send_Custom_No_Presets_Inside_Of_Vehicle","Custom:int,Preset:string,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float,Repeat=0:int");
+ScriptRegistrant<JMG_Utility_Custom_Send_Custom_From_All_Players> JMG_Utility_Custom_Send_Custom_From_All_Players_Registrant("JMG_Utility_Custom_Send_Custom_From_All_Players","Custom:int,ID=0:int,SendCustom:int,Param:int,Delay=0.0:float");
+ScriptRegistrant<JMG_Utility_Killed_By_Player_Send_Custom_From_Player> JMG_Utility_Killed_By_Player_Send_Custom_From_Player_Registrant("JMG_Utility_Killed_By_Player_Send_Custom_From_Player","ID:int,Custom:int,Param:int,Delay:float");
+ScriptRegistrant<JMG_Utility_Sync_Fog_Controller> JMG_Utility_Sync_Fog_Controller_Registrant("JMG_Utility_Sync_Fog_Controller","MinRange:float,MaxRange:float");
+ScriptRegistrant<JMG_Utility_Sync_Fog_Custom_Update> JMG_Utility_Sync_Fog_Custom_Update_Registrant("JMG_Utility_Sync_Fog_Custom_Update","Custom:int,MinRange:float,MaxRange:float,Transition:float");
+ScriptRegistrant<JMG_Utility_Sync_Animation_On_Join> JMG_Utility_Sync_Animation_On_Join_Registrant("JMG_Utility_Sync_Animation_On_Join","");

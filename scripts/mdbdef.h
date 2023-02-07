@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2015 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -20,7 +20,6 @@ public:
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj, int type, int param, GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	void Animation_Complete(GameObject *obj,const char *animation_name);
 	public: void Register_Auto_Save_Variables();
@@ -37,7 +36,6 @@ class MDB_Base_Defense_Popup_VTOL_Only : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj, int type, int param, GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	void Animation_Complete(GameObject *obj,const char *animation_name);
 	public: void Register_Auto_Save_Variables();
@@ -51,7 +49,6 @@ class MDB_Base_Defense_Popup : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj, int type, int param, GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	void Animation_Complete(GameObject *obj,const char *animation_name);
 	public: void Register_Auto_Save_Variables();
@@ -64,7 +61,6 @@ class MDB_Base_Defense : public ScriptImpClass {
 	int LastSeen;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -76,7 +72,6 @@ class MDB_Base_Defense_No_VTOL : public ScriptImpClass {
 	int LastSeen;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -87,7 +82,6 @@ class MDB_Base_Defense_VTOL_Only : public ScriptImpClass {
 	float MaxDis;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };

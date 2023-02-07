@@ -21,14 +21,16 @@
 class DAVehicleQueueGameFeatureClass : public DAEventClass, public DAGameFeatureClass {
 private:
 	struct DAVehicleQueueStruct {
-		DAVehicleQueueStruct(cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost) {
+		DAVehicleQueueStruct(cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost,SoldierGameObj *Owner) {
 			this->Vehicle = Vehicle;
 			this->Player = Player;
 			this->Cost = Cost;
+			this->Owner = Owner;
 		};
 		cPlayer *Player;
 		const VehicleGameObjDef *Vehicle;
 		float Cost;
+		SoldierGameObj *Owner;
 		
 	private:
 		DAVehicleQueueStruct();
@@ -38,7 +40,7 @@ private:
 	~DAVehicleQueueGameFeatureClass();
 	virtual void Level_Loaded_Event();
 	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item);
-	virtual bool Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay);
+	virtual bool Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay,SoldierGameObj *Owner);
 	virtual void Team_Change_Event(cPlayer *Player);
 	virtual void Player_Leave_Event(cPlayer *Player);
 	virtual void Object_Created_Event(GameObject *obj);
@@ -47,9 +49,9 @@ private:
 	virtual void Timer_Expired(int Number,unsigned int Team);
 
 	void Spawn_Vehicle(int Team,DAVehicleQueueStruct *Q);
-	void Spawn_Vehicle(int Team,cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost);
+	void Spawn_Vehicle(int Team,cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost,SoldierGameObj *Owner);
 	void Clear(int Team);
-	void Add(int Team,cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost,bool Head = false);
+	void Add(int Team,cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost,SoldierGameObj *Owner,bool Head = false);
 	bool Remove(int Team,cPlayer *Player);
 	void Send_Positions(int Team);
 

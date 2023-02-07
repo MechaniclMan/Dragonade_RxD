@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -19,7 +19,6 @@ class JFW_User_Controllable_Base_Defence : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -47,7 +46,6 @@ class JFW_Base_Defence : public ScriptImpClass {
 	unsigned int objtype;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -72,7 +70,6 @@ class JFW_Base_Defence_No_Aircraft : public ScriptImpClass {
 	unsigned int objtype;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -97,7 +94,6 @@ class JFW_Base_Defence_Aircraft_Only : public ScriptImpClass {
 	unsigned int objtype;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -119,7 +115,6 @@ class JFW_Base_Defence_Secondary : public ScriptImpClass {
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -144,7 +139,6 @@ class JFW_Base_Defence_No_Aircraft_Secondary : public ScriptImpClass {
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -169,7 +163,6 @@ class JFW_Base_Defence_Aircraft_Only_Secondary : public ScriptImpClass {
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -189,7 +182,6 @@ class JFW_Base_Defence_Animated : public ScriptImpClass {
 	bool attack;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -209,7 +201,6 @@ class JFW_Base_Defence_Animated_No_Aircraft : public ScriptImpClass {
 	bool attack;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -228,7 +219,6 @@ class JFW_Base_Defence_Animated_Aircraft_Only : public ScriptImpClass {
 	bool attack;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -248,7 +238,6 @@ class JFW_Base_Defence_Animated_Secondary : public ScriptImpClass {
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -268,7 +257,6 @@ class JFW_Base_Defence_Animated_No_Aircraft_Secondary : public ScriptImpClass {
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -288,7 +276,6 @@ class JFW_Base_Defence_Animated_Aircraft_Only_Secondary : public ScriptImpClass 
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -309,7 +296,6 @@ class JFW_Base_Defence_No_VTOL : public ScriptImpClass {
 	unsigned int objtype;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -342,7 +328,6 @@ class JFW_Base_Defence_VTOL_Only : public ScriptImpClass {
 	unsigned int objtype;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -364,7 +349,6 @@ class JFW_Base_Defence_No_VTOL_Secondary : public ScriptImpClass {
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -386,7 +370,6 @@ class JFW_Base_Defence_VTOL_Only_Secondary : public ScriptImpClass {
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -405,7 +388,6 @@ class JFW_Base_Defence_Animated_No_VTOL : public ScriptImpClass {
 	bool attack;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -424,7 +406,6 @@ class JFW_Base_Defence_Animated_VTOL_Only : public ScriptImpClass {
 	bool attack;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -445,7 +426,6 @@ class JFW_Base_Defence_Animated_No_VTOL_Secondary : public ScriptImpClass {
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -466,7 +446,6 @@ class JFW_Base_Defence_Animated_VTOL_Only_Secondary : public ScriptImpClass {
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -476,7 +455,6 @@ class JFW_Base_Defence_Animated_Sound : public ScriptImpClass {
 	bool attack;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -486,7 +464,6 @@ class JFW_Base_Defence_Animated_Sound_No_Aircraft : public ScriptImpClass {
 	bool attack;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -496,7 +473,6 @@ class JFW_Base_Defence_Animated_Sound_Aircraft_Only : public ScriptImpClass {
 	bool attack;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -507,7 +483,6 @@ class JFW_Base_Defence_Animated_Sound_Secondary : public ScriptImpClass {
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -518,7 +493,6 @@ class JFW_Base_Defence_Animated_Sound_No_Aircraft_Secondary : public ScriptImpCl
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -529,7 +503,6 @@ class JFW_Base_Defence_Animated_Sound_Aircraft_Only_Secondary : public ScriptImp
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -539,7 +512,6 @@ class JFW_Base_Defence_Animated_Sound_No_VTOL : public ScriptImpClass {
 	bool attack;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -549,7 +521,6 @@ class JFW_Base_Defence_Animated_Sound_VTOL_Only : public ScriptImpClass {
 	bool attack;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -560,7 +531,6 @@ class JFW_Base_Defence_Animated_Sound_No_VTOL_Secondary : public ScriptImpClass 
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -571,7 +541,6 @@ class JFW_Base_Defence_Animated_Sound_VTOL_Only_Secondary : public ScriptImpClas
 	bool primary;
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -585,7 +554,6 @@ class JFW_Base_Defence_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -599,7 +567,6 @@ class JFW_Base_Defence_No_Aircraft_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -613,7 +580,6 @@ class JFW_Base_Defence_Aircraft_Only_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -625,7 +591,6 @@ class JFW_Base_Defence_Animated_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -637,7 +602,6 @@ class JFW_Base_Defence_Animated_No_Aircraft_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -649,7 +613,6 @@ class JFW_Base_Defence_Animated_Aircraft_Only_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -663,7 +626,6 @@ class JFW_Base_Defence_No_VTOL_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -677,7 +639,6 @@ class JFW_Base_Defence_VTOL_Only_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -689,7 +650,6 @@ class JFW_Base_Defence_Animated_No_VTOL_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -701,7 +661,6 @@ class JFW_Base_Defence_Animated_VTOL_Only_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -713,7 +672,6 @@ class JFW_Base_Defence_Animated_Sound_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -725,7 +683,6 @@ class JFW_Base_Defence_Animated_Sound_No_Aircraft_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -737,7 +694,6 @@ class JFW_Base_Defence_Animated_Sound_Aircraft_Only_Swap : public ScriptImpClass
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -749,7 +705,6 @@ class JFW_Base_Defence_Animated_Sound_No_VTOL_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
@@ -761,7 +716,6 @@ class JFW_Base_Defence_Animated_Sound_VTOL_Only_Swap : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
-	void Action_Complete(GameObject *obj,int action_id,ActionCompleteReason complete_reason);
 	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };

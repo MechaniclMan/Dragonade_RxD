@@ -88,13 +88,13 @@ int DAVehicleQueueGameFeatureClass::Vehicle_Purchase_Request_Event(BaseControlle
 					return 3;
 				}
 				else { //Add to queue if VF is busy.
-					Add(Team,Player,Item,Cost);
+					Add(Team,Player,Item,Cost, 0);
 					return 1;
 				}
 			}
 			else if (VF->Is_Available()) { //Build if VF is free.
 				Player->Purchase_Item(Cost);
-				Spawn_Vehicle(Team,Player,Item,Cost);
+				Spawn_Vehicle(Team,Player,Item,Cost, 0);
 				return 0;
 			}
 		}
@@ -102,7 +102,7 @@ int DAVehicleQueueGameFeatureClass::Vehicle_Purchase_Request_Event(BaseControlle
 	return 3;
 }
 
-bool DAVehicleQueueGameFeatureClass::Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay) {
+bool DAVehicleQueueGameFeatureClass::Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay,SoldierGameObj *Owner) {
 	int Team = Factory->Get_Player_Type();
 	if ((Team == 0 || Team == 1) && Factory->Is_Available()) {
 		if (Building[Team]) {
@@ -111,14 +111,14 @@ bool DAVehicleQueueGameFeatureClass::Request_Vehicle_Event(VehicleFactoryGameObj
 					RefineryGameObj *Ref = (RefineryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_REFINERY);
 					if (Ref && !Ref->Is_Destroyed() && !Ref->Get_Harvester_Vehicle() && (unsigned int)Ref->Get_Harvester_Def_ID() == Vehicle->Get_ID() && Ref->Get_Allow_Harvester_Spawn()) {
 						Ref->Block_Harvester_Spawn(); //Block refinery from requesting a harvester so it doesn't spam requests. Will be re-enabled after the harvester is built.
-						Add(Team,0,Vehicle,-1,true);
+						Add(Team,0,Vehicle,-1,0,true);
 					}
 					else {
-						Add(Team,0,Vehicle,0);
+						Add(Team,0,Vehicle,0,Owner);
 					}
 				}
 				else {
-					Add(Team,Player,Vehicle,0);
+					Add(Team,Player,Vehicle,0,0);
 				}
 			}
 			else if (!Factory->Get_Generating_Vehicle_ID()) { //Allow VF to create the vehicle.
@@ -129,14 +129,14 @@ bool DAVehicleQueueGameFeatureClass::Request_Vehicle_Event(VehicleFactoryGameObj
 			RefineryGameObj *Ref = (RefineryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_REFINERY);
 			if (Ref && !Ref->Is_Destroyed() && !Ref->Get_Harvester_Vehicle() && (unsigned int)Ref->Get_Harvester_Def_ID() == Vehicle->Get_ID() && Ref->Get_Allow_Harvester_Spawn()) {
 				Ref->Block_Harvester_Spawn();
-				Spawn_Vehicle(Team,0,Vehicle,-1);
+				Spawn_Vehicle(Team,0,Vehicle,-1,0);
 			}
 			else {
-				Spawn_Vehicle(Team,0,Vehicle,0);
+				Spawn_Vehicle(Team,0,Vehicle,0,Owner);
 			}
 		}
 		else {
-			Spawn_Vehicle(Team,Player,Vehicle,0);
+			Spawn_Vehicle(Team,Player,Vehicle,0,0);
 		}
 	}
 	return false;
@@ -247,7 +247,7 @@ void DAVehicleQueueGameFeatureClass::Spawn_Vehicle(int Team,DAVehicleQueueStruct
 		if (!BaseControllerClass::Find_Base(Team)->Is_Base_Powered()) {
 			Delay *= Get_Build_Time_Multiplier(Team);
 		}
-		VF->Request_Vehicle(Q->Vehicle->Get_ID(),Delay,Q->Player?Q->Player->Get_GameObj():0);
+		VF->Request_Vehicle(Q->Vehicle->Get_ID(),Delay,Q->Player?Q->Player->Get_GameObj():Q->Owner);
 		if (Q->Player && Q->Player->Is_Alive_And_Kicking()) { //Gray out for the Player.
 			Update_Network_Object_Player(VF,Q->Player->Get_Id());
 			VF->Set_Busy(false); //Prevent from graying out for other players.
@@ -263,8 +263,8 @@ void DAVehicleQueueGameFeatureClass::Spawn_Vehicle(int Team,DAVehicleQueueStruct
 	}
 }
 
-void DAVehicleQueueGameFeatureClass::Spawn_Vehicle(int Team,cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost) {
-	Spawn_Vehicle(Team,new DAVehicleQueueStruct(Player,Vehicle,Cost));
+void DAVehicleQueueGameFeatureClass::Spawn_Vehicle(int Team,cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost,SoldierGameObj *Owner) {
+	Spawn_Vehicle(Team,new DAVehicleQueueStruct(Player,Vehicle,Cost,Owner));
 }
 
 void DAVehicleQueueGameFeatureClass::Timer_Expired(int Number,unsigned int Team) {
@@ -332,7 +332,7 @@ void DAVehicleQueueGameFeatureClass::Clear(int Team) {
 	Queue[Team].Delete_All();
 }
 
-void DAVehicleQueueGameFeatureClass::Add(int Team,cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost,bool Head) {
+void DAVehicleQueueGameFeatureClass::Add(int Team,cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost,SoldierGameObj *Owner,bool Head) {
 	if (Player) {
 		if (Team == 0) {
 			DA::Create_2D_Sound_Player(Player,"M00EVAN_DSGN0009I1EVAN_SND.wav");
@@ -349,20 +349,20 @@ void DAVehicleQueueGameFeatureClass::Add(int Team,cPlayer *Player,const VehicleG
 			}
 		}
 		if (Head) {
-			Queue[Team].Add_Head(new DAVehicleQueueStruct(Player,Vehicle,Cost));
+			Queue[Team].Add_Head(new DAVehicleQueueStruct(Player,Vehicle,Cost,Owner));
 			Send_Positions(Team);
 		}
 		else {
-			Queue[Team].Add(new DAVehicleQueueStruct(Player,Vehicle,Cost));
+			Queue[Team].Add(new DAVehicleQueueStruct(Player,Vehicle,Cost,0));
 			DA::Private_Color_Message(Player,COLORGRAY,"You are in position %d/%d of the vehicle queue.",Queue[Team].Count(),Queue[Team].Count());
 		}
 	}
 	else if (Head) {
-		Queue[Team].Add_Head(new DAVehicleQueueStruct(Player,Vehicle,Cost));
+		Queue[Team].Add_Head(new DAVehicleQueueStruct(Player,Vehicle,Cost,Owner));
 		Send_Positions(Team);
 	}
 	else {
-		Queue[Team].Add(new DAVehicleQueueStruct(Player,Vehicle,Cost));
+		Queue[Team].Add(new DAVehicleQueueStruct(Player,Vehicle,Cost,Owner));
 	}
 }
 

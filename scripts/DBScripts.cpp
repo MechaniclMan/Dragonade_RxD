@@ -3,6 +3,8 @@
 #include "engine_def.h"
 #include "VehicleGameObjDef.h"
 #include "BeaconGameObjDef.h"
+#include "gmplugin.h"
+#include "gmgame.h"
 #include "TeamPurchaseSettingsDefClass.h"
 #include "PurchaseSettingsDefClass.h"
 #include "PowerupGameObj.h"
@@ -18,14 +20,7 @@
 #include "MoveablePhysClass.h"
 #include "DB_General.h"
 
-#include "engine_tdb.h"
-#include "engine_obj.h"
-#include "engine_script.h"
-#include "engine_player.h"
-#include "engine_phys.h"
-#include "engine_game.h"
-#include "engine_obj2.h"
-#include "engine_dmg.h"
+
 
 class DB_Captureable_Silo : public ScriptImpClass {
 	bool Play_Damage;
@@ -1159,6 +1154,261 @@ class DB_Power_Plant_fix : public ScriptImpClass {
 	}
 };
 
+class DB_Beacon_fix : public ScriptImpClass {
+
+	int beacontimerID;
+	void DB_Beacon_fix::Created(GameObject *obj)
+	{
+		
+		
+	}
+
+	void DB_Beacon_fix::Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if( type == CUSTOM_EVENT_BEACON_DEPLOYED && obj->As_PhysicalGameObj() && obj->As_PhysicalGameObj()->As_BeaconGameObj())
+		{
+			float det_time = obj->As_PhysicalGameObj()->As_BeaconGameObj()->Get_Detonate_Time();
+			//Console_InputF("msg beacon deployed: %f seconds",det_time);
+			Vector3 droploc = Commands->Get_Position(obj);
+			GameObject *beacontimer = Commands->Create_Object("Invisible_Object",droploc);
+			beacontimerID = beacontimer->Get_ID();
+			Attach_Script_Once_V(beacontimer,"DB_Beacon_fix2","%i,%f",obj->Get_ID(),det_time);
+		}
+	}
+
+	void DB_Beacon_fix::Destroyed(GameObject *obj)
+	{
+		if(beacontimerID)
+			Commands->Destroy_Object(Commands->Find_Object(beacontimerID));
+	}
+};
+
+class DB_Beacon_fix2 : public ScriptImpClass {
+
+	int BeaconID;
+	int CountDown;
+	void DB_Beacon_fix2::Created(GameObject *obj)
+	{
+		float DetTime = Get_Float_Parameter("DetTime");
+		BeaconID = Get_Int_Parameter("BeaconID");
+		GameObject *beacon = Commands->Find_Object(BeaconID);
+		if(beacon && beacon->As_PhysicalGameObj()->As_BeaconGameObj())
+		{
+			int IsNuke = beacon->As_PhysicalGameObj()->As_BeaconGameObj()->Get_Definition().Is_Nuke();
+			if(DetTime>72)
+			{
+				Commands->Start_Timer(obj,this,DetTime-(float)67,3575);  // countdown initiated
+				if(IsNuke)
+				{
+					Commands->Start_Timer(obj,this,DetTime-(float)62.5,3583);  // Nuclear Strike in 60 seconds
+					Commands->Start_Timer(obj,this,DetTime-(float)52.5,3585);  // Nuclear Strike in 50 seconds
+					Commands->Start_Timer(obj,this,DetTime-(float)42.5,3587);  // Nuclear Strike in 40 seconds
+					Commands->Start_Timer(obj,this,DetTime-(float)32.5,3589);  // Nuclear Strike in 30 seconds
+				}
+				else 
+				{
+					Commands->Start_Timer(obj,this,DetTime-(float)62.5,3584);  // Nuclear Strike in 60 seconds
+					Commands->Start_Timer(obj,this,DetTime-(float)52.5,3586);  // Nuclear Strike in 50 seconds
+					Commands->Start_Timer(obj,this,DetTime-(float)42.5,3588);  // Ion Cannon Strike in 40 seconds
+					Commands->Start_Timer(obj,this,DetTime-(float)32.5,3590);  // Ion Cannon Strike in 30 seconds
+				}
+				Commands->Start_Timer(obj,this,DetTime-25,3579); // 25
+				Commands->Start_Timer(obj,this,DetTime-20,3580); // 20
+				Commands->Start_Timer(obj,this,DetTime-15,3581); // 15
+			}
+
+			else if(DetTime>62)
+			{
+				Commands->Start_Timer(obj,this,DetTime-(float)57,3575);  // countdown initiated
+				if(IsNuke)
+				{
+					Commands->Start_Timer(obj,this,DetTime-(float)52.5,3585);  // Nuclear Strike in 50 seconds
+					Commands->Start_Timer(obj,this,DetTime-(float)42.5,3587);  // Nuclear Strike in 40 seconds
+					Commands->Start_Timer(obj,this,DetTime-(float)32.5,3589);  // Nuclear Strike in 30 seconds
+				}
+				else 
+				{
+					Commands->Start_Timer(obj,this,DetTime-(float)52.5,3586);  // Nuclear Strike in 50 seconds
+					Commands->Start_Timer(obj,this,DetTime-(float)42.5,3588);  // Ion Cannon Strike in 40 seconds
+					Commands->Start_Timer(obj,this,DetTime-(float)32.5,3590);  // Ion Cannon Strike in 30 seconds
+				}
+				Commands->Start_Timer(obj,this,DetTime-25,3579); // 25
+				Commands->Start_Timer(obj,this,DetTime-20,3580); // 20
+				Commands->Start_Timer(obj,this,DetTime-15,3581); // 15
+			}
+
+			else if(DetTime>52)
+			{
+				Commands->Start_Timer(obj,this,DetTime-(float)47,3575);  // countdown initiated
+				if(IsNuke)
+				{
+					Commands->Start_Timer(obj,this,DetTime-(float)42.5,3587);  // Nuclear Strike in 40 seconds
+					Commands->Start_Timer(obj,this,DetTime-(float)32.5,3589);  // Nuclear Strike in 30 seconds
+				}
+				else 
+				{
+					Commands->Start_Timer(obj,this,DetTime-(float)42.5,3588);  // Ion Cannon Strike in 40 seconds
+					Commands->Start_Timer(obj,this,DetTime-(float)32.5,3590);  // Ion Cannon Strike in 30 seconds
+				}
+				Commands->Start_Timer(obj,this,DetTime-25,3579); // 25
+				Commands->Start_Timer(obj,this,DetTime-20,3580); // 20
+				Commands->Start_Timer(obj,this,DetTime-15,3581); // 15
+			}
+
+			else if(DetTime>25)
+			{
+				Commands->Start_Timer(obj,this,DetTime-(float)37,3575); // countdown initiated
+				Commands->Start_Timer(obj,this,DetTime-(float)33.9,3574); // you have GDI
+				Commands->Start_Timer(obj,this,DetTime-(float)33.8,3576); // you have Nod
+				Commands->Start_Timer(obj,this,DetTime-33,3577); // 30
+				Commands->Start_Timer(obj,this,DetTime-(float)32.4,3578); // Seconds to reach minimum safe distance
+				Commands->Start_Timer(obj,this,DetTime-25,3579);
+				Commands->Start_Timer(obj,this,DetTime-20,3580);
+				Commands->Start_Timer(obj,this,DetTime-15,3581);
+			}
+			else if(DetTime>10)
+			{
+				Commands->Start_Timer(obj,this,DetTime-(float)14.9,3574); // you have GDI
+				Commands->Start_Timer(obj,this,DetTime-(float)14.8,3576); // you have Nod
+				Commands->Start_Timer(obj,this,DetTime-14,3582); // 10
+				Commands->Start_Timer(obj,this,DetTime-(float)13.4,3578); // Seconds to reach minimum safe distance
+			}
+			//Commands->Start_Timer(obj,this,DetTime-10,3582);
+			CountDown = 1;
+		}
+	}
+
+	void Timer_Expired(GameObject *obj,int number)
+	{
+		if(number==3575)
+		{
+			//Console_Input("msg Beacon will detonate in 31 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("m00evan_dsgn0102i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("m00evag_dsgn0096i1evag_snd.wav",1);
+		}
+
+		if(number==3574)
+		{
+			//Console_Input("msg Beacon will detonate in 31 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("m00evag_dsgn0097i1evag_snd.wav",1);
+		}
+
+		if(number==3576)
+		{
+			//Console_Input("msg Beacon will detonate in 31 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("m00evan_dsgn0103i1evan_snd.wav",0);
+		}
+
+		if(number==3577)
+		{
+			//Console_Input("msg Beacon will detonate in 30 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("m00evan_dsgn0079i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("m00evag_dsgn0073i1evag_snd.wav",1);
+		}
+
+		if(number==3578)
+		{
+			//Console_Input("msg Beacon will detonate in 29 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("m00evan_dsgn0104i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("m00evag_dsgn0098i1evag_snd.wav",1);
+		}
+
+		if(number==3579)
+		{
+			//Console_Input("msg Beacon will detonate in 25 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("m00evan_dsgn0080i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("m00evag_dsgn0074i1evag_snd.wav",1);
+		}
+
+		if(number==3580)
+		{
+			//Console_Input("msg Beacon will detonate in 20 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("m00evan_dsgn0081i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("m00evag_dsgn0075i1evag_snd.wav",1);
+		}
+
+		if(number==3581)
+		{
+			//Console_Input("msg Beacon will detonate in 15 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("m00evan_dsgn0082i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("m00evag_dsgn0076i1evag_snd.wav",1);
+		}
+
+		if(number==3582)
+		{
+			//Console_InputF("msg Beacon will detonate in %i Seconds",11-CountDown);
+			StringClass SoundNod;
+			StringClass SoundGDI;
+			SoundNod.Format("m00evan_dsgn00%ii1evan_snd.wav",82+CountDown);
+			SoundGDI.Format("m00evag_dsgn00%ii1evag_snd.wav",76+CountDown);
+			Create_2D_WAV_Sound_Team_Dialog(SoundNod,0);
+			Create_2D_WAV_Sound_Team_Dialog(SoundGDI,1);
+			//CountDown++;
+			//if(CountDown<=11)
+				//Commands->Start_Timer(obj,this,1,3582);
+			//else
+				//Commands->Destroy_Object(obj);
+		}
+
+		if(number==3583)
+		{
+			//Console_Input("msg Beacon will detonate in 60 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("mxxdsgn_dsgn0033i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("mxxdsgn_dsgn0035i1evag_snd.wav",1);
+		}
+		
+		if(number==3584)
+		{
+			//Console_Input("msg Beacon will detonate in 60 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("mxxdsgn_dsgn0023i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("evagion60.wav",1);
+		}
+
+		if(number==3585)
+		{
+			//Console_Input("msg Beacon will detonate in 50 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("mxxdsgn_dsgn0032i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("mxxdsgn_dsgn0034i1evag_snd.wav",1);
+		}
+		
+		if(number==3586)
+		{
+			//Console_Input("msg Beacon will detonate in 50 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("mxxdsgn_dsgn0022i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("evagion50.wav",1);
+		}
+
+		if(number==3587)
+		{
+			//Console_Input("msg Beacon will detonate in 40 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("mxxdsgn_dsgn0031i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("mxxdsgn_dsgn0033i1evag_snd.wav",1);
+		}
+		
+		if(number==3588)
+		{
+			//Console_Input("msg Beacon will detonate in 40 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("mxxdsgn_dsgn0021i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("evagion40.wav",1);
+		}
+
+		if(number==3589)
+		{
+			//Console_Input("msg Beacon will detonate in 30 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("mxxdsgn_dsgn0030i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("mxxdsgn_dsgn0032i1evag_snd.wav",1);
+		}
+		
+		if(number==3590)
+		{
+			//Console_Input("msg Beacon will detonate in 30 Seconds");
+			Create_2D_WAV_Sound_Team_Dialog("mxxdsgn_dsgn0020i1evan_snd.wav",0);
+			Create_2D_WAV_Sound_Team_Dialog("evagion30.wav",1);
+		}
+	}
+
+};
+
 class DB_Enter_Teleport_Random : public ScriptImpClass {
 	void Entered(GameObject *obj, GameObject *enter)
 	{
@@ -1281,7 +1531,6 @@ class DB_Face_Forward: public ScriptImpClass {
 };
 
 ScriptRegistrant<DB_Face_Forward> DB_Face_Forward_Registrant("DB_Face_Forward", "Duration=1:float");
-
 ScriptRegistrant<DB_Captureable_Silo>DB_Captureable_Silo_Registrant("DB_Captureable_Silo","Team=-2:int,Amount=2:float,UpgradeAmount=3:float,UpgradeID=0:int");
 ScriptRegistrant<DB_Helipad_Captureable> DB_Capturable_Helipad_Registrant("DB_Capturable_Helipad","Team=-2:int,ReloadZoneID=0:int");
 ScriptRegistrant<DB_Powerup_Buy_Poke_Sound> DB_Powerup_Buy_Poke_Sound_Registrant("DB_Powerup_Buy_Poke_Sound", "Team=0:int,BuildingID=0:int,Preset=bla:string,Cost=10000:float,SoundGranted=bla:string,SoundDenied=bla:string");
@@ -1297,5 +1546,6 @@ ScriptRegistrant<Nod_Turret_DeathSound> Nod_Turret_DeathSound_Registrant("Nod_Tu
 ScriptRegistrant<GDI_Guard_Tower_DeathSound> GDI_Guard_Tower_DeathSound_Registrant("GDI_Guard_Tower_DeathSound", "");
 ScriptRegistrant<Nod_SamSite_DeathSound> Nod_SamSite_DeathSound_Registrant("Nod_SamSite_DeathSound", "");
 ScriptRegistrant<DB_Power_Plant_fix> DB_Power_Plant_fix_Registrant("DB_Power_Plant_fix", "");
+ScriptRegistrant<DB_Beacon_fix> DB_Beacon_fix_Registrant("DB_Beacon_fix", "");
+ScriptRegistrant<DB_Beacon_fix2> DB_Beacon_fix2_Registrant("DB_Beacon_fix2", "BeaconID=0:int,DetTime:0:float");
 ScriptRegistrant<DB_Enter_Teleport_Random> DB_Enter_Teleport_Random_Registrant("DB_Enter_Teleport_Random","Object_ID1=1:int,Object_ID2=1:int,Object_ID3=1:int,Object_ID4=1:int,Object_ID5=1:int");
-

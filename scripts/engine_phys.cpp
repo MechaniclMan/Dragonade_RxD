@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -150,15 +150,15 @@ char SCRIPTS_API Get_Sex(GameObject *obj)
 
 void SCRIPTS_API Create_Effect_All_Stealthed_Objects_Area(const Vector3 &Position,float Distance,const char *object,const Vector3 &offset,int team)
 {
+	Vector3 TestPosition = Position;
+	TestPosition.Z = 0;
 	SLNode<SmartGameObj> *x = GameObjManager::SmartGameObjList.Head();
 	while (x) 
 	{
 		SmartGameObj *obj = x->Data();
 		Vector3 ObjPosition = Commands->Get_Position(obj);
-		Vector3 TestPosition = Position;
 		ObjPosition.Z = 0;
-		TestPosition.Z = 0;
-		if ((Commands->Get_Distance(ObjPosition,TestPosition) <= Distance))
+		if ((Vector3::Distance_Squared(ObjPosition,TestPosition) <= Distance * Distance))
 		{
 			if ((Get_Object_Type(obj) == team) || (team == 2))
 			{

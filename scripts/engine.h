@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -27,6 +27,7 @@
 #include "engine_tdb.h"
 #include "engine_dmg.h"
 #include "engine_phys.h"
+#include "engine_dialog.h"
 #ifndef TT
 #include "engine_script.h"
 #include "engine_tt.h"

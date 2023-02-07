@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -420,6 +420,8 @@ class JFW_Kill_Message_Display : public ScriptImpClass {
 	unsigned int KillerPlayerID;
 	unsigned int KilledID;
 	unsigned int KilledPlayerID;
+	bool KillerIsMSBot;
+	bool KilledIsMSBot;
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 public:
