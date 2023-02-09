@@ -9482,13 +9482,16 @@ void JMG_Bear_Hunter_Turkey::Killed(GameObject *obj,GameObject *killer)
 	BearHunterVoiceSystem::PlayVoice("BH102.mp3","Bear Rug Co: Looks like you found some turkeys, bring them to the processing plant for market price.");
 	NewObjectiveSystemControl.Add_Objective(28,NewObjectiveSystem::Bonus,NewObjectiveSystem::Pending,12864,"",12864);
 }
+void JMG_Security_Camera_Behavior_Target::Created(GameObject *obj)
+{
+}
 ScriptRegistrant<JMG_Bear_Hunter_Player_Soldier> JMG_Bear_Hunter_Player_Soldier_Registrant("JMG_Bear_Hunter_Player_Soldier","");
 ScriptRegistrant<JMG_Rp2_Dedicated_Server_Sound_Emulator> JMG_Rp2_Dedicated_Server_Sound_Emulator_Registrant("JMG_Rp2_Dedicated_Server_Sound_Emulator","");
 ScriptRegistrant<JMG_Bear_Hunter_Game_Control> JMG_Bear_Hunter_Game_Control_Registrant("JMG_Bear_Hunter_Game_Control","PositionFile=DhSwampDeerPositions.ecw:string");
 ScriptRegistrant<JMG_Rp2_Hostile_Mutant_AI> JMG_Rp2_Hostile_Mutant_AI_Registrant("JMG_Rp2_Hostile_Mutant_AI","");
 ScriptRegistrant<JMG_Bear_Hunt_Mutant_Attacker> JMG_Bear_Hunt_Mutant_Attacker_Registrant("JMG_Bear_Hunt_Mutant_Attacker","Speed:float");
 ScriptRegistrant<JMG_Bear_Hunter_Animal_Control> JMG_Bear_Hunter_Animal_Control_Registrant("JMG_Bear_Hunter_Animal_Control","");
-ScriptRegistrant<JMG_Security_Camera_Behavior> JMG_Security_Camera_Behavior_Registrant("JMG_Security_Camera_Behavior","Angle:float,Alarm_ID=0:int,Is_Gun=1:int,Delay=0:float,Alarm_Message=0:int,Alarm_Sound=Beep:string,UpdateRateMultiplier=1.0:float,IdleAimZAngleModifier=0.0:float,FloodLightPreset=null:string,Power_Message=0:int,StealthModeOverride=0:int");
+ScriptRegistrant<JMG_Security_Camera_Behavior> JMG_Security_Camera_Behavior_Registrant("JMG_Security_Camera_Behavior","Angle:float,Alarm_ID=0:int,Is_Gun=1:int,Delay=0:float,Alarm_Message=0:int,Alarm_Sound=Beep:string,UpdateRateMultiplier=1.0:float,IdleAimZAngleModifier=0.0:float,FloodLightPreset=null:string,Power_Message=0:int,StealthModeOverride=0:int,CanOnlyTargetCameraTargets=0:int,MinSightDistance=0.0:float");
 ScriptRegistrant<JMG_Bear_Hunt_Mutant_Cat_Explosion> JMG_Bear_Hunt_Mutant_Cat_Explosion_Registrant("JMG_Bear_Hunt_Mutant_Cat_Explosion","KillSelfExplosion:string,KilledExplosion:string");
 ScriptRegistrant<JMG_Bear_Hunter_President_Controller> JMG_Bear_Hunter_President_Controller_Registrant("JMG_Bear_Hunter_President_Controller","");
 ScriptRegistrant<JMG_Bear_Hunter_Turret_Death_Alert> JMG_Bear_Hunter_Turret_Death_Alert_Registrant("JMG_Bear_Hunter_Turret_Death_Alert","");
@@ -9585,3 +9588,4 @@ ScriptRegistrant<JMG_Bear_Hunter_AI_Guardian_Generic> JMG_Bear_Hunter_AI_Guardia
 ScriptRegistrant<JMG_Bear_Hunter_Give_AI_Cash_For_Kills> JMG_Bear_Hunter_Give_AI_Cash_For_Kills_Registrant("JMG_Bear_Hunter_Give_AI_Cash_For_Kills","");
 ScriptRegistrant<JMG_Wandering_AI_Wander_Point_Follow_Weapon_Or_Obj> JMG_Wandering_AI_Wander_Point_Follow_Weapon_Or_Obj_Registrant("JMG_Wandering_AI_Wander_Point_Follow_Weapon_Or_Obj","GroupId:int,PresetName:string,WeaponName:string");
 ScriptRegistrant<JMG_Bear_Hunter_Turkey> JMG_Bear_Hunter_Turkey_Registrant("JMG_Bear_Hunter_Turkey","");
+ScriptRegistrant<JMG_Security_Camera_Behavior_Target> JMG_Security_Camera_Behavior_Target_Registrant("JMG_Security_Camera_Behavior_Target","");

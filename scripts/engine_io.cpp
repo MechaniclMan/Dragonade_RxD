@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -456,7 +456,8 @@ StringClass &INIClass::Get_String_Advanced(StringClass& string, const char* sect
 		string = "";
 	}
 	return string;
-}INISection *INIClass::Find_Section(const char* section) const
+}
+INISection *INIClass::Find_Section(const char* section) const
 {
 	if (section)
 	{

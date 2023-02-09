@@ -47,9 +47,7 @@ GameObject _declspec(naked) *DAGameObjObserverClass::Owner() {
 }
 
 void DAGameObjObserverClass::Start_Timer(int Number,float Duration) {
-	
-	float Time = ceilf(Duration * 100) / 100;
-	Commands->Start_Timer(Get_Owner(),(ScriptClass *)this,Time,Number);
+	Commands->Start_Timer(Get_Owner(),(ScriptClass *)this,Duration,Number);
 }
 
 void DAGameObjObserverClass::Stop_Timer(int Number) {

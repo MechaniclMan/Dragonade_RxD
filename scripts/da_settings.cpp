@@ -217,7 +217,7 @@ void DASettingsManager::Remove_Settings(int Position) {
 
 const DASettingsClass *DASettingsManager::Get_Settings(const char *Name) {
 	for (int i = 0;i < Settings.Count();i++) {
-		if (Settings[i]->Get_File_Name() == Name) {
+		if (!strcmp(Settings[i]->Get_File_Name(),Name)) {
 			return Settings[i];
 		}
 	}

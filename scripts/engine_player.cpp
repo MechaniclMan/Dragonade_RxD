@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -669,26 +669,6 @@ SCRIPTS_API void Set_Deaths(int ID,int deaths)
 		}
 }
 
-void cTeam::Set_Kills(int _kills) //DA
-{
-	kills = _kills;
-	Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE, true);
-}
-
-void cTeam::Increment_Kills() //DA
-{
-	if (CombatManager::Is_Gameplay_Permitted())
-	{
-		kills++;
-		Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE, true);
-	}
-}
-
-void cTeam::Decrement_Kills() { //DA
-	kills--;
-	Set_Object_Dirty_Bit(BIT_RARE, true);
-}
-
 SCRIPTS_API void Set_Team_Score(int ID,float score)
 {
 	cTeam *teamdata = Find_Team(ID);
@@ -708,6 +688,26 @@ void cPlayer::Set_Deaths(int deaths)
 {
 	Deaths = deaths;
 	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
+}
+
+void cTeam::Set_Kills(int _kills) //DA
+{
+	kills = _kills;
+	Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE, true);
+}
+
+void cTeam::Increment_Kills() //DA
+{
+	if (CombatManager::Is_Gameplay_Permitted())
+	{
+		kills++;
+		Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE, true);
+	}
+}
+
+void cTeam::Decrement_Kills() { //DA
+	kills--;
+	Set_Object_Dirty_Bit(BIT_RARE, true);
 }
 
 void cTeam::Set_Score(float _score)

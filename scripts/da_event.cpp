@@ -901,11 +901,11 @@ void DAEventManager::Init() {
 	AddVehiclePurchaseHook((PurchaseHook)Vehicle_Purchase_Request_Event,0);
 	AddPowerupPurchaseHook((PurchaseHook)PowerUp_Purchase_Request_Event,0);
 	AddThinkHook(Think);
+	AddDialogHook(Dialog_Event);
 	AddRefillHook((RefillHook)Refill_Event);
 	AddRadioHook(Radio_Event);
 	AddStockDamageHook(Stock_Client_Damage_Request_Event);
 	AddTtDamageHook(TT_Client_Damage_Request_Event);
-	AddDialogHook(Dialog_Event);
 
 	static ObjectCreateHookStruct ObjectHook;
 	ObjectHook.hook = Object_Created_Event;

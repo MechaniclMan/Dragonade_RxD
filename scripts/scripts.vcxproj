@@ -612,7 +612,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="RepairBayGameObj.h" />
     <ClInclude Include="RepairBayGameObjDef.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="RigidBodyClass.h" />
     <ClInclude Include="SamSiteGameObj.h" />
     <ClInclude Include="SamSiteGameObjDef.h" />
     <ClInclude Include="SaveLoadSubSystemClass.h" />

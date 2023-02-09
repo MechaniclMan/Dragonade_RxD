@@ -14,10 +14,6 @@
 #include "scripts.h"
 #include "engine.h"
 #include "da.h"
-#include "DefaultConnectionAcceptanceFilter.h"
-#ifdef SSGM
-#include "gmgame.h"
-#endif
 
 #define SCRIPTSAPI __declspec(dllexport)
 typedef void (*srdf) (void (*function)(ScriptClass*));
@@ -121,13 +117,7 @@ BOOL SCRIPTSAPI __stdcall DllMain(HINSTANCE hinstDLL,
 			}
 			break;
 		case DLL_PROCESS_DETACH:
-			if ((!Exe) || (Exe == 1))
-			{
-				removeConnectionAcceptanceFilter(&defaultConnectionAcceptanceFilter);
-			}
-#ifdef SSGM
-			SSGMGameManager::Shutdown();
-#endif			DestroyExpVehFacClass();
+			DestroyExpVehFacClass();
 			FreeLibrary(wwscripts);
 			DA::Shutdown();
 			break;
@@ -441,7 +431,7 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	DA::Init();
 
 	//Write_Renlog(SetScriptCommands)
-	addConnectionAcceptanceFilter(&defaultConnectionAcceptanceFilter);
+	//addConnectionAcceptanceFilter(&defaultConnectionAcceptanceFilter);
 	//Write_GameLog()
 	
 	return (SetScriptCommands) (commands);
