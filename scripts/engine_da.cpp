@@ -1412,48 +1412,6 @@ void cGameData::Set_Intermission_Time_Seconds(int time) {
 	IntermissionTime_Seconds = time;
 }
 
-void Set_Emot_Icon_VisableAll(int ID, const char *Model ) {
-	WideStringClass Send;
-	Send.Format(L"j\n36\n%d\n%hs\n", ID, Model);
-	for (SLNode<cPlayer> *z = Get_Player_List()->Head(); z; z = z->Next()) {
-		if ( z->Data()->Is_Active() ) {
-			Send_Client_Text(Send, TEXT_MESSAGE_PRIVATE, false, -2, z->Data()->Get_Id(), true, true);
-		}
-	}
-}
-
-
-void Check_Stealth_ICON(int ID,const char *Model,int Team) 
-{
-	cPlayer *Player = Find_Player(ID);
-	if ( Player )
-	{
-		if (Player->Get_GameObj()->Get_Vehicle()) {
-			if ( Player->Get_GameObj()->Get_Vehicle()->Is_Stealthed()  )
-				return;
-		}
-		if ( Player->Get_GameObj()->Is_Stealthed() )
-			return;
-		Set_Emot_Icon2(ID,Model,Team);
-	}
-}
-
-bool Is_Stealth(int ID) 
-{
-	cPlayer *Player = Find_Player(ID);
-	if ( Player )
-	{
-		if (Player->Get_GameObj()->Get_Vehicle()) {
-			if ( Player->Get_GameObj()->Get_Vehicle()->Is_Stealthed()  )
-				return true;
-		}
-
-		if ( Player->Get_GameObj()->Is_Stealthed() )
-			return true;
-	}
-	return false;
-}
-
 /*
 
 bool Is_Stealth(GameObject *obj) 
@@ -1500,7 +1458,28 @@ bool RxDMap()
 }
 
 
-void Set_Emot_Icon2(int ID,const char *Model,int Team) {
+GameObject * Find_Object_By_ID(int ObjectID)
+{
+	for (SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head(); x; x = x->Next()) {
+		if (x->Data()->As_ScriptableGameObj() ) {
+			GameObject *Z = x->Data()->As_ScriptableGameObj();
+			if (ObjectID == Z->Get_ID()) { return Z; }
+		}
+	}
+	return 0;
+}
+
+void Set_Emot_Icon_VisableAll(int ID, const char *Model ) {
+	WideStringClass Send;
+	Send.Format(L"j\n36\n%d\n%hs\n", ID, Model);
+	for (SLNode<cPlayer> *z = Get_Player_List()->Head(); z; z = z->Next()) {
+		if ( z->Data()->Is_Active() ) {
+			Send_Client_Text(Send, TEXT_MESSAGE_PRIVATE, false, -2, z->Data()->Get_Id(), true, true);
+		}
+	}
+}
+
+void Set_Emot_Icon_DA(int ID,const char *Model,int Team) {
 	WideStringClass Send;
 	Send.Format(L"j\n36\n%d\n%hs\n",ID,Model);
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
@@ -1509,6 +1488,38 @@ void Set_Emot_Icon2(int ID,const char *Model,int Team) {
 		}
 	}
 }
+
+void Set_Emot_Icon_Stealth(int ID,const char *Model,int Team) 
+{
+	cPlayer *Player = Find_Player(ID);
+	if ( Player )
+	{
+		if (Player->Get_GameObj()->Get_Vehicle()) {
+			if ( Player->Get_GameObj()->Get_Vehicle()->Is_Stealthed()  )
+				return;
+		}
+		if ( Player->Get_GameObj()->Is_Stealthed() )
+			return;
+		Set_Emot_Icon_DA(ID,Model,Team);
+	}
+}
+
+bool Is_Stealth(int ID) 
+{
+	cPlayer *Player = Find_Player(ID);
+	if ( Player )
+	{
+		if (Player->Get_GameObj()->Get_Vehicle()) {
+			if ( Player->Get_GameObj()->Get_Vehicle()->Is_Stealthed()  )
+				return true;
+		}
+
+		if ( Player->Get_GameObj()->Is_Stealthed() )
+			return true;
+	}
+	return false;
+}
+
 
 unsigned int Get_Ground_Vehicle_Count(int Team) {
 	GameObject *factory = Find_Vehicle_Factory(Team);

@@ -66,10 +66,12 @@ public:
 #define CID_Spawner 0x300D
 
 DA_API bool RxDMap();
+DA_API GameObject *Find_Object_By_ID(int ObjectID);
 DA_API void Set_Emot_Icon_VisableAll(int ID, const char *Model );
-DA_API void Check_Stealth_ICON(int ID, const char *Model, int Team );
+DA_API void Set_Emot_Icon_DA(int ID,const char *Model,int Team);
+DA_API void Set_Emot_Icon_Stealth(int ID, const char *Model, int Team );
 DA_API bool Check_Stealth(int ID);
-DA_API void Set_Emot_Icon2(int ID,const char *Model,int Team);
+
 
 DA_API bool Find_Active_Beacon();
 //DA_API GameObject *Find_Any_Beacon();

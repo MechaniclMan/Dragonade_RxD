@@ -33,6 +33,11 @@ typedef ScriptableGameObj GameObject;
 #define Format_String(Buffer) { Buffer[255] = '\0'; va_list arg_list; va_start(arg_list,Format); vsnprintf(Buffer,255,Format,arg_list); va_end(arg_list); };
 #define Format_String_Prefix(Buffer) { Buffer[255] = '\0'; va_list arg_list; va_start(arg_list,Format); strcpy(Buffer,MessagePrefix); vsnprintf(Buffer+MessagePrefix.Get_Length(),255-MessagePrefix.Get_Length(),Format,arg_list); va_end(arg_list); };
 
+typedef const char* (*DA_gdv)();
+typedef unsigned int (*DA_gdr)();
+DA_API extern DA_gdv Get_Dragonade_Version;
+DA_API extern DA_gdr Get_Dragonade_Revision;
+
 class DA_API DA {
 public:
 	static const char *Get_Version();
@@ -139,6 +144,33 @@ inline int Diff(int First, int Second) {
 inline StringClass Format_Time(unsigned long Time) {
 	return StringFormat("%02d.%02d.%02d",Time/3600,(Time/60)%60,Time%60);
 }
+
+inline StringClass Format_Time_Long(unsigned long Time) 
+{
+	unsigned long Hours = Time/3600;
+	unsigned long Minutes = (Time/60)%60;
+	unsigned long Seconds = Time%60;
+
+	//int hours = Seconds / 3600;
+	//int minutes = (Seconds / 60) - (hours * 60);
+	//int seconds = Seconds - (((hours * 60) + minutes) * 60);
+
+	StringClass hourFormat = Hours > 1 ? StringFormat("hours") : StringFormat("hour");
+	StringClass minuteFormat = Minutes > 1 ? StringFormat("minutes") : StringFormat("minute");
+	StringClass secondFormat = Seconds > 1 ? StringFormat("seconds") : StringFormat("second");
+
+	if ( Hours >= 1)
+		return StringFormat("%d %s %d %s %d %s",Hours,hourFormat,Minutes,minuteFormat,Seconds,secondFormat);
+	else if ( Seconds <= 0)
+		return StringFormat("%d %s",Minutes, minuteFormat);
+	else if ( Minutes > 0)
+		return StringFormat("%d %s and %d %s",Minutes,minuteFormat,Seconds,secondFormat);
+	else
+		return StringFormat("%d %s",Seconds,secondFormat);
+}
+
+//	else if ( (Time/60)%60 >= 1)
+//		return StringFormat("%d Minutes and %d Seconds",(Time/60)%60,Time%60);
 
 inline StringClass Long_To_IP(unsigned long IP) {
 	return StringFormat("%d.%d.%d.%d",0xFF & IP,(0xFF00 & IP) >> 8,(0xFF0000 & IP) >> 16,((0xFF000000 & IP) >> 24));

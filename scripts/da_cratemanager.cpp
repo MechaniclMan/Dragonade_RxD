@@ -299,10 +299,22 @@ Vector3 *DACrateManager::Select_Spawner() {
 		float MaxDistance = FLT_MIN;
 		for (int i = 0;i < ActiveSpawners.Count();i++) { //Select active spawner farthest from any crate.
 			float SpawnerMinDistance = FLT_MAX;
-			for (int x = 0;x < CrateObjs.Count();x++) {
-				float Distance = Commands->Get_Distance(CrateObjs[x]->Get_Position(),*ActiveSpawners[i]);
-				if (Distance < SpawnerMinDistance) {
-					SpawnerMinDistance = Distance;
+			DALogManager::Write_RenLog("Select Spawner: Map %s", The_Game()->Get_Map_Name());
+			Console_Output("Select Spawner: Map %s", The_Game()->Get_Map_Name());
+
+			for (int x = 0;x < CrateObjs.Count();x++) 
+			{
+				if ( CrateObjs[i] && ActiveSpawners[i] )
+				{
+					float Distance = Commands->Get_Distance(CrateObjs[x]->Get_Position(),*ActiveSpawners[i]);
+					if (Distance < SpawnerMinDistance) {
+						SpawnerMinDistance = Distance;
+					}
+				}
+				else
+				{
+					DALogManager::Write_RenLog("Select Spawner: Map %s has no spawner", The_Game()->Get_Map_Name());
+					Console_Output("Select Spawner: Map %s has no spawner\n", The_Game()->Get_Map_Name());
 				}
 			}
 			float Distance = Commands->Get_Distance(LastCratePosition,*ActiveSpawners[i]);

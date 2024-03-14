@@ -221,7 +221,7 @@ public:
 	void Set_QuickMatch_Server(bool b) {IsQuickMatch = b;}
 	const WideStringClass &Get_Owner() const {return Owner;}
 	WideStringClass &Get_Game_Title() {return GameTitle;} //DA
-    //const WideStringClass &Get_Game_Title() const {return GameTitle;}
+        //const WideStringClass &Get_Game_Title() const {return GameTitle;}
 	int Get_Version_Number() const {return ExeKey;}
 	bool Do_Exe_Versions_Match() {return ExeVersionsMatch;}
 	bool Do_String_Versions_Match() {return StringVersionsMatch;}

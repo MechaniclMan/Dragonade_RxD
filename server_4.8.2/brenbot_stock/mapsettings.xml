@@ -1,0 +1,66 @@
+<?xml version='1.0' standalone='yes'?>
+<mapsettings>
+ <default>
+  <time>30</time>
+  <mines>30</mines>
+  <vehicles>8</vehicles>
+  <donatelimit>5</donatelimit>
+  <rules></rules>
+ </default>
+ <map name="C&amp;C_Field.mix">
+  <time>30</time>
+  <mines>35</mines>
+  <vehicles>8</vehicles>
+  <donatelimit>10</donatelimit>
+  <rules></rules>
+ </map>
+ <map name="C&amp;C_Volcano.mix">
+  <time>30</time>
+  <mines>35</mines>
+  <vehicles>8</vehicles>
+  <donatelimit>5</donatelimit>
+  <rules></rules>
+ </map>
+ <map name="C&amp;C_City.mix">
+  <time>30</time>
+  <mines>40</mines>
+  <vehicles>8</vehicles>
+  <donatelimit>10</donatelimit>
+  <rules></rules>
+ </map>
+ <map name="C&amp;C_City_Flying.mix">
+  <time>30</time>
+  <mines>40</mines>
+  <vehicles>10</vehicles>
+  <donatelimit>10</donatelimit>
+  <rules></rules>
+ </map>
+ <map name="C&amp;C_Walls.mix">
+  <time>30</time>
+  <mines>45</mines>
+  <vehicles>8</vehicles>
+  <donatelimit>10</donatelimit>
+  <rules></rules>
+ </map>
+ <map name="C&amp;C_Walls_Flying.mix">
+  <time>30</time>
+  <mines>45</mines>
+  <vehicles>8</vehicles>
+  <donatelimit>10</donatelimit>
+  <rules></rules>
+ </map>
+ <map name="C&amp;C_Siege.mix">
+  <time>30</time>
+  <mines>35</mines>
+  <vehicles>8</vehicles>
+  <donatelimit>10</donatelimit>
+  <rules></rules>
+ </map>
+ <map name="C&amp;C_Hourglass.mix">
+  <time>30</time>
+  <mines>35</mines>
+  <vehicles>8</vehicles>
+  <donatelimit>10</donatelimit>
+  <rules>Shooting enemy buildings from the top of the hill is not permitted!</rules>
+ </map>
+</mapsettings>

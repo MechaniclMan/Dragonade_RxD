@@ -67,7 +67,7 @@ public:
 	SCRIPTS_API void Add_Occupant( SoldierGameObj * occupant );
 	void	Remove_Occupant( SoldierGameObj * occupant );
 	bool	Contains_Occupant( SoldierGameObj * occupant );
-	SCRIPTS_API int	Get_Occupant_Count(void);
+	int	SCRIPTS_API Get_Occupant_Count(void);
 	int	Find_Seat( SoldierGameObj * occupant );
 	SCRIPTS_API SoldierGameObj * Get_Driver(void); //DA
 	SCRIPTS_API SoldierGameObj * Get_Gunner(void); //DA

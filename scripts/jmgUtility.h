@@ -4259,6 +4259,8 @@ class JMG_Utility_Custom_Display_Briefing_Message : public ScriptImpClass {
 	void Destroyed(GameObject *obj);
 	void AddNewTextNode();
 	void RemoveTextNodes();
+public:
+	static int voiceId;
 };
 
 /*!
@@ -12096,6 +12098,162 @@ class JMG_Utility_Sync_Fog_Custom_Update : public ScriptImpClass {
 */
 class JMG_Utility_Sync_Animation_On_Join : public ScriptImpClass {
 	bool synced[128];
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+};
+
+/*!
+* \brief Makes the attached object sync its animation frame to the object's clip count
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Utility_Set_Animation_Frame_To_Match_Ammo : public ScriptImpClass {
+	char animation[32];
+	int lastFrame;
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+};
+
+/*!
+* \brief Grants a weapon on poke
+* \Weapon - Weapon to grant
+* \Rounds - Rounds in the gun, -1 = infinite
+* \Backpack - Should it fill the backpack
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Utility_Poke_Grant_Weapon : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Poked(GameObject *obj, GameObject *poker);
+};
+
+/*!
+* \brief Creates an object while at least object is in a zone
+* \Preset - Preset to create
+* \Location - Spot to create the object
+* \Facing - Direction the object should face
+* \EnableCustom - Custom that enables the script, a param of non-zero enables, if the custom is 0 then the script is always enabled.
+* \RecreateOnDeath - Can the script zone trigger re-creation if the object was killed
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Utility_Zone_Create_Object_While_Occupied : public ScriptImpClass {
+	char preset[128];
+	int enableCustom;
+	bool enabled;
+	int id;
+	Vector3 location;
+	float facing;
+	int objectsInZone;
+	bool reCreateOnDeath;
+	void Created(GameObject *obj);
+	void Custom(GameObject *obj,int message,int param,GameObject *sender);
+	void Entered(GameObject *obj,GameObject *enterer);
+	void Exited(GameObject *obj,GameObject *exiter);
+	void TriggerCreate(GameObject *obj);
+};
+/*!
+* \brief Used by JMG_Utility_Zone_Create_Object_While_Occupied, ignore otherwise
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Utility_Zone_Create_Object_While_Occupied_Attached : public ScriptImpClass {
+	void Killed(GameObject *obj,GameObject *killer);
+	void Destroyed(GameObject *obj);
+};
+
+/*!
+* \brief Used by JMG_Utility_Zone_Create_Object_While_Occupied, ignore otherwise
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Utility_Zone_Create_Object_While_Occupied_Object_Attached : public ScriptImpClass {
+	int ownerScriptId;
+	bool deathByScript;
+	void Created(GameObject *obj);
+	void Custom(GameObject *obj,int message,int param,GameObject *sender);
+	void Destroyed(GameObject *obj);
+};
+
+/*!
+* \brief Makes the object or a sub-object of the object animate while moving, dead, or idle.
+* \SubObject - Name of the sub-object if any
+* \IdleAnimation - Name of the idle animation
+* \MoveAnimation - Name of the move animation
+* \DeathAnimation - Name of the death animation
+* \DeathFrame - Last frame of the death animation
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Utility_Animate_While_Moving_Idle_Or_Dead : public ScriptImpClass {
+	char subObject[16];
+	char idle[32];
+	char death[32];
+	char move[32];
+	float deathFrame;
+	bool moving;
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+	void Killed(GameObject *obj,GameObject *killer);
+	void PlayAnimation(GameObject *obj,const char *aniamtionName,float frame);
+};
+
+/*!
+* \brief Sends the matching custom when the units HP drops below the ratio
+* \TargetRatio - (Health+Armor)*THIS VALUE returns the ratio
+* \ID - ID to send to, 0 sends to self, -1 sends to damager, if no damager uses self
+* \AboveCustom - Custom to send when you first go above the ratio
+* \AboveParam - Param to send when you first go above the ratio
+* \BelowCustom - Custom to send when you first go below the ratio
+* \BelowParam - Param to send when you first go below the ratio
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Utility_Send_Custom_When_HP_Crosses_Threshold : public ScriptImpClass {
+	bool below;
+	int id;
+	float targetRatio;
+	int aboveCustom;
+	int aboveParam;
+	int belowCustom;
+	int belowParam;
+	void Created(GameObject *obj);
+	void Damaged(GameObject *obj,GameObject *damager,float damage);
+};
+
+/*!
+* \brief Changes the SkinType to Blamo until Armor takes any damage, after that it reverts the SkinType back to the original and destroys the script
+* \MinHealthRatio - Hitpoints have to drop below this value before reverting the SkinType from blamo
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Utility_Change_SkinType_To_Blamo_Until_Damaged : public ScriptImpClass {
+	char skinType[128];
+	float minHealthRatio;
+	void Created(GameObject *obj);
+	void Damaged(GameObject *obj,GameObject *damager,float damage);
+public:
+	JMG_Utility_Change_SkinType_To_Blamo_Until_Damaged()
+	{
+		sprintf(skinType,"None");
+	}
+};
+
+/*!
+* \brief Sends a custom message when the attached object moves a distance from its initial spawn location
+* \Distance - Distance object has to move
+* \ID - ID to send to, 0 sends to self
+* \Custom - Custom to send
+* \Param - Param to send
+* \StartDelay - amount of time to wait before doing first detection if the object has moved
+* \RequireInPathfind - Only trigger if the object is in a pathfind zone
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Utility_Send_Custom_When_Moved_Distance_From_Spawn : public ScriptImpClass {
+	Vector3 location;
+	float distance;
+	bool requireInPathfind;
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj,int number);
 };

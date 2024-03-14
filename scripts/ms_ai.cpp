@@ -68,6 +68,15 @@ inline void M_Console_Input(const char *Input)
 	Console_Input(Input);
 }
 
+void M_Console_InputF(const char *Format,...) {
+	va_list arg_list;
+	va_start(arg_list,Format);
+	char Buffer[256];
+	vsnprintf(Buffer,256,Format,arg_list);
+	Console_Input(Buffer);
+	va_end(arg_list);
+}
+
 // -------------------------------------------------------------------------------------------------
 
 inline void M_Console_Output(const char *Output)
@@ -3787,19 +3796,19 @@ public:
 				}
 				if (i == Get_Parameter_Index("Max_Attack_Range") && Get_Int_Parameter("Max_Attack_Range") == -1)
 				{
-					buffer.Format("%s,%d", buffer.Peek_Buffer(), maxAttackRange);
+					buffer.Format("%s%d", buffer.Peek_Buffer(), maxAttackRange);
 				}
 				else if (i == Get_Parameter_Index("Preferred_Attack_Range") && Get_Int_Parameter("Preferred_Attack_Range") == -1)
 				{
-					buffer.Format("%s,%d", buffer.Peek_Buffer(), preferredAttackRange);
+					buffer.Format("%s%d", buffer.Peek_Buffer(), preferredAttackRange);
 				}
 				else if (i == Get_Parameter_Index("Max_Attack_Range_Secondary") && Get_Int_Parameter("Max_Attack_Range_Secondary") == -1)
 				{
-					buffer.Format("%s,%d", buffer.Peek_Buffer(), maxAttackRangeSecondary);
+					buffer.Format("%s%d", buffer.Peek_Buffer(), maxAttackRangeSecondary);
 				}
 				else if (i == Get_Parameter_Index("Preferred_Attack_Range_Secondary") && Get_Int_Parameter("Preferred_Attack_Range_Secondary") == -1)
 				{
-					buffer.Format("%s,%d", buffer.Peek_Buffer(), preferredAttackRangeSecondary);
+					buffer.Format("%s%d", buffer.Peek_Buffer(), preferredAttackRangeSecondary);
 				}
 				else
 				{
@@ -4263,6 +4272,7 @@ public:
 		baseDefObjectiveIDTeam[1] = 0;
 		radarRadius = 0;
 		transportVehicleSeatCount = 0;
+		grantCreditsMultiplier = 1;
 		chattingEnabled = true;
 		radioCommandsEnabled = true;
 		killedRespEnabled = false;
@@ -4391,6 +4401,7 @@ public:
 
 	void Init_Bot_Strings()
 	{
+		//Console_Output("msg Init_Bot_Strings\n");
 		INIClass *config = Get_INI("bot_names.cfg");
 		if (config)
 		{
@@ -4400,6 +4411,7 @@ public:
 			{
 				StringClass name;
 				config->Get_String(name, "BotNames", entry.Peek_Buffer(), "");
+				//Console_Output("BotName: %s\n", name);
 				availableBotNames.Add(name);
 				i++;
 				entry.Format("BotName%d", i);
@@ -6864,6 +6876,12 @@ class MS_AI_Player_Controller : public ScriptImpClass
 
 	void Spawn_Object(GameObject *obj)
 	{
+		// Prevent server from crashing if Get_GDI_Soldier_Name() : Get_Nod_Soldier_Name() fail to find spawner preset. Bad Map most likely cause.
+		if (strcmp(teamSpawnPreset,"none") == 0) {
+			M_Console_Input("msg ms_ai FATAL error teamSpawnPreset = none");
+			return;
+		}
+
 		// Spawn first as the particular team's spawn character
 		GameObject *soldier = ObjectLibraryManager::Create_Object(teamSpawnPreset);
 

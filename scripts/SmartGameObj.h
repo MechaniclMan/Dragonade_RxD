@@ -89,7 +89,7 @@ public:
 	virtual	void	Get_Information( StringClass & string );
 	void				Enable_Stealth(bool onoff);
 	void				Toggle_Stealth(void);
-	bool				SCRIPTS_API Is_Stealth_Enabled(void); //da
+	bool				SCRIPTS_API Is_Stealth_Enabled(void); //DA
 	bool				SCRIPTS_API Is_Stealthed(void) const;
 	virtual float	Get_Stealth_Fade_Distance(void) const			{ return 25.0f; }
 	void				Grant_Stealth_Powerup(float seconds);

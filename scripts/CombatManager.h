@@ -86,8 +86,8 @@ public:
 	static bool I_Am_Only_Client() { return IAmClient && !IAmServer; }
 	static bool I_Am_Only_Server() { return IAmServer && !IAmClient; }
 	static bool I_Am_Client_Server() { return IAmClient && IAmServer;}
-	SCRIPTS_API static void Set_Friendly_Fire_Permitted( bool yes ) { FriendlyFirePermitted = yes; }
-	SCRIPTS_API static bool Is_Friendly_Fire_Permitted( void ) { return FriendlyFirePermitted; }
+	SCRIPTS_API static void Set_Friendly_Fire_Permitted( bool yes ) { FriendlyFirePermitted = yes; } //DA
+	SCRIPTS_API static bool Is_Friendly_Fire_Permitted( void ) { return FriendlyFirePermitted; }  //DA
 	static void Set_Beacon_Placement_Ends_Game( bool yes ){ BeaconPlacementEndsGame = yes; }
 	static bool Does_Beacon_Placement_Ends_Game( void )	{ return BeaconPlacementEndsGame; }
 	static void Set_My_Id( int id ) { MyId = id; }

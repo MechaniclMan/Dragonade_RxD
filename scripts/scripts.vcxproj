@@ -566,6 +566,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="mdbevf.h" />
     <ClInclude Include="MixFileFactoryClass.h" />
     <ClInclude Include="MoveablePhysDefClass.h" />
+	<ClInclude Include="ms.h" />
     <ClInclude Include="MuzzleFlashClass.h" />
     <ClInclude Include="MuzzleRecoilClass.h" />
     <ClInclude Include="NavalFactoryGameObj.h" />
@@ -611,6 +612,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="renalert2.h" />
     <ClInclude Include="RepairBayGameObj.h" />
     <ClInclude Include="RepairBayGameObjDef.h" />
+	<ClInclude Include="RigidBodyClass.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SamSiteGameObj.h" />
     <ClInclude Include="SamSiteGameObjDef.h" />
@@ -748,6 +750,17 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="VehicleGameObjDef.h" />
     <ClInclude Include="wwmath.h" />
     <ClInclude Include="xpert.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="documentation\cinematics.dox" />
+    <None Include="documentation\ConstructionYard.dox" />
+    <None Include="documentation\hudini.dox" />
+    <None Include="documentation\ttini.dox" />
+    <None Include="Doxyfile" />
+    <None Include="documentation\groups.dox" />
+    <None Include="documentation\keyhooks.dox" />
+    <None Include="keys.txt" />
+    <None Include="documentation\Tutorials.dox" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MemoryManager\MemoryManager.vcxproj">

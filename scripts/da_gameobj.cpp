@@ -16,6 +16,7 @@
 #include "engine.h"
 #include "engine_DA.h"
 #include "da.h"
+#include "da_log.h"
 #include "da_gameobj.h"
 #include "da_player.h"
 #include "GameObjManager.h"
@@ -196,9 +197,20 @@ void DAGameObjManager::Think() {
 		GameObjsDeletePending.Delete(i);
 		Temp->Set_Delete_Pending();
 	}
-	for (int i = 0;i < ObserversDeletePending.Count();i++) {
-		if (ObserversDeletePending[i]->Get_Owner()) {
-			ObserversDeletePending[i]->Get_Owner()->Remove_Observer(ObserversDeletePending[i]);
+	for (int i = 0;i < ObserversDeletePending.Count();i++) 
+	{
+
+		DALogManager::Write_Log("_Observers","ObserversDeletePending ID %d Name: %s",ObserversDeletePending[i]->Get_ID(), ObserversDeletePending[i]->Get_Name());
+		Console_Output("ObserversDeletePending ID %d Name: %s\n",ObserversDeletePending[i]->Get_ID(), ObserversDeletePending[i]->Get_Name());
+		DALogManager::Write_GameLog("Observers;%d;%d;",ObserversDeletePending[i]->Get_ID(), ObserversDeletePending[i]->Get_Name() );
+		DALogManager::Write_RenLog("ObserversDeletePending %d\n" , ObserversDeletePending[i]->Get_ID(), ObserversDeletePending[i]->Get_Name() );
+
+		int ID = ObserversDeletePending[i]->Get_ID();
+		if ( ID > 0 )
+		{
+			if (ObserversDeletePending[i]->Get_Owner()) {
+				ObserversDeletePending[i]->Get_Owner()->Remove_Observer(ObserversDeletePending[i]);
+			}
 		}
 	}
 	ObserversDeletePending.Delete_All();

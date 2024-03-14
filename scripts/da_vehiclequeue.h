@@ -47,7 +47,9 @@ private:
 	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	bool VQ_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
 	virtual void Timer_Expired(int Number,unsigned int Team);
+	virtual void Think();
 
+	void Process_Queue(int Team);
 	void Spawn_Vehicle(int Team,DAVehicleQueueStruct *Q);
 	void Spawn_Vehicle(int Team,cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost,SoldierGameObj *Owner);
 	void Clear(int Team);
@@ -55,8 +57,15 @@ private:
 	bool Remove(int Team,cPlayer *Player);
 	void Send_Positions(int Team);
 
+/*
 	inline bool Is_Building(int Team) {
 		return !!Building[Team];
+	}
+*/
+
+	inline bool Is_Building(int Team) {
+		VehicleFactoryGameObj* VF = (VehicleFactoryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY);
+		return VF && !VF->Is_Available() && !!Building[Team];
 	}
 	
 private:

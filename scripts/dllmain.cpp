@@ -349,7 +349,6 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Set_Object_Visibility = (sov)Address(tt,"Set_Object_Visibility");
 	Lock_Soldier_Collision_Group = (lscg)Address(tt,"Lock_Soldier_Collision_Group");
 	Unlock_Soldier_Collision_Group = (ulscg)Address(tt,"Unlock_Soldier_Collision_Group");
-	Unlock_Soldier_Collision_Group = (ulscg)Address(tt,"Unlock_Soldier_Collision_Group");
 	Is_Engine_Enabled = (iea)Address(tt,"Is_Engine_Enabled");
 	Stop_Timer = (ss)Address(tt,"Stop_Timer");
 	Create_2D_Wave_Sound_Dialog_Player = (cwsdp)Address(tt,"Create_2D_Wave_Sound_Dialog_Player");
@@ -426,14 +425,46 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Set_Gameplay_Allowed = (sga)Address(tt, "Set_Gameplay_Allowed");
 	Print_Client_Console = (pcc)Address(tt, "Print_Client_Console");
 	Print_Client_Console_Player = (pccp)Address(tt, "Print_Client_Console_Player");
-
+	Reload_Level = (rl)Address(tt, "Reload_Level");
+	Force_Client_Reload = (fcr)Address(tt, "Force_Client_Reload");
+	Change_Enemy_HUD_Color = (chudc)Address(tt, "Change_Enemy_HUD_Color");
+	Change_Enemy_HUD_Color_Player = (chudcp)Address(tt, "Change_Enemy_HUD_Color_Player");
+	Change_Friendly_HUD_Color = (chudc)Address(tt, "Change_Friendly_HUD_Color");
+	Change_Friendly_HUD_Color_Player = (chudcp)Address(tt, "Change_Friendly_HUD_Color_Player");
+	Change_Neutral_HUD_Color = (chudc)Address(tt, "Change_Neutral_HUD_Color");
+	Change_Neutral_HUD_Color_Player = (chudcp)Address(tt, "Change_Neutral_HUD_Color_Player");
+	Enable_Global_Targeting = (egt)Address(tt, "Enable_Global_Targeting");
+	Enable_Global_Targeting_Player = (egtp)Address(tt, "Enable_Global_Targeting_Player");
+	Get_Screen_Resolution = (gsr)Address(tt, "Get_Screen_Resolution");
+	Create_HUD_Surface = (chs)Address(tt, "Create_HUD_Surface");
+	Find_HUD_Surface = (fhs)Address(tt, "Find_HUD_Surface");
+	Show_HUD_Surface = (hudsfc)Address(tt, "Show_HUD_Surface");
+	Hide_HUD_Surface = (hudsfc)Address(tt, "Hide_HUD_Surface");
+	Delete_HUD_Surface = (hudsfc)Address(tt, "Delete_HUD_Surface");
+	Get_Client_Hardware_Identifier = (gcsh)Address(tt, "Get_Client_Hardware_Identifier");
+	Is_Overriding_Sky_Colors = (iosc)Address(tt, "Is_Overriding_Sky_Colors");
+	Override_Sky_Colors = (osc)Address(tt, "Override_Sky_Colors");
+	Get_Warm_Sky_Color = (spgui)Address(tt, "Get_Warm_Sky_Color");
+	Get_Cold_Sky_Color = (spgui)Address(tt, "Get_Cold_Sky_Color");
+	Get_Sun_Color = (spgui)Address(tt, "Get_Sun_Color");
+	Get_Sun_Halo_Color = (spgui)Address(tt, "Get_Sun_Halo_Color");
+	Get_Moon_Halo_Color = (spgui)Address(tt, "Get_Moon_Halo_Color");
+	Get_Starfield_Alpha = (spguc)Address(tt, "Get_Starfield_Alpha");
+	Get_Sky_Color = (spgui)Address(tt, "Get_Sky_Color");
+	Get_Gloominess_Color = (spgui)Address(tt, "Get_Gloominess_Color");
+	Set_Warm_Sky_Color = (spsui)Address(tt, "Set_Warm_Sky_Color");
+	Set_Cold_Sky_Color = (spsui)Address(tt, "Set_Cold_Sky_Color");
+	Set_Sun_Color = (spsui)Address(tt, "Set_Sun_Color");
+	Set_Sun_Halo_Color = (spsui)Address(tt, "Set_Sun_Halo_Color");
+	Set_Moon_Halo_Color = (spsui)Address(tt, "Set_Moon_Halo_Color");
+	Set_Starfield_Alpha = (spsuc)Address(tt, "Set_Starfield_Alpha");
+	Set_Sky_Color = (spsui)Address(tt, "Set_Sky_Color");
+	Set_Gloominess_Color = (spsui)Address(tt, "Set_Gloominess_Color");
+	Get_Time_Of_Day = (gtod)Address(tt, "Get_Time_Of_Day");
+	Set_Time_Of_Day = (stod)Address(tt, "Set_Time_Of_Day");
+	Is_Connection_Bad = (icbad)Address(tt, "Is_Connection_Bad");
 
 	DA::Init();
-
-	//Write_Renlog(SetScriptCommands)
-	//addConnectionAcceptanceFilter(&defaultConnectionAcceptanceFilter);
-	//Write_GameLog()
-	
 	return (SetScriptCommands) (commands);
 }
 

@@ -73,7 +73,7 @@ void DAExtraRadioCommandsGameFeatureClass::Radio1_Key_Hook(cPlayer *Player) {
 		}
 		else {
 			DA::Team_Player_Message(Player,"Repair the %s!",DATranslationManager::Translate(LowestBuilding));
-			Check_Stealth_ICON(Player->Get_Id(),"o_em_cross.w3d",Team);
+			Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_cross.w3d",Team);
 			Create_2D_WAV_Sound_Team("m00rado_dsgn0050i1gbmg_snd.wav",Team);
 		}
 	}
@@ -85,16 +85,16 @@ void DAExtraRadioCommandsGameFeatureClass::Radio2_Key_Hook(cPlayer *Player) {
 		if (ClosestBuilding) {
 			if (ClosestBuilding->Find_Closest_Poly(Player->Get_GameObj()->Get_Position()) > 400.0f) {
 				DA::Team_Player_Message(Player,"Enemy beacon detected in our base!");
-				Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
+				Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 			}
 			else if (ClosestBuilding) {
 				DA::Team_Player_Message(Player,"Enemy beacon detected at the %s!",DATranslationManager::Translate(ClosestBuilding));
-				Check_Stealth_ICON(Player->Get_Id(),"o_em_building.w3d",Player->Get_Player_Type());
+				Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_building.w3d",Player->Get_Player_Type());
 			}
 		}
 		else {
 			DA::Team_Player_Message(Player,"Enemy beacon detected in our base!");
-			Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
+			Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 		}
 	}
 }
@@ -102,14 +102,14 @@ void DAExtraRadioCommandsGameFeatureClass::Radio2_Key_Hook(cPlayer *Player) {
 void DAExtraRadioCommandsGameFeatureClass::Radio3_Key_Hook(cPlayer *Player) {
 	if (!Player->Is_Flooding() && !Player->Get_DA_Player()->Is_Muted()) {
 		DA::Team_Player_Message(Player,"Defend the pedestal!");
-		Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
+		Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 	}
 }
 
 void DAExtraRadioCommandsGameFeatureClass::Radio4_Key_Hook(cPlayer *Player) {
 	if (!Player->Is_Flooding() && !Player->Get_DA_Player()->Is_Muted()) {
 		DA::Team_Player_Message(Player,"Cease fire.");
-		Check_Stealth_ICON(Player->Get_Id(),"o_em_grnarr.w3d",Player->Get_Player_Type());
+		Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_grnarr.w3d",Player->Get_Player_Type());
 	}
 }
 
@@ -120,25 +120,25 @@ void DAExtraRadioCommandsGameFeatureClass::Radio5_Key_Hook(cPlayer *Player) {
 			int ID = Player->Get_Id();
 			if (Is_Player(LastDamaged)) {
 				DA::Team_Player_Message(ID,"Focus fire on %ls (%s)!",Get_Wide_Player_Name(LastDamaged),DATranslationManager::Translate(Get_Vehicle_Return(LastDamaged)));
-				Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
+				Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 				if (!Is_Stealth_Enabled(LastDamaged)) {
-					Check_Stealth_ICON(Get_Player_ID(LastDamaged),"o_em_chevron.w3d",Player->Get_Player_Type());
+					Set_Emot_Icon_Stealth(Get_Player_ID(LastDamaged),"o_em_chevron.w3d",Player->Get_Player_Type());
 				}
 			}
 			else if (VehicleGameObj *Vehicle = LastDamaged->As_VehicleGameObj()) {
 				if (Is_Harvester_Preset(LastDamaged)) {
 					DA::Team_Player_Message(ID,"Attack the %s!",DATranslationManager::Translate(LastDamaged));
-					Check_Stealth_ICON(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
+					Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
 					Create_2D_WAV_Sound_Team("m00rado_dsgn0071i1gbmg_snd.wav",Player->Get_Player_Type());
 				}
 				else if (Vehicle->Is_Turret()) {
 					DA::Team_Player_Message(ID,"Attack that %s!",DATranslationManager::Translate(LastDamaged));
-					Check_Stealth_ICON(Player->Get_Id(),"o_em_building.w3d",Player->Get_Player_Type());
+					Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_building.w3d",Player->Get_Player_Type());
 					Create_2D_WAV_Sound_Team("m00rado_dsgn0070i1gbmg_snd.wav",Player->Get_Player_Type());
 				}
 				else if (!Vehicle->Get_Occupant_Count()) {
 					DA::Team_Player_Message(ID,"Focus fire on that %s!",DATranslationManager::Translate(LastDamaged));
-					Check_Stealth_ICON(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
+					Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
 					Create_2D_WAV_Sound_Team("m00rado_dsgn0053i1gbmg_snd.wav",Player->Get_Player_Type());
 				}
 				else {
@@ -146,10 +146,10 @@ void DAExtraRadioCommandsGameFeatureClass::Radio5_Key_Hook(cPlayer *Player) {
 					for (int i = 0;i < x;i++) {
 						if (Vehicle->Get_Occupant(i)) {
 							DA::Team_Player_Message(ID,"Focus fire on %ls (%s)!",Get_Wide_Player_Name(Vehicle->Get_Occupant(i)),DATranslationManager::Translate(LastDamaged));
-							Check_Stealth_ICON(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
+							Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
 							//if (!Is_Stealth_Enabled(LastDamaged)) {
 							if (!LastDamaged->As_VehicleGameObj()->Is_Stealth_Enabled()) {
-								Check_Stealth_ICON(Get_Player_ID(Vehicle->Get_Occupant(i)),"o_em_apc.w3d",Player->Get_Player_Type());
+								Set_Emot_Icon_Stealth(Get_Player_ID(Vehicle->Get_Occupant(i)),"o_em_apc.w3d",Player->Get_Player_Type());
 							}
 							Create_2D_WAV_Sound_Team("m00rado_dsgn0053i1gbmg_snd.wav",Player->Get_Player_Type());
 							break;
@@ -159,7 +159,7 @@ void DAExtraRadioCommandsGameFeatureClass::Radio5_Key_Hook(cPlayer *Player) {
 			}
 			else if (BuildingGameObj *Building = LastDamaged->As_BuildingGameObj()) {
 				DA::Team_Player_Message(ID,"Attack the %s!",DATranslationManager::Translate(LastDamaged));
-				Check_Stealth_ICON(Player->Get_Id(),"o_em_building.w3d",Player->Get_Player_Type());
+				Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_building.w3d",Player->Get_Player_Type());
 				if (Building->As_PowerPlantGameObj()) {
 					Create_2D_WAV_Sound_Team("m00rado_dsgn0074i1gbmg_snd.wav",Player->Get_Player_Type());
 				}
@@ -175,11 +175,11 @@ void DAExtraRadioCommandsGameFeatureClass::Radio5_Key_Hook(cPlayer *Player) {
 			}
 			else if (Is_C4(LastDamaged)) {
 				DA::Team_Player_Message(ID,"Disarm that C4!");
-				Check_Stealth_ICON(Player->Get_Id(),"o_em_cross.w3d",Player->Get_Player_Type());
+				Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_cross.w3d",Player->Get_Player_Type());
 			}
 			else if (Is_Beacon(LastDamaged)) {
 				DA::Team_Player_Message(ID,"Disarm that beacon!");
-				Check_Stealth_ICON(Player->Get_Id(),"o_em_cross.w3d",Player->Get_Player_Type());
+				Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_cross.w3d",Player->Get_Player_Type());
 			}
 		}
 	}
@@ -189,7 +189,7 @@ void DAExtraRadioCommandsGameFeatureClass::Radio6_Key_Hook(cPlayer *Player) {
 	if (!Player->Is_Flooding() && !Player->Get_DA_Player()->Is_Muted()) {
 		GameObject *LastDamaged = Get_Player_Data(Player)->Get_Last_Damage();
 		if (LastDamaged && Get_Object_Type(LastDamaged) != Player->Get_Player_Type()) {
-			Create_2D_WAV_Sound_Team("m00rado_dsgn0059i1gbmg_snd.wav",Player->Get_Player_Type());
+			
 			if (!LastDamaged || (!LastDamaged->As_SoldierGameObj() && !LastDamaged->As_VehicleGameObj())) {
 				SCAnnouncement* RadioEvent = Send_Client_Announcement(0, Player->Get_Id(), 8544, ANNOUNCE_TEAM, 0, false, false);
 				for (SLNode<cPlayer>* z = Get_Player_List()->Head(); z; z = z->Next()) {
@@ -199,20 +199,20 @@ void DAExtraRadioCommandsGameFeatureClass::Radio6_Key_Hook(cPlayer *Player) {
 					}
 				}
 				
-				Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
+				Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 			}
 			else {
-				DA::Team_Player_Message(Player,"Enemy %s spotted!",DATranslationManager::Translate(LastDamaged));
+				Create_2D_WAV_Sound_Team("m00rado_dsgn0059i1gbmg_snd.wav",Player->Get_Player_Type());				DA::Team_Player_Message(Player,"Enemy %s spotted!",DATranslationManager::Translate(LastDamaged));
 				if (LastDamaged->As_VehicleGameObj()) {
-					Check_Stealth_ICON(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
+					Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
 					if (!LastDamaged->As_VehicleGameObj()->Is_Stealth_Enabled()) {
-						Check_Stealth_ICON(Get_Player_ID(Get_Vehicle_Occupant(LastDamaged,0)),"o_em_chevron.w3d",Player->Get_Player_Type());
+						Set_Emot_Icon_Stealth(Get_Player_ID(Get_Vehicle_Occupant(LastDamaged,0)),"o_em_chevron.w3d",Player->Get_Player_Type());
 					}
 				}
 				else {
-					Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
+					Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 					if (!Is_Stealth_Enabled(LastDamaged)) {
-						Check_Stealth_ICON(Get_Player_ID(LastDamaged),"o_em_chevron.w3d",Player->Get_Player_Type());
+						Set_Emot_Icon_Stealth(Get_Player_ID(LastDamaged),"o_em_chevron.w3d",Player->Get_Player_Type());
 					}
 				}
 			}
@@ -247,15 +247,15 @@ void DAExtraRadioCommandsGameFeatureClass::Radio7_Key_Hook(cPlayer *Player) {
 		}
 		if (ClosestType == 1) {
 			DA::Team_Player_Message(Player,"Get that crate.");
-			Check_Stealth_ICON(Player->Get_Id(),"o_em_chevron.w3d",Player->Get_Player_Type());
+			Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_chevron.w3d",Player->Get_Player_Type());
 		}
 		else if (ClosestType == 2) {
 			DA::Team_Player_Message(Player,"Get that backpack.");
-			Check_Stealth_ICON(Player->Get_Id(),"o_em_chevron.w3d",Player->Get_Player_Type());
+			Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_chevron.w3d",Player->Get_Player_Type());
 		}
 		else if (ClosestType == 3) {
 			DA::Team_Player_Message(Player,"Get that weapon.");
-			Check_Stealth_ICON(Player->Get_Id(),"o_em_chevron.w3d",Player->Get_Player_Type());
+			Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_chevron.w3d",Player->Get_Player_Type());
 		}
 	}
 }
@@ -271,7 +271,7 @@ void DAExtraRadioCommandsGameFeatureClass::Radio8_Key_Hook(cPlayer *Player) {
 			StringClass Translation = DATranslationManager::Translate(Vehicle);
 			DA::Team_Player_Message(Player,"Requesting more %ss for %s rush.",Translation,a_or_an_Prepend(Translation));
 			//DA::Team_Player_Message(Player, "Requesting more %ss for %s rush.", Translation, a_or_an_Prepend(Translation));
-			Check_Stealth_ICON(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
+			Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
 		}
 	}
 }
@@ -279,14 +279,14 @@ void DAExtraRadioCommandsGameFeatureClass::Radio8_Key_Hook(cPlayer *Player) {
 void DAExtraRadioCommandsGameFeatureClass::Radio9_Key_Hook(cPlayer *Player) {
 	if (!Player->Is_Flooding() && !Player->Get_DA_Player()->Is_Muted()) {
 		DA::Team_Player_Message(Player,"Sorry.");
-		Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
+		Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 	}
 }
 
 void DAExtraRadioCommandsGameFeatureClass::Radio10_Key_Hook(cPlayer *Player) {
 	if (!Player->Is_Flooding() && !Player->Get_DA_Player()->Is_Muted()) {
 		DA::Team_Player_Message(Player,"Wait up!");
-		Check_Stealth_ICON(Player->Get_Id(),"o_em_chevron.w3d",Player->Get_Player_Type());
+		Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_chevron.w3d",Player->Get_Player_Type());
 	}
 }
 
@@ -296,7 +296,7 @@ void DAExtraRadioCommandsGameFeatureClass::Radio11_Key_Hook(cPlayer *Player) {
 		Create_2D_WAV_Sound_Team("m00rado_dsgn0059i1gbmg_snd.wav",Player->Get_Player_Type());
 		if (!LastDamaged || (!LastDamaged->As_SoldierGameObj() || !LastDamaged->As_VehicleGameObj()) || LastDamaged->As_VehicleGameObj()->Is_Turret()) {
 			DA::Team_Player_Message(Player,"Incoming enemy unit!");
-			Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
+			Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 		}
 		else {
 			DA::Team_Player_Message(Player,"Incoming enemy %s!",DATranslationManager::Translate(LastDamaged));
@@ -304,17 +304,17 @@ void DAExtraRadioCommandsGameFeatureClass::Radio11_Key_Hook(cPlayer *Player) {
 			{
 				//if ( LastDamaged->As_VehicleGameObj()->Is_Stealthed() )
 				//{
-				//	Check_Stealth_ICON(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
+				//	Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
 				//}
-				Check_Stealth_ICON(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
+				Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
 				if (!Is_Stealth_Enabled(LastDamaged)) {
-					Check_Stealth_ICON(Get_Player_ID(Get_Vehicle_Occupant(LastDamaged,0)),"o_em_chevron.w3d",Player->Get_Player_Type());
+					Set_Emot_Icon_Stealth(Get_Player_ID(Get_Vehicle_Occupant(LastDamaged,0)),"o_em_chevron.w3d",Player->Get_Player_Type());
 				}
 			}
 			else {
-				Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
+				Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 				if (!Is_Stealth_Enabled(LastDamaged)) {
-					Check_Stealth_ICON(Get_Player_ID(LastDamaged),"o_em_chevron.w3d",Player->Get_Player_Type());
+					Set_Emot_Icon_Stealth(Get_Player_ID(LastDamaged),"o_em_chevron.w3d",Player->Get_Player_Type());
 				}
 			}
 		}
@@ -330,7 +330,7 @@ void DAExtraRadioCommandsGameFeatureClass::Radio12_Key_Hook(cPlayer *Player) {
 		else {
 			DA::Team_Player_Message(Player,"Thank you.");
 		}
-		Check_Stealth_ICON(Player->Get_Id(),"o_em_grnarr.w3d",Player->Get_Player_Type());
+		Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_grnarr.w3d",Player->Get_Player_Type());
 	}
 }
 */
@@ -344,7 +344,7 @@ void DAExtraRadioCommandsGameFeatureClass::Radio12_Key_Hook(cPlayer *Player) {
 		else {
 			StringClass Translation = DATranslationManager::Translate(Vehicle);
 			DA::Team_Player_Message(Player, "Requesting more %ss for %s rush.", Translation, a_or_an_Prepend(Translation));
-			Set_Emot_Icon2(Player->Get_Id(), "o_em_apc.w3d", Player->Get_Player_Type());
+			Set_Emot_Icon_DA(Player->Get_Id(), "o_em_apc.w3d", Player->Get_Player_Type());
 		}
 	}
 }
@@ -352,35 +352,35 @@ void DAExtraRadioCommandsGameFeatureClass::Radio12_Key_Hook(cPlayer *Player) {
 void DAExtraRadioCommandsGameFeatureClass::Radio13_Key_Hook(cPlayer *Player) {
 	if (!Player->Is_Flooding() && !Player->Get_DA_Player()->Is_Muted()) {
 		DA::Team_Player_Message(Player,"I'm going for a refill.");
-		Check_Stealth_ICON(Player->Get_Id(),"o_em_chevron.w3d",Player->Get_Player_Type());
+		Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_chevron.w3d",Player->Get_Player_Type());
 	}
 }
 
 void DAExtraRadioCommandsGameFeatureClass::Radio14_Key_Hook(cPlayer *Player) {
 	if (!Player->Is_Flooding() && !Player->Get_DA_Player()->Is_Muted()) {
 		DA::Team_Player_Message(Player,"Watch out! There's C4 on you!");
-		Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
+		Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 	}
 }
 
 void DAExtraRadioCommandsGameFeatureClass::Radio15_Key_Hook(cPlayer *Player) {
 	if (!Player->Is_Flooding() && !Player->Get_DA_Player()->Is_Muted()) {
 		DA::Team_Player_Message(Player,"Behind us!");
-		Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
+		Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 	}
 }
 
 void DAExtraRadioCommandsGameFeatureClass::Radio16_Key_Hook(cPlayer *Player) {
 	if (!Player->Is_Flooding() && !Player->Get_DA_Player()->Is_Muted()) {
 		DA::Team_Player_Message(Player,"I'm taking fire!");
-		Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
+		Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 	}
 }
 
 void DAExtraRadioCommandsGameFeatureClass::Radio17_Key_Hook(cPlayer *Player) {
 	if (!Player->Is_Flooding() && !Player->Get_DA_Player()->Is_Muted()) {
 		DA::Team_Player_Message(Player,"Stay in the vehicle.");
-		Check_Stealth_ICON(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
+		Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_apc.w3d",Player->Get_Player_Type());
 	}
 }
 
@@ -390,11 +390,11 @@ void DAExtraRadioCommandsGameFeatureClass::Radio18_Key_Hook(cPlayer *Player) {
 		BuildingGameObj *Building = Get_Closest_Building(Pos,Player->Get_Player_Type());
 		if (!Building || Building->Find_Closest_Poly(Pos) > 400.0f) {
 			DA::Team_Player_Message(Player,"I'm mining the base.");
-			Check_Stealth_ICON(Player->Get_Id(),"o_em_grnarr.w3d",Player->Get_Player_Type());
+			Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_grnarr.w3d",Player->Get_Player_Type());
 		}
 		else {
 			DA::Team_Player_Message(Player,"I'm mining the %s.",DATranslationManager::Translate(Building));
-			Check_Stealth_ICON(Player->Get_Id(),"o_em_building.w3d",Player->Get_Player_Type());
+			Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_building.w3d",Player->Get_Player_Type());
 		}
 	}
 }
@@ -405,11 +405,11 @@ void DAExtraRadioCommandsGameFeatureClass::Radio19_Key_Hook(cPlayer *Player) {
 		BuildingGameObj *Building = Get_Closest_Building(Pos,Player->Get_Player_Type());
 		if (!Building || Building->Find_Closest_Poly(Pos) > 400.0f) {
 			DA::Team_Player_Message(Player,"The base needs mining.");
-			Check_Stealth_ICON(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
+			Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_redarr.w3d",Player->Get_Player_Type());
 		}
 		else {
 			DA::Team_Player_Message(Player,"The %s needs mining.",DATranslationManager::Translate(Building));
-			Check_Stealth_ICON(Player->Get_Id(),"o_em_building.w3d",Player->Get_Player_Type());
+			Set_Emot_Icon_Stealth(Player->Get_Id(),"o_em_building.w3d",Player->Get_Player_Type());
 		}
 	}
 }

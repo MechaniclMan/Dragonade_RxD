@@ -40,7 +40,6 @@ public:
 	virtual void Player_Join_Event(cPlayer *Player);
 	virtual void Player_Leave_Event(cPlayer *Player);
 	virtual ~DAGameSpyGameFeatureClass();
-	
 
 private:
 	SOCKET ListenSocket;

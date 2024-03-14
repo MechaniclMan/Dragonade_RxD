@@ -432,7 +432,7 @@ void DASquadManagerClass::Active_Squads()
 		return;
 
 	int SquadCount = SquadList.Count();
-	//Functions::Console_Renlog("[BB] There are %d Active Squads\n", SquadCount);
+	//RC::Console_Renlog("[BB] There are %d Active Squads\n", SquadCount);
 	DALogManager::Write_Log("_SQUAD","There are %d Active Squads\n", SquadCount);
 	Display_Squads();
 }
@@ -477,13 +477,12 @@ void DASquadManagerClass::Squad_Max_Games()
 			Squad->Set_Max_Squad_Games(SquadGames);
 			SquadGames = Squad->Get_Max_Squad_Games();
 			Squad->Squad_Message("Squad %d has played %d Squad Games", i, SquadGames);
-			//Functions::Console_Renlog("[BB] Squad %d has played %d Squad Games\n", i, SquadGames );
+			//RC::Console_Renlog("[BB] Squad %d has played %d Squad Games\n", i, SquadGames );
 			DALogManager::Write_Log("_SQUAD","Squad %d has played %d Squad Games\n", i, SquadGames );
-
 			if ( SquadGames >= MaxGames )
 			{
 				Squad->Squad_Message("Your Squad was Disbanded after %d Games", SquadGames);
-				//Functions::Console_Renlog("[BB] Squad %d Disbanded after %d Games\n", i, SquadGames );
+				//RC::Console_Renlog("[BB] Squad %d Disbanded after %d Games\n", i, SquadGames );
 				DALogManager::Write_Log("_SQUAD","Squad %d Disbanded after %d Games\n", i, SquadGames );
 				Squad->Disband();
 			}
@@ -1118,14 +1117,14 @@ int DASquadManagerClass::Get_Max_Squad_Size() {
 
 int DASquadClass::Get_Max_Squad_Games()
 {
-	//Functions::Console_Renlog("[BB] Get MaxSquadGames %d\n", MaxSquadGames );
+	//RC::Console_Renlog("[BB] Get MaxSquadGames %d\n", MaxSquadGames );
 	return MaxSquadGames;
 }
 
 int DASquadClass::Set_Max_Squad_Games(int Games) 
 {
 	MaxSquadGames = Games;
-	//Functions::Console_Renlog("[BB] Setting MaxSquadGames %d\n", MaxSquadGames );
+	//RC::Console_Renlog("[BB] Setting MaxSquadGames %d\n", MaxSquadGames );
 	return MaxSquadGames;
 }
 

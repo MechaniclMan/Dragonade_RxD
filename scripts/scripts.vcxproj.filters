@@ -26,6 +26,9 @@
     <Filter Include="DA Crates">
       <UniqueIdentifier>{0ab9acd4-0566-4cc9-8d70-1590f537a0bd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Documentation">
+      <UniqueIdentifier>{097d4353-4980-4ad0-994a-a3fe5f6bfc36}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cAMpaScripts.cpp">
@@ -570,6 +573,9 @@
     </ClCompile>
     <ClCompile Include="engine_dialog.cpp">
       <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="DefaultConnectionAcceptanceFilter.cpp">
+      <Filter>Scripts</Filter>
     </ClCompile>
     <ClCompile Include="DefaultConnectionAcceptanceFilter.cpp">
       <Filter>Scripts</Filter>
@@ -1650,7 +1656,6 @@
     <ClInclude Include="VehicleFactoryGameObjDummy.h">
       <Filter>DA Engine</Filter>
     </ClInclude>
-    <ClInclude Include="ObjectLibraryManager.h" />
     <ClInclude Include="unstoppable.h">
       <Filter>Scripts</Filter>
     </ClInclude>
@@ -1672,10 +1677,48 @@
     <ClInclude Include="PhysicsConstants.h">
       <Filter>Scripts</Filter>
     </ClInclude>
+    <ClInclude Include="RigidBodyClass.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="ms.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectLibraryManager.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="scripts.rc">
       <Filter>Engine</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="documentation\cinematics.dox">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="documentation\ConstructionYard.dox">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="Doxyfile">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="documentation\groups.dox">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="documentation\hudini.dox">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="documentation\keyhooks.dox">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="keys.txt">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="documentation\Tutorials.dox">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include="documentation\ttini.dox">
+      <Filter>Documentation</Filter>
+    </None>
   </ItemGroup>
 </Project>
