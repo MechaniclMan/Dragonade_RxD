@@ -1,82 +1,10 @@
 # Dragonade_RxD
 
-Dragonade 2.0
+RxD Dragonade 2.0
 RxD supported version of Dragaonade. 
-Update Scripts 4.7 Update 4.
+Update Scripts 4.8 Update 2.
 
-JonWill
-
-I would like to thank Jerad2142,  dblaney, cyberarm and Unstoppable for their contributions to 4.7 Update 4 (If I missed anyone else who contributed to 4.7 Update 4, sorry).
- 
-
-Changes made since 4.7 Update 3:
-
-Made the ssgm.ini setting ExtraKillMessages able to be set per map.
-
-New scripts and fixes to existing scripts by Jerad2142, as a reminder you can check JmgUtility.h to see more details on the scripts added.
-
-Fix RA_Gap_Generator_Building to work properly with base power turning off and on.
-
-Fixed a bug in GSA listing that would cause the listing to be stuck at "Waiting server list..." when a server had 0 digit in it's IP address.
-
-Add console commands destroybuildingbytype, destroybuildingbypreset and destroybuildingbyname to destroy buildings by type, ID, name or preset.
-
-Added bad connection indicator to the "FPS" display (top right corner of the screen) that tells how many times a packet was re-sent and the time left to disconnect.
-
-Added Remote Console feature, that allows executing commands in remote server from client console and relaying server console output to clients using the "Menu" key with optional password authorization.
-
-Players will now see GAMEPLAY IS PENDING when server is waiting all players to load if they loaded before the server, instead of being free in the map.
-
-Add new dialog to tell players if they are waiting for a server load or for other players to load.
-
-Add new engine calls Is_Gameplay_Pending and Set_Gameplay_Pending that lets server code pause/unpause the game (with clients seeing "GAMEPLAY IS PENDING" while its paused)
-
-Fixes to the custom dialog logic.
-
-Add new console command whereami that tells you your current x,y,z position and what map you are on.
-
-Player ID and Name changes are now correctly sent over the network.
-
-Add new engine call Set_Gravity_Multiplier that lets you change the gravity multiplier of an object at runtime and have it sync up over the network.
-
-Owned keycards now display on HUD properly.
-
-Fix incorrect text on Options button & GameSpy Options menu in GSA listing dialog after leaving a game.
-
-Added the server.ini command DisableConsoleOutput which will disable the text output for large servers (console output can cause lag if there is a lot of it).
-
-Set AGT/Obelisk gun teams to building's team so scripts will target the correct enemy.
-
-Add new engine call Is_In_Pathfind_Sector to check if given point is inside a pathfind sector or not.
-
-Add new engine calls Print_Client_Console and Print_Client_Console_Player, to print text into client's console. (at top left corner)
-
-New feature where .mix, .dat and .pkg files contained inside TTFS downloads will be loaded (and the files inside them available to the game). This should improve download times (much faster to download one big mix file than many small files)
-
-Add URL protocol handler support (details to come)
-
-New engine calls Get_Repository_URL, Set_Repository_URL, Get_Screenshot_URL and Set_Screenshot_URL to change the repository and screenshot URLs
-
-New engine call Take_Screenshot to take a client screenshot (same thing as the sshot console command)
-
-Fix a backwards compatibility issue presented in previous version when maximum player count is greater than 1.
-
-Added the server.ini setting UseStockTeamNames, which if set to true will force Game_Info to print out GDI and Nod instead of whatever team name replacements exist for the map/mod. This is useful for brenbot which expects team names to always be the same from map to map.
-
- 
-
-If you are running 4.7 Update 3 (or any earlier version) you will be automatically updated to 4.7 Update 4.
-
-People wanting a full installer (to install from scratch or to do a full reinstall), a server download or a tools download can find them on the Tiberian Technologies website (www.tiberiantechnologies.org) in the downloads section. Appropriate source code for 4.7 Update 4 as well as the source files for the map fixes in 4.7 (which are the latest fixes we have) can also be found on the site.
-
-People who need Dragonade will have to wait for a compatible version of Dragonade to be released.
-
- 
-
-
-
-
-Dragonade 1.10
+Dragonade 1.10.9
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -94,7 +22,7 @@ dblaney1, misc. code and fixes.
 Installation:
 
 1. Download and install the latest server version of TT from http://www.tiberiantechnologies.org/downloads. 
-   Note that DA was designed to work with TT 4.6.9. It probably won't work with other versions.
+   Note that DA was designed to work with TT 4.7. It probably won't work with other versions.
 2. Copy the contents of the server folder included in this zip to the server folder of your FDS, overwriting any existing files.
 3. Configure da.ini, da_crates.ini, and the relevant gamemode.ini to your liking.
 
@@ -103,6 +31,118 @@ Installation:
 
 
 Update History:
+
+Version 1.10.9
+  Additions:
+   - Updated to TT 4.8.2.
+
+  Changes:
+   - Restricted !stuck command to Public and Team chat only, to prevent people abusing it secretly.
+   - Added CrateModel keyword into da_crates.ini (The feature was there, but configuration option was missing.)
+
+Version 1.10.8
+  Additions:
+   - Updated to TT 4.8.1.
+
+  Changes:
+   - Added Hardware ID support for bans, ForceTT and connection refusal messages.
+   - Changes in maximum health/armor will now replace the calculated health/armor of veteran system.
+    
+  Bug Fixes:
+   - Fix Building Annotations config section names.
+   - Fix repairing message and a memory leak in Building Annotations.
+   - Avoid heap allocations (for player name) every repair in Building Annotations.
+   - Use player object team instead of vehicle team to prevent smart bots from stealing teammate's vehicles.
+   - Fix a rare time-based crash (primarily caused by unstable FPS) while processing vehicle queue when Vehicle Factory is busy.
+   - Fix so dialog events that does not involve controls will now trigger events.
+
+Version 1.10.7
+  Additions:
+   - Updated to TT 4.8.
+
+  Changes:
+   - Tweaks to the chat hook of Dragonade Core.
+   - Use the vehicle owner for enemy checking of vehicles for Veteran System.
+   - Partially standardize GameSpy broadcaster for the new TT system.
+
+  Bug Fixes:
+   - Fix Veteran System is not granting veteran points for repairing.
+
+Version 1.10.6
+  Additions:
+   - Updated to TT 4.7.4.
+
+Version 1.10.5 Hotfix #2
+  Additions:
+   - Added Is_Smart_Bot DA engine function.
+
+  Changes:
+   - Add C4/Beacon detonate and disarm messages for smart bots.
+   - Improve smart bot detection in kill messages and C4/Beacon pokes.
+   - Add Dialog event in Player Observer.
+   - Armor, health, weapon and keycard powerup pickups are now displayed in HUD.
+   - Remove HUD grant display from DA's Loot PowerUps as this is now handled by Dragonade's core.
+   - Private chats now trigger plugin events.
+
+  Bug Fixes:
+   - Fix when a vehicle with 0-seat and VehicleType not set to Turret crashes server when it kills a vehicle.
+   - Fix base power off-line messages to log server when there are more than 1 Power Plants in the map.
+   - Fix so kill streak won't increment when player suicides.
+
+Version 1.10.5 Hotfix #1
+  Changes:
+   - Add HUD weapon grant display to Backpacks.
+
+  Bug Fixes:
+   - Fix a crash occurring when a weapon power-up is granted to a player created by Dragonade Loot System.
+   - Fix BlockFakeBeacons not working properly.
+
+Version 1.10.5
+  Additions:
+   - Updated to TT 4.7.3.
+   - Added Kill Streaks game feature.
+   - Added dialog event.
+
+  Changes:
+   - Game data now updates after server title changes to display it correctly in Discord Rich Presence.
+   - When a C4/Beacon is poked, display bot tag or preset translation if it's owner is not a player.
+   - Display weapon/ammo grants in HUD when a backpack is picked up.
+
+Version 1.10.4
+  Additions:
+   - Updated to TT 4.7.2.
+
+  Bug Fixes:
+   - Fix a bug in Veteran System when the vehicle that player is currently in gets destroyed confuses Veteran System, causing a crash.
+
+Version 1.10.3 Hotfix #1
+  Changes:
+   - Improvements for kill messages.
+   - Move veteran system configuration to a new file "da_veteran.ini".
+
+  Bug Fixes:
+   - Fix a bug in Veteran System when an object is killed by non-player would not give player veteran points even if player damaged the victim before.
+
+Version 1.10.3
+  Additions:
+   - Updated to TT 4.7.1.
+   - Add more kill/destroy/suicide messages for moonsense715's bots.
+   - Add Veteran game feature.
+   - Add Building Annotations game feature.
+
+  Changes:
+   - Modify Veteran Crate to grant veteran points between 1-30 when picked up with Veteran game feature.
+
+  Bug Fixes:
+   - Fix a bug where tagging an enemy building or dead enemy unit then using Radio6 command would report "Enemy spotted!" to enemy.
+   - Fix an exploit where tagging a stealth enemy vehicle then using Radio5 or Radio6 would reveal stealthed enemy with a small icon on top of it.
+   - Fix so using Taunts with a non-Human model no longer crashes server.
+
+Version 1.10.2
+  Additions:
+   - Updated to TT 4.7.
+   - Renamed DA function "Set_Emot_Icon" to "Set_Emote_Icon" to fix redefinition with engine call "Set_Emot_Icon" (sei).
+   - Added private chat messages to show up in events.
 
 Version 1.10.1
   Additions:
@@ -407,5 +447,3 @@ Version 1.0.1:
 
 Version 1.0:
    - Initial release
-
-
